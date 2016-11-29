@@ -4,7 +4,7 @@ get_dataset = function(name) {
   data = read.csv(name, header=T,sep=";")
   
 
-  for(header in list(data$title,data$newsletter,data$coupon,data$giftwrapping,data$referrer,data$cost_shipping)
+  for(header in list(data$title,data$newsletter,data$coupon,data$giftwrapping,data$referrer,data$cost_shipping))
       {
       header = factor(header, labels=c("no,"yes"))
       }
