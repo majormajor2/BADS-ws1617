@@ -59,3 +59,13 @@ exterminate_missing_values = function(dataset) {
   
   return(data)
 }
+
+# standardise cardinal variables to range from 0 to 1 (e.g. item count)
+# input: data frame
+# output: data frame
+standardise_cardinal_variables = function(dataset) {
+  data = dataset
+  
+  
+  return(data)
+}
