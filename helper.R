@@ -6,7 +6,7 @@ get_dataset = function(name) {
 
   for(header in list(data$title,data$newsletter,data$coupon,data$giftwrapping,data$referrer,data$cost_shipping))
       {
-      header = factor(header, labels=c("no,"yes"))
+      header = factor(header, labels=c("no","yes"))
       }
 
   #data$YOB[data$YOB==99] = NA
