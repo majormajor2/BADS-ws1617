@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "# This is only a test file.\n\n## hk: another test",
+    "created" : 1481903801247.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1525610152",
+    "id" : "7358E80",
+    "lastKnownWriteTime" : 1481903725,
+    "last_content_update" : 1481903725,
+    "path" : "~/bads-ws1617-group27/test.R",
+    "project_path" : "test.R",
+    "properties" : {
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
