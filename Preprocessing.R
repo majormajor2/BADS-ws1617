@@ -1,62 +1,97 @@
-#get data
-setwd("/Users/sfinkenwirth/Documents/MEMS/Lectures and Seminars/Business Analytics & Data Science/Assignment_BADS_WS1617/Input")
-bads <- read.csv("assignment_BADS_WS1617_known.csv", header = TRUE, sep = ",")
-if(!require("ggplot2")) install.packages("ggplot2"); library(ggplot2)
+# Preprocessing
 
-#get list of names and classes
-vtypes_known <- write.csv(sapply(data, class))
-vtypes_class <- write.csv(sapply(data_class, class))
+### 1. form_of_address ###
+# str(known$form_of_address) : 3 levels : Company, Mr, Mrs
+# check for missing values
+sum(is.na(known$form_of_address)) # 6.866 values are missing
 
-#for histograms
-par(mar=c(1,1,1,1)) # this code avoids some errors related to screen resolution; feel free to ignore it
+# stats: calculate percentage of 3 levels + NA
+form_of_address_na = sum(is.na(known$form_of_address))/nrow(known) 
+company <- as.numeric(summary(known$form_of_address)[1])/nrow(known)
+mr <- as.numeric(summary(known$form_of_address)[2])/nrow(known)
+mrs <- as.numeric(summary(known$form_of_address)[3])/nrow(known)
 
-# structure of dataset
-str(bads)
-summary(bads)
-
-# --------------------------------------------------------
-
-# form_of_address - 13% missing
-str(bads$form_of_address)
-as.numeric(summary(bads$form_of_address)[1])
-address_missing = sum(is.na(bads$form_of_address))/nrow(bads)
-# stats
-company <- as.numeric(summary(bads$form_of_address)[1])/nrow(bads)
-mr <- as.numeric(summary(bads$form_of_address)[2])/nrow(bads)
-mrs <- as.numeric(summary(bads$form_of_address)[3])/nrow(bads)
-
-address_stats <- c(company, mr, mrs, address_missing)
-pct <- round(address_stats/sum(address_stats)*100)
-labels.address <- paste(c("company", "mr", "mrs", "address_missing"), pct, "%", sep = " ")
-data.frame(address_stats, row.names = c("company", "mr", "mrs", "address_missing"))
-
-## Summary form_of_address
+# give data frame and plot pie with 4 categories & percentages
+address_stats <- c(company, mr, mrs, form_of_address_na) # define vector with 4 categoires
+address_stats_pct <- round(address_stats/sum(address_stats)*100) # round to full integers
+labels.address <- paste(c("company", "mr", "mrs", "address_missing"), pct, "%", sep = " ") # define labels
+data.frame(address_stats, row.names = c("company", "mr", "mrs", "address_missing")) # data frame of percentages
 pie(x = address_stats, labels = labels.address, main = "Form of address")
 
-# ----------------------------------------------------------
+### Stuff to do for form_of_adress
+# 1. give percentages with 2 decimal places and "%" sign
+# 2. clean up code (sapply)
+###
 
-# account_creation_date
-str(bads$account_creation_date) # factor with 258 levels
-summary(bads$account_creation_date) # 3412 NAs
-# converte to Date-type
-bads$account_creation_date <- as.Date(bads$account_creation_date)
+-------------------------
+### 2.account_creation_date
+# original data:
+# typeof(known$account_creation_date) # data type integer
+# str(known$account_creation_date) # factor with 258 levels
+
+# check for missing values
+sum(is.na(known$account_creation_date)) # 3412 NAs
+
+# convert to Date-type 
+known$account_creation_date <- as.Date(known$account_creation_date) # also needed for lubridate package
+# class(known$account_creation_date)
+# sum(is.na(known$account_creation_date)) # as.Date leaves NAs as they are
+
+# use package lubridate
+# split column up into quarteryear, month, week, weekdays
+# week
+known$acc_creation_week = week(x = known$account_creation_date)
+head(known$acc_creation_week) # works
+head(known$account_creation_date) # compare with original dates
+
+
+#weekends and weekdays
+# create vector of weekdays
+weekdays1 = c("Mo", "Di", "Mi", "Do", "Fr")
+known$wDay <- factor((weekdays(known$account_creation_date, abbreviate = TRUE) %in% weekdays1), levels=c(FALSE, TRUE), labels=c("weekend", "weekday") )
+head(known$wDay)
+
+# month
+known$acc_creation_month = month(x= known$account_creation_date, label = FALSE)
+head(known$acc_creation_month) # works
+head(known$account_creation_date) # compare with original dates
+
+# year
+known$acc_creation_year = year(x = known$account_creation_date)
+head(known$acc_creation_year) # works
+head(known$account_creation_date) # compare with original dates
+
+# quarter
+known$acc_creation_quarter = quarter(x = known$account_creation_date, with_year = TRUE)
+head(known$acc_creation_quarter) # works
+head(known$account_creation_date) # compare with original dates
+
+# Now: do histograms (Yay!)
+# quarter
+acc_dates = list(k)
+known[,c("acc_creation_quarter","acc_creation_month","wDay")]
+head(known[,c("acc_creation_quarter","acc_creation_month","wDay")])
+
+head# 
+if(!require("lubridate")) install.packages("lubridate"); library(lubridate)
+?lubridate
 
 # Distribution of account_creation_date 
-hist(x = bads$account_creation_date, breaks = "months") 
-hist(x = bads$account_creation_date, breaks = "days")
+hist(x = known$account_creation_date, breaks = "months") 
+hist(x = known$account_creation_date, breaks = "days")
 
 # correlation between order_date & account_creation_date
-bads$acc.creation_order.date <- bads$account_creation_date == bads$order_date
-summary(bads$acc.creation_order.date)
-stats_firsties <- (as.numeric(summary(bads$acc.creation_order.date)[3])/nrow(bads))*100
+known$acc.creation_order.date <- known$account_creation_date == known$order_date
+summary(known$acc.creation_order.date)
+stats_firsties <- (as.numeric(summary(known$acc.creation_order.date)[3])/nrow(known))*100
 
 
 # Variable ID - ID is unique 
-idunique <- unique(bads$ID) # unique() returns vector/data frame with like (x) but with duplicate elements/rows removed
+idunique <- unique(known$ID) # unique() returns vector/data frame with like (x) but with duplicate elements/rows removed
 length(idunique) # length() returns no of rows in vector idunique
-nrow(bads) # returns no of rows 
-## Return answer, whether ID is unique (i.e. if ID count equals no rows in bads)
-if (length(idunique) == nrow(bads)) {
+nrow(known) # returns no of rows 
+## Return answer, whether ID is unique (i.e. if ID count equals no rows in known)
+if (length(idunique) == nrow(known)) {
   print("Variable ID is unique identifier for each row")
 } else {
   print("Variabel ID is NOT unique")
@@ -65,27 +100,27 @@ if (length(idunique) == nrow(bads)) {
 # order_date -  !can't calculate with it
 # why important: time passed since last order indicative
 # is factor with 356 levels
-class(bads$order_date)
+class(known$order_date)
 
 ## convert to Data-type
-bads$order_date <- as.Date(bads$order_date)
-class(bads$order_date)
+known$order_date <- as.Date(known$order_date)
+class(known$order_date)
 # order_date_ym <- strftime(order_date, "%Y/%m") save specific attributes of Date
 # Distribution of order_date per month
-hist(x = bads$order_date, breaks = "months") 
-hist(x = bads$order_date, breaks = "days")
+hist(x = known$order_date, breaks = "months") 
+hist(x = known$order_date, breaks = "days")
 ?Date
 # create variables for month & weeks for each observation, Source: https://www.r-bloggers.com/plot-weekly-or-monthly-totals-in-r/
-bads$order_month <- as.Date(cut(bads$order_date, breaks = "month"))
-bads$order_week <- as.Date(cut(bads$order_date, breaks = "week", start.on.monday = TRUE))
+known$order_month <- as.Date(cut(known$order_date, breaks = "month"))
+known$order_week <- as.Date(cut(known$order_date, breaks = "week", start.on.monday = TRUE))
 # show histogramm of no of orders per week
-ggplot(data = bads, aes(order_week)) + geom_histogram(binwidth = 2, show.legend = TRUE)
-ggplot(data = bads, aes(order_month)) + geom_histogram(binwidth = 2, show.legend = TRUE)
-sort(table(bads$order_week))
+ggplot(data = known, aes(order_week)) + geom_histogram(binwidth = 2, show.legend = TRUE)
+ggplot(data = known, aes(order_month)) + geom_histogram(binwidth = 2, show.legend = TRUE)
+sort(table(known$order_week))
 
 # time span orders
-firstorder <- names(table(bads$order_date))[1]
-lastorder <- names(tail(table(bads$order_date)))[6]
+firstorder <- names(table(known$order_date))[1]
+lastorder <- names(tail(table(known$order_date)))[6]
 firstorder - lastorder
 
 #time span account creation date
