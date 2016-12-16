@@ -5,12 +5,15 @@
 # output: data frame
 
 get_dataset = function(name) {
+  
   # read csv-file
   data = read.csv(name, header=T,sep=",")
   
   
   # drop data$points_redeemed because it has all zeros -> no informational value
   data$points_redeemed <- NULL
+  data$points_redeemed = NULL
+
   
   # factorise ID
   data$ID = factor(data$ID)
@@ -31,6 +34,12 @@ get_dataset = function(name) {
   # factorise binary variable data$delivery with appropriate labels
   data$delivery = factor(data$delivery, labels=c("Door delivery","Collection at post office"))
   
+
+  for(header in colnames(data))
+    {
+    print(header)
+    summary(data[,header])
+    }
 
   #data$YOB[data$YOB==99] = NA
   #data$YOB_missing = factor(ifelse(is.na(data$YOB), 1, 0), labels=c("no","yes"))
