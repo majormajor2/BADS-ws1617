@@ -1,7 +1,7 @@
-# name = "~/Assignment_BADS_WS1617/assignment_BADS_WS1617_known.csv"
+#name = "~/Assignment_BADS_WS1617/assignment_BADS_WS1617_known.csv"
 
 get_dataset = function(name) {
-  data = read.csv(name, header=T,sep=";")
+  data = read.csv(name, header=T,sep=",")
   
 
   for(header in list(data$title,data$newsletter,data$coupon,data$giftwrapping,data$referrer,data$cost_shipping))
