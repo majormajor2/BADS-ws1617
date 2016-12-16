@@ -48,3 +48,14 @@ get_dataset = function(name) {
 
   return(data)
 }
+
+
+# treats the missing values in the data frame
+# input: data frame with missing values
+# output: data frame with treated missing values
+exterminate_missing_values = function(dataset) {
+  data = dataset
+  
+  
+  return(data)
+}
