@@ -81,7 +81,13 @@ returnbymonth_deliveryest$percentreturn <- returnbymonth_deliveryest$return_cust
 returnbymonth_deliveryact$percentreturn <- returnbymonth_deliveryact$return_customer*100/Totreturn
 
 
-ggplot(data = returnbymonth, aes(x = YrMonth, y = percentreturn)) + geom_point()
+ggplot(data = returnbymonth_orderdate, aes(x = YrMonth_order_date_new, y = percentreturn)) + geom_point()
+ggplot(data = returnbymonth_accountcreation, aes(x = YrMonth_account_creation_date_new, y = percentreturn)) + geom_point()
+ggplot(data = returnbymonth_deliveryest, aes(x = YrMonth_deliverydate_estimated_new, y = percentreturn)) + geom_point()
+ggplot(data = returnbymonth_deliveryact, aes(x = YrMonth_deliverydate_actual_new, y = percentreturn)) + geom_point()
+
+## We still need to clean the dates but the code should work
+
 ggplot(data = returnbymonth, aes(x = YrMonth, y = percentreturn)) + geom_point() + geom_line()
 
 ## Create a list of all columns with dates - to check distribution of customers across dates ## needs to be finished
