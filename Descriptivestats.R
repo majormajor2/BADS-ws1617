@@ -86,7 +86,7 @@ ggplot(data = returnbymonth_accountcreation, aes(x = YrMonth_account_creation_da
 ggplot(data = returnbymonth_deliveryest, aes(x = YrMonth_deliverydate_estimated_new, y = percentreturn)) + geom_point()
 ggplot(data = returnbymonth_deliveryact, aes(x = YrMonth_deliverydate_actual_new, y = percentreturn)) + geom_point()
 
-## We still need to clean the dates but the code should work
+## We still need to clean the dates but the code should work, need to shorten the code
 
 ggplot(data = returnbymonth, aes(x = YrMonth, y = percentreturn)) + geom_point() + geom_line()
 
