@@ -85,5 +85,5 @@ standardise_cardinal_variables = function(dataset) {
 
 
 standardise_postcodes = function(postcode){
-  if(length(postcode)!=2){paste("0",item)}
+  if(length(postcode)!=2){paste("0",postcode)}
 }
