@@ -2,5 +2,6 @@
 
 source("helper.R")
 known = get_dataset("assignment_BADS_WS1617_known.csv")
+class = get_dataset("assignment_BADS_WS1617_class.csv")
 lapply(known,class)
 lapply(known,summary)
