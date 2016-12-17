@@ -96,6 +96,7 @@ ggplot(data = returnbymonth, aes(x = YrMonth, y = percentreturn)) + geom_point()
 
 ## First attempt at a shorter/cleaner code
 
+
 ## Create a list of all columns with dates - to check distribution of customers across dates ## needs to be finished
 
 datelist <- list(known$order_date, known$account_creation_date, known$deliverydate_estimated, known$deliverydate_actual)
