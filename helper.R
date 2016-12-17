@@ -22,7 +22,7 @@ get_dataset = function(name) {
   data$postcode_delivery = factor(data$postcode_delivery)
   
   # factorise website model
-  data$model = factor(data$model)
+  data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
   
   # factorise all binary variables with labels "no" and "yes" where appropriate
   for(header in c("title","newsletter","coupon","giftwrapping","referrer","cost_shipping"))
