@@ -12,26 +12,26 @@ get_dataset = function(name) {
   
   # drop data$points_redeemed because it has all zeros -> no informational value
   data$points_redeemed = NULL
-
+  
   
   # factorise ID
   data$ID = factor(data$ID)
   
   # factorise postcodes
-  #data$postcode_invoice = factor(data$postcode_invoice)
-  #data$postcode_delivery = factor(data$postcode_delivery)
+  data$postcode_invoice = factor(data$postcode_invoice)
+  data$postcode_delivery = factor(data$postcode_delivery)
   #data$postcode_invoice = character(data$postcode_invoice) gives errors
   #data$postcode_delivery = character(data$postcode_delivery) gives errors
-  data$postcode_invoice = as.character(data$postcode_invoice)
-  data$postcode_delivery = as.character(data$postcode_delivery)
+  #data$postcode_invoice = as.character(data$postcode_invoice)
+  #data$postcode_delivery = as.character(data$postcode_delivery)
   
   # factorise website model
   data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
   
   # factorise all binary variables with labels "no" and "yes" where appropriate
   for(header in c("title","newsletter","coupon","giftwrapping","referrer","cost_shipping"))
-      {
-      data[,header] = factor(data[,header],labels=c("no","yes"))
+  {
+    data[,header] = factor(data[,header],labels=c("no","yes"))
   }
   
   # factorise binary variable data$delivery with appropriate labels
@@ -43,13 +43,13 @@ get_dataset = function(name) {
     data[,header] = as.Date(data[,header])
   }
   
-
+  
   #data$YOB[data$YOB==99] = NA
   #data$YOB_missing = factor(ifelse(is.na(data$YOB), 1, 0), labels=c("no","yes"))
   # trade off between information carried in dummy variables and increase in dimensionality
   #data$YOB[is.na(data$YOB)] = median(data$YOB, na.rm = TRUE)
-
-
+  
+  
   return(data)
 }
 
@@ -65,7 +65,7 @@ exterminate_missing_values = function(dataset) {
   # TO DO 3: Replace missing weight with mean weight for the same number of items
   
   # TO DO X: replace ?? in class_data?
-
+  
   return(data)
 }
 
@@ -78,21 +78,4 @@ standardise_cardinal_variables = function(dataset) {
   # TO DO:
   
   return(data)
-}
-
-
-setdiff_postcode_invoice = function(data1,data2) {
-  
-  
-  sd = setdiff(data1$postcode_invoice,data2$postcode_invoice)
-  
-  for(postcode_known in known$postcode_invoice)
-  {
-    if(!(postcode_known %in% class$postcode_invoice))
-    {
-      print(postcode_known)
-    }
-  }
-  
-  return(sd)
 }
