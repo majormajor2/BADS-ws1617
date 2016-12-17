@@ -12,20 +12,21 @@ get_dataset = function(name) {
   
   # drop data$points_redeemed because it has all zeros -> no informational value
   data$points_redeemed = NULL
-  
+
   
   # factorise ID
   data$ID = factor(data$ID)
   
-  # convert data type of postcodes to "character" (alternatively factorise them)
+  # convert data type of postcodes to "character" (alternatively factorise them) 
   # also standardise them to 2 digits
-  
   data$postcode_invoice = factor(data$postcode_invoice)
   data$postcode_delivery = factor(data$postcode_delivery)
+
   #data$postcode_invoice = as.character(data$postcode_invoice)
   #data$postcode_delivery = as.character(data$postcode_delivery)
   data$postcode_invoice = sapply(data$postcode_invoice, standardise_postcode)
   data$postcode_delivery = sapply(data$postcode_delivery, standardise_postcode)
+
   
   # factorise website model
   data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
@@ -33,7 +34,7 @@ get_dataset = function(name) {
   # factorise all binary variables with labels "no" and "yes" where appropriate
   for(header in c("title","newsletter","coupon","giftwrapping","referrer","cost_shipping"))
   {
-    data[,header] = factor(data[,header],labels=c("no","yes"))
+      data[,header] = factor(data[,header],labels=c("no","yes"))
   }
   
   # factorise binary variable data$delivery with appropriate labels
@@ -45,13 +46,13 @@ get_dataset = function(name) {
     data[,header] = as.Date(data[,header])
   }
   
-  
+
   #data$YOB[data$YOB==99] = NA
   #data$YOB_missing = factor(ifelse(is.na(data$YOB), 1, 0), labels=c("no","yes"))
   # trade off between information carried in dummy variables and increase in dimensionality
   #data$YOB[is.na(data$YOB)] = median(data$YOB, na.rm = TRUE)
-  
-  
+
+
   return(data)
 }
 
@@ -67,7 +68,7 @@ exterminate_missing_values = function(dataset) {
   # TO DO 3: Replace missing weight with mean weight for the same number of items
   
   # TO DO X: replace ?? in class_data?
-  
+
   return(data)
 }
 
@@ -81,6 +82,7 @@ standardise_cardinal_variables = function(dataset) {
   
   return(data)
 }
+
 
 # standardize postcode function
 # input: postcode as character
@@ -112,4 +114,3 @@ standardise <- function(x){
   result <- (x - mu)/std
   return(result)
 }
-
