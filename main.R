@@ -16,4 +16,4 @@ class = get_dataset("assignment_BADS_WS1617_class.csv")
 
 # summarise
 lapply(known,summary)
-lapply(class,summary)
+#lapply(class,summary)
