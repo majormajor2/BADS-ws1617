@@ -17,13 +17,16 @@ get_dataset = function(name) {
   # factorise ID
   data$ID = factor(data$ID)
   
-  # factorise postcodes
-  data$postcode_invoice = factor(data$postcode_invoice)
-  data$postcode_delivery = factor(data$postcode_delivery)
+  # convert data type of postcodes to "character" (alternatively factorise them)
+  # also standardise them to 2 digits
+  #data$postcode_invoice = factor(data$postcode_invoice)
+  #data$postcode_delivery = factor(data$postcode_delivery)
   #data$postcode_invoice = character(data$postcode_invoice) gives errors
   #data$postcode_delivery = character(data$postcode_delivery) gives errors
-  #data$postcode_invoice = as.character(data$postcode_invoice)
-  #data$postcode_delivery = as.character(data$postcode_delivery)
+  data$postcode_invoice = as.character(data$postcode_invoice)
+  data$postcode_delivery = as.character(data$postcode_delivery)
+  lapply(data$postcode_invoice, standardise_postcodes)
+  lapply(data$postcode_delivery, standardise_postcodes)
   
   # factorise website model
   data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
