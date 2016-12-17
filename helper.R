@@ -83,7 +83,9 @@ standardise_cardinal_variables = function(dataset) {
   return(data)
 }
 
-
+# standardize postcode function
+# input: postcode as character
+# output: standardized postcode as character
 standardise_postcode = function(postcode){
   if(length(postcode)!=2)
     {
@@ -93,3 +95,14 @@ standardise_postcode = function(postcode){
     }
   return(standardised_postcode)
 }
+
+# general standardization function
+# input: numerical column
+# output: standardized numerical column
+standardize <- function(x){
+  mu <- mean(x)
+  std <- sd(x)
+  result <- (x - mu)/std
+  return(result)
+}
+
