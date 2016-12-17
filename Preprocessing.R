@@ -5,6 +5,22 @@ if(!require("lubridate")) install.packages("lubridate"); library(lubridate)
 if(!require("corrplot")) install.packages("corrplot"); library(corrplot) 
 if(!require("ggplot2")) install.packages("ggplot2"); library(ggplot2) 
 -----------------------------
+
+## email_domain
+summary(known$email_domain)
+sort(table(known$email_domain), decreasing = TRUE) # web.de & gmx.de
+
+## cash payment
+summary(known$payment)
+
+## postcode_invoice - done by Djordje
+## postcode_delivery - done by Djordje
+
+# advertising_code
+summary(known$advertising_code)
+
+
+  
 ### 1. form_of_address ###
 # str(known$form_of_address) : 3 levels : Company, Mr, Mrs
 # check for missing values
@@ -168,6 +184,7 @@ rid <- data[data$return_customer == 1, "ID"]
 rtitle <- data[data$return_customer == 1, "title"]
 
 rsummary <- matrix(c(rdomain, raccount, rid, rtitle), nrows = return, ncol = 4, byrow = TRUE)
-rsummary
+
+
 
 
