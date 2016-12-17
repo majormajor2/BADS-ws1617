@@ -13,7 +13,6 @@ summary(known)
 known.outlierscheck <- known
 
 # nullify uneeded columns
-# note to self: make it in a list with names
 known.outlierscheck[ ,c(1:14,17:22)] <- c(NULL)
 
 # Assign row and column names
@@ -33,7 +32,7 @@ colnames(known.quantiles.nozeros) <- known.outlierscheck.colnames
 rownames(known.quantiles.nozeros) <- known.outlierscheck.rownames
 
 
-# create boxplots of all the columns and save them to pdf files
+# create boxplots (trial)
 dev.off()
 # the former line makes sure the device is off to avoid a possible error
 pdf(file = "plot goods_value.pdf")
