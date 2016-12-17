@@ -2,6 +2,7 @@
 -----------------------------
 # Packages
 if(!require("corrplot")) install.packages("corrplot"); library(corrplot) 
+if(!require("ggplot2")) install.packages("ggplot2"); library(ggplot2) 
 -----------------------------
 ### 1. form_of_address ###
 # str(known$form_of_address) : 3 levels : Company, Mr, Mrs
@@ -29,19 +30,51 @@ pie(x = address_stats, labels = labels.address, main = "Form of address")
 -----------------------------
 ### DATES ###
 # give me variable names that have a date
-data = known
 selectdatevars = function(data){
-  # select column names that have "date" in them
-  datevarnames = colnames(data)[grep(pattern = "date", x = colnames(data))]
+datevarnames = colnames(data)[grep(pattern = "date", x = colnames(data))]
 return(datevarnames)
 }
-datevarnames = selectdatevars(known) # safe output in a list
+datecolumn = selectdatevars(known) # safe data variables in a list
+c(datecolumn)
+# plot histogramms
+for(datecolumn in c(datecolumn)){
+  ggplot(known, aes(x = datecolumn)) + geom_histogram(bins = 50)
+}
+
+sum(is.na(known$account_creation_date))
+
+hist_datecolumn = function(data, datecolumn){
+  
+  ggplot(data = data, aes(x = datecolumn)) + geom_histogram()
+}
+hist_datecolumn(known, account_creation_date)
+
+?lubridate
+
+
+
 
 # transform to Date
-for(header in c(datevarnames))
+for(header in c(date_columns))
 {
-  data[,header] = as.Date(data[,header])
+  known[,header] = as.Date(known[,header])
 }
+
+if(!require("foreach")) install.packages("foreach"); library(foreach)
+# extract week, month, quarter etc. and check correlation
+corr_date = function(input){
+  # extract week, month, year
+  for(date_columns in c(date_columns))
+    {
+    # week
+    week = week(x = known$date_columns)
+    hist(week)
+    }
+return()
+}
+
+
+
 
   
 ### 2.account_creation_date
