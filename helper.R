@@ -65,7 +65,10 @@ exterminate_missing_values = function(dataset) {
   data = dataset
   
   # TO DO 1: NAs for advertising_code - create dummy no_advertising
+  data$missing_advertising_code = factor(ifelse(data$advertising_code == "", 1, 0), labels=c("no","yes"))
   # TO DO 2: NAs for postcode delivery - create dummy no_postcode_delivery, replace with postcode invoice
+  data$missing_postcode_delivery = factor(ifelse(is.na(data$postcode_delivery), 1, 0), labels=c("no","yes"))
+  data$postcode_delivery[is.na(data$postcode_delivery)] = data$postcode_invoice
   # TO DO 3: Replace missing weight with mean weight for the same number of items
   
   # TO DO X: replace ?? in class_data?
