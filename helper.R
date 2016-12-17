@@ -20,9 +20,10 @@ get_dataset = function(name) {
   # factorise postcodes
   #data$postcode_invoice = factor(data$postcode_invoice)
   #data$postcode_delivery = factor(data$postcode_delivery)
-  data$postcode_invoice = character(data$postcode_invoice)
-  data$postcode_delivery = character(data$postcode_delivery)
-  
+  #data$postcode_invoice = character(data$postcode_invoice) gives errors
+  #data$postcode_delivery = character(data$postcode_delivery) gives errors
+  data$postcode_invoice = as.character(data$postcode_invoice)
+  data$postcode_delivery = as.character(data$postcode_delivery)
   
   # factorise website model
   data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
