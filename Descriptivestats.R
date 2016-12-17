@@ -88,7 +88,13 @@ ggplot(data = returnbymonth_deliveryact, aes(x = YrMonth_deliverydate_actual_new
 
 ## We still need to clean the dates but the code should work, need to shorten the code
 
+## Plot month-date by % of customers who returned out all that returned
+
 ggplot(data = returnbymonth, aes(x = YrMonth, y = percentreturn)) + geom_point() + geom_line()
+
+
+
+## First attempt at a shorter/cleaner code
 
 ## Create a list of all columns with dates - to check distribution of customers across dates ## needs to be finished
 
