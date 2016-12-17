@@ -75,3 +75,11 @@ standardise_cardinal_variables = function(dataset) {
   
   return(data)
 }
+
+for(postcode_known in known$postcode_invoice)
+{
+  if(not postcode_known %in% class$postcode_invoice)
+  {
+    print(postcode_known)
+  }
+}
