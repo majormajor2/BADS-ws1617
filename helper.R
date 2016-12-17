@@ -79,11 +79,19 @@ standardise_cardinal_variables = function(dataset) {
   return(data)
 }
 
-setdiff(known$postcode_invoice,class$postcode_invoice)
-for(postcode_known in known$postcode_invoice)
-{
-  if(!(postcode_known %in% class$postcode_invoice))
+
+setdiff_postcode_invoice = function(data1,data2) {
+  
+  
+  sd = setdiff(data1$postcode_invoice,data2$postcode_invoice)
+  
+  for(postcode_known in known$postcode_invoice)
   {
-    print(postcode_known)
+    if(!(postcode_known %in% class$postcode_invoice))
+    {
+      print(postcode_known)
+    }
   }
+  
+  return(sd)
 }
