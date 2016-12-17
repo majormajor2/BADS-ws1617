@@ -13,7 +13,6 @@ summary(known)
 known.outlierscheck <- known
 
 # nullify uneeded columns
-# note to self: make it in a list with names
 known.outlierscheck[ ,c(1:14,17:22)] <- c(NULL)
 
 # Assign row and column names
@@ -33,7 +32,7 @@ colnames(known.quantiles.nozeros) <- known.outlierscheck.colnames
 rownames(known.quantiles.nozeros) <- known.outlierscheck.rownames
 
 
-# create boxplots of all the columns and save them to pdf files
+# create boxplots (trial)
 dev.off()
 # the former line makes sure the device is off to avoid a possible error
 pdf(file = "plot goods_value.pdf")
@@ -46,22 +45,4 @@ for (i in colnames(known.outlierscheck)){
   dev.off()
 }
 
-# we could see that the quantiles matrix and the boxplots are not very informative and we can see that most of the values are 0's. We need a different way to understand how the data looks like.
-
-# create a function
-# input: column of a data frame
-# output: a table (with percentage) for each column
-pertablefun <- function(x){
-  tab <- table(x)
-  pertab <- cbind(tab, prop.table(tab)*100)
-  colnames(pertab) <- c("Count", "Percentage")
-  return(pertab)
-}
-output.pertablefun <- lapply(known.outlierscheck, pertablefun)
-
-# we can see that the vast majority of the values of most variables are 0's and 1's. We can unify all numbers bigger than 1 to have a better look at the data.
-# make a table and unify all numbers bigger than 1 to 3
-known.outlierscheck.lessvalues <- known.outlierscheck
-known.outlierscheck.lessvalues[known.outlierscheck.lessvalues > 1] <- 3
-# apply pertablefun again on the new table
-output.pertablefunless <- lapply(known.outlierscheck.lessvalues, pertablefun)
+# talk about outliers

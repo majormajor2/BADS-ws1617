@@ -19,11 +19,12 @@ get_dataset = function(name) {
   
   # convert data type of postcodes to "character" (alternatively factorise them) 
   # also standardise them to 2 digits
-  data$postcode_invoice = factor(data$postcode_invoice)
-  data$postcode_delivery = factor(data$postcode_delivery)
-
+  
+  #data$postcode_invoice = factor(data$postcode_invoice)
+  #data$postcode_delivery = factor(data$postcode_delivery)
   #data$postcode_invoice = as.character(data$postcode_invoice)
   #data$postcode_delivery = as.character(data$postcode_delivery)
+  
   data$postcode_invoice = sapply(data$postcode_invoice, standardise_postcode)
   data$postcode_delivery = sapply(data$postcode_delivery, standardise_postcode)
 
