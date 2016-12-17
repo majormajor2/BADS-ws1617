@@ -25,8 +25,8 @@ get_dataset = function(name) {
   #data$postcode_delivery = character(data$postcode_delivery) gives errors
   data$postcode_invoice = as.character(data$postcode_invoice)
   data$postcode_delivery = as.character(data$postcode_delivery)
-  lapply(data$postcode_invoice, standardise_postcode)
-  lapply(data$postcode_delivery, standardise_postcode)
+  data$postcode_invoice = lapply(data$postcode_invoice, standardise_postcode)
+  data$postcode_delivery = lapply(data$postcode_delivery, standardise_postcode)
   
   # factorise website model
   data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
