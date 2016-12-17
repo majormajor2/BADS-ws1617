@@ -19,10 +19,9 @@ get_dataset = function(name) {
   
   # convert data type of postcodes to "character" (alternatively factorise them)
   # also standardise them to 2 digits
+  
   #data$postcode_invoice = factor(data$postcode_invoice)
   #data$postcode_delivery = factor(data$postcode_delivery)
-  #data$postcode_invoice = character(data$postcode_invoice) gives errors
-  #data$postcode_delivery = character(data$postcode_delivery) gives errors
   data$postcode_invoice = as.character(data$postcode_invoice)
   data$postcode_delivery = as.character(data$postcode_delivery)
   data$postcode_invoice = lapply(data$postcode_invoice, standardise_postcode)
@@ -99,7 +98,7 @@ standardise_postcode = function(postcode){
 # general standardization function
 # input: numerical column
 # output: standardized numerical column
-standardize <- function(x){
+standardise <- function(x){
   mu <- mean(x)
   std <- sd(x)
   result <- (x - mu)/std
