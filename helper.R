@@ -22,7 +22,7 @@ get_dataset = function(name) {
   data$postcode_delivery = factor(data$postcode_delivery)
   
   # factorise website model
-  data$model = factor(data$model)
+  data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
   
   # factorise all binary variables with labels "no" and "yes" where appropriate
   for(header in c("title","newsletter","coupon","giftwrapping","referrer","cost_shipping"))
@@ -56,8 +56,12 @@ get_dataset = function(name) {
 exterminate_missing_values = function(dataset) {
   data = dataset
   
-  # TO DO:
+  # TO DO 1: NAs for advertising_code - create dummy no_advertising
+  # TO DO 2: NAs for postcode delivery - create dummy no_postcode_delivery, replace with postcode invoice
+  # TO DO 3: Replace missing weight with mean weight for the same number of items
   
+  # TO DO X: replace ?? in class_data?
+
   return(data)
 }
 
@@ -70,4 +74,12 @@ standardise_cardinal_variables = function(dataset) {
   # TO DO:
   
   return(data)
+}
+
+for(postcode_known in known$postcode_invoice)
+{
+  if(not postcode_known %in% class$postcode_invoice)
+  {
+    print(postcode_known)
+  }
 }
