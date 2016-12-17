@@ -25,8 +25,8 @@ get_dataset = function(name) {
   #data$postcode_delivery = character(data$postcode_delivery) gives errors
   data$postcode_invoice = as.character(data$postcode_invoice)
   data$postcode_delivery = as.character(data$postcode_delivery)
-  lapply(data$postcode_invoice, standardise_postcodes)
-  lapply(data$postcode_delivery, standardise_postcodes)
+  lapply(data$postcode_invoice, standardise_postcode)
+  lapply(data$postcode_delivery, standardise_postcode)
   
   # factorise website model
   data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
@@ -84,6 +84,12 @@ standardise_cardinal_variables = function(dataset) {
 }
 
 
-standardise_postcodes = function(postcode){
-  if(length(postcode)!=2){paste("0",postcode)}
+standardise_postcode = function(postcode){
+  if(length(postcode)!=2)
+    {
+    # print(postcode)
+    standardised_postcode = paste("0",postcode)
+    # print(standardised_postcode)
+    }
+  return(standardised_postcode)
 }
