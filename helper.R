@@ -18,8 +18,11 @@ get_dataset = function(name) {
   data$ID = factor(data$ID)
   
   # factorise postcodes
-  data$postcode_invoice = factor(data$postcode_invoice)
-  data$postcode_delivery = factor(data$postcode_delivery)
+  #data$postcode_invoice = factor(data$postcode_invoice)
+  #data$postcode_delivery = factor(data$postcode_delivery)
+  data$postcode_invoice = character(data$postcode_invoice)
+  data$postcode_delivery = character(data$postcode_delivery)
+  
   
   # factorise website model
   data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
@@ -76,9 +79,10 @@ standardise_cardinal_variables = function(dataset) {
   return(data)
 }
 
+setdiff(known$postcode_invoice,class$postcode_invoice)
 for(postcode_known in known$postcode_invoice)
 {
-  if(not postcode_known %in% class$postcode_invoice)
+  if(!(postcode_known %in% class$postcode_invoice))
   {
     print(postcode_known)
   }
