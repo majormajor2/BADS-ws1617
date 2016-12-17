@@ -1,14 +1,14 @@
 {
     "collab_server" : "",
-    "contents" : "# This is the main script that runs all the other modules\n\nsource(\"helper.R\")\nknown = get_dataset(\"assignment_BADS_WS1617_class.csv\")\nlapply(known,class)\nlapply(known,summary)\n",
+    "contents" : "# This is the main script that runs all the other modules\n\nsource(\"helper.R\")\nknown = get_dataset(\"assignment_BADS_WS1617_known.csv\")\nlapply(known,class)\nlapply(known,summary)\n",
     "created" : 1481919549251.000,
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "1417047525",
+    "hash" : "1078557753",
     "id" : "C5291FDB",
-    "lastKnownWriteTime" : 1481969859,
-    "last_content_update" : 1481969859814,
+    "lastKnownWriteTime" : 1481974575,
+    "last_content_update" : 1481974575264,
     "path" : "~/bads-ws1617-group27/main.R",
     "project_path" : "main.R",
     "properties" : {
