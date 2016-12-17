@@ -17,16 +17,24 @@ get_dataset = function(name) {
   # factorise ID
   data$ID = factor(data$ID)
   
-  # factorise postcodes
-  data$postcode_invoice = factor(data$postcode_invoice)
-  data$postcode_delivery = factor(data$postcode_delivery)
+  # convert data type of postcodes to "character" (alternatively factorise them) 
+  # also standardise them to 2 digits
+  
+  #data$postcode_invoice = factor(data$postcode_invoice)
+  #data$postcode_delivery = factor(data$postcode_delivery)
+  #data$postcode_invoice = as.character(data$postcode_invoice)
+  #data$postcode_delivery = as.character(data$postcode_delivery)
+  
+  data$postcode_invoice = sapply(data$postcode_invoice, standardise_postcode)
+  data$postcode_delivery = sapply(data$postcode_delivery, standardise_postcode)
+
   
   # factorise website model
   data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
   
   # factorise all binary variables with labels "no" and "yes" where appropriate
   for(header in c("title","newsletter","coupon","giftwrapping","referrer","cost_shipping"))
-      {
+  {
       data[,header] = factor(data[,header],labels=c("no","yes"))
   }
   
@@ -76,10 +84,34 @@ standardise_cardinal_variables = function(dataset) {
   return(data)
 }
 
-for(postcode_known in known$postcode_invoice)
-{
-  if(not postcode_known %in% class$postcode_invoice)
-  {
-    print(postcode_known)
-  }
+
+# standardize postcode function
+# input: postcode as character
+# output: standardized postcode as character
+standardise_postcode = function(postcode){
+  # convert to character to be sure
+  standardised_postcode = as.character(postcode)
+  
+  # if postcode has fewer than 2 characters, add a preceding 0 
+  if(!(is.na(standardised_postcode)))
+     {
+       if(nchar(standardised_postcode, allowNA = TRUE, keepNA = TRUE)<2)
+         {
+         # print(standardised_postcode)
+         standardised_postcode = paste("0",standardised_postcode,sep="")
+         # print(standardised_postcode)
+         }
+       }
+
+         return(standardised_postcode)
+}
+
+# general standardization function
+# input: numerical column
+# output: standardized numerical column
+standardise <- function(x){
+  mu <- mean(x)
+  std <- sd(x)
+  result <- (x - mu)/std
+  return(result)
 }
