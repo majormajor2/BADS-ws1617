@@ -1,6 +1,7 @@
 
-source("helper.R")
 
+
+source("helper.R")
 known <- get_dataset("assignment_BADS_WS1617_known.csv")
 
 ## clear workspace, if needed
@@ -11,7 +12,6 @@ rm(list = ls())
 DatacleaningDates <- function(x) {
   
   ## Load packages that are needed 
-  library(lubridate)
   if(!require("lubridate")) install.packages("lubridate"); library("lubridate")
   if(!require("caret")) install.packages("caret"); library("caret")
   if(!require("rpart")) install.packages("rpart"); library("rpart")
@@ -168,3 +168,6 @@ yhat.test.dt.prunedMore <- predict(dt, newdata = test, type = "prob")[,2]
 brier.test <- sapply(list("lr" = yhat.test.lr, "dt" = yhat.test.dt.prunedMore), BrierScore, y = y.test, USE.NAMES = TRUE)
 print(brier.test)
 ```
+
+
+
