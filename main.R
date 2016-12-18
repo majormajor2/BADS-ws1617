@@ -1,6 +1,10 @@
 # This is the main script that runs all the other modules
 
 #######################
+# Load packages
+library(lubridate)
+
+#######################
 # Load modules
 source("helper.R")
 
@@ -16,6 +20,8 @@ known = treat_missing_values(known)
 class = treat_missing_values(class)
 known = treat_postcodes(known)
 class = treat_postcodes(class)
+known = treat_dates(known)
+class = treat_dates(class)
 #######################
 # check plausability of data types
 # lapply(known,class)

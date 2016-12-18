@@ -58,11 +58,63 @@ treat_missing_values = function(dataset) {
   # see Data_Cleaning_SF.R courtesy of Stephie
   data$advertising_code[data$advertising_code == ""] = NA
   data$advertising_code_missing = factor(ifelse(is.na(data$advertising_code), 1, 0), labels=c("no","yes"))
-  
+  # drop empty level from factor
+  data$advertising_code = droplevels(data$advertising_code)
 
   ## 2: Replace missing weight with mean weight for the same number of items
   # see Data_Cleaning_SF.R courtesy of Stephie
   data$weight_missing = factor(ifelse(is.na(data$weight), 1, 0), labels=c("no","yes"))
+  
+  return(data)
+}
+
+
+## Date cleaning function
+# see DatacleaningDates.R - courtesy of Hamayun
+# input: data frame
+# output: data frame
+treat_dates = function(dataset) {
+  data = dataset
+  
+  ## Order date does not require cleaning, there are no missing values or outliers
+  
+  ## Account creation date: Create a dummy variable for NAs
+  data$account_creation_date_missing = ifelse(is.na(data$account_creation_date), 1, 0)
+  ## and adjust existing values to match order date (large clustering at the beginning of the period)
+  ## index the NAs for account creation date
+  na_index = which(is.na(data$account_creation_date))
+  ## replace them with order date
+  data$account_creation_date[na_index] = data$order_date[na_index]
+  
+  ## Delivery date estimated has outliers, from 2010 and 4746. Create a dummy to capture both
+  
+  data$deliverydate_estimated_outliers = ifelse(year(data$deliverydate_estimated) == 2010 | year(data$deliverydate_estimated) == 4746, 1, 0)
+  
+  ## Change 2010 to 2013, 4746 to 201year(known$deliverydate_estimated[year(known$deliverydate_estimated) == 2010])
+  data$deliverydate_estimated  = as.Date(data$deliverydate_estimated)
+  # is.Date(data$deliverydate_estimated) # check if it is a Date
+  
+  year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) <- year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) + 4
+  year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) <- year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) - 2733
+  
+  
+  ## Delivery date acutal has 0000/00/00, create a dummy wth the missing value
+  data$deliverydate_actual = as.Date(data$deliverydate_actual)
+  # is.Date(data$deliverydate_actual) # check if it is a Date
+  data$deliverydate_actual_missing = ifelse(is.na(data$deliverydate_actual), 1, 0)
+  
+  ## and adjust existing values to match delivery date estimated 
+  
+  ## index the NAs for delivery_date_actual
+  na_index = which(is.na(data$deliverydate_actual))
+  
+  ## replace them with estimated delivery date
+  data$deliverydate_actual[na_index] = data$deliverydate_estimated[na_index]
+  
+  ## factorise dummy variables
+  data$account_creation_date_missing = factor(data$account_creation_date_missing, labels=c("no","yes"))
+  data$deliverydate_actual_missing = factor(data$deliverydate_actual_missing, labels=c("no","yes"))
+  data$deliverydate_estimated_outliers = factor(data$deliverydate_estimated_outliers, labels=c("no","yes"))
   
   return(data)
 }
