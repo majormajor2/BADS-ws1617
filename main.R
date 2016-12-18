@@ -4,9 +4,11 @@
 # Load packages
 library(lubridate)
 
+
 #######################
 # Load modules
 source("helper.R")
+source("adaptive_boosting.R")
 
 #######################
 # Load data
@@ -29,3 +31,17 @@ class = treat_dates(class)
 # summarise
 #lapply(known,summary)
 #lapply(class,summary)
+#######################
+# Try adaptive boosting
+
+adaboost = adaptive_boosting(known)
+summary(adaboost)
+adaboost$trees
+adaboost$weights
+adaboost$importance
+errorevol(adaboost,adadata)
+predict(adaboost,adadata)
+t1=adaboost$trees[[1]]
+
+plot(t1)
+text(t1,pretty=0)
