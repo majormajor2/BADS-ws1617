@@ -12,22 +12,21 @@ get_dataset = function(name) {
   
   # drop data$points_redeemed because it has all zeros -> no informational value
   data$points_redeemed = NULL
-
+  
   
   # factorise ID
   data$ID = factor(data$ID)
   
-  # convert data type of postcodes to "character" (alternatively factorise them) 
+  # convert data type of postcodes to "character" (alternatively factorise them)
   # also standardise them to 2 digits
-  
   #data$postcode_invoice = factor(data$postcode_invoice)
   #data$postcode_delivery = factor(data$postcode_delivery)
-  #data$postcode_invoice = as.character(data$postcode_invoice)
-  #data$postcode_delivery = as.character(data$postcode_delivery)
-  
-  data$postcode_invoice = sapply(data$postcode_invoice, standardise_postcode)
-  data$postcode_delivery = sapply(data$postcode_delivery, standardise_postcode)
-
+  #data$postcode_invoice = character(data$postcode_invoice) gives errors
+  #data$postcode_delivery = character(data$postcode_delivery) gives errors
+  data$postcode_invoice = as.character(data$postcode_invoice)
+  data$postcode_delivery = as.character(data$postcode_delivery)
+  lapply(data$postcode_invoice, standardise_postcode)
+  lapply(data$postcode_delivery, standardise_postcode)
   
   # factorise website model
   data$model = factor(data$model,labels=c("Design 1","Design 2", "Design 3"))
@@ -35,7 +34,7 @@ get_dataset = function(name) {
   # factorise all binary variables with labels "no" and "yes" where appropriate
   for(header in c("title","newsletter","coupon","giftwrapping","referrer","cost_shipping"))
   {
-      data[,header] = factor(data[,header],labels=c("no","yes"))
+    data[,header] = factor(data[,header],labels=c("no","yes"))
   }
   
   # factorise binary variable data$delivery with appropriate labels
@@ -47,13 +46,13 @@ get_dataset = function(name) {
     data[,header] = as.Date(data[,header])
   }
   
-
+  
   #data$YOB[data$YOB==99] = NA
   #data$YOB_missing = factor(ifelse(is.na(data$YOB), 1, 0), labels=c("no","yes"))
   # trade off between information carried in dummy variables and increase in dimensionality
   #data$YOB[is.na(data$YOB)] = median(data$YOB, na.rm = TRUE)
-
-
+  
+  
   return(data)
 }
 
@@ -65,14 +64,11 @@ exterminate_missing_values = function(dataset) {
   data = dataset
   
   # TO DO 1: NAs for advertising_code - create dummy no_advertising
-  data$missing_advertising_code = factor(ifelse(data$advertising_code == "", 1, 0), labels=c("no","yes"))
   # TO DO 2: NAs for postcode delivery - create dummy no_postcode_delivery, replace with postcode invoice
-  data$missing_postcode_delivery = factor(ifelse(is.na(data$postcode_delivery), 1, 0), labels=c("no","yes"))
-  data$postcode_delivery[is.na(data$postcode_delivery)] = data$postcode_invoice
   # TO DO 3: Replace missing weight with mean weight for the same number of items
   
   # TO DO X: replace ?? in class_data?
-
+  
   return(data)
 }
 
@@ -87,34 +83,26 @@ standardise_cardinal_variables = function(dataset) {
   return(data)
 }
 
-
 # standardize postcode function
 # input: postcode as character
 # output: standardized postcode as character
 standardise_postcode = function(postcode){
-  # convert to character to be sure
-  standardised_postcode = as.character(postcode)
-  
-  # if postcode has fewer than 2 characters, add a preceding 0 
-  if(!(is.na(standardised_postcode)))
-     {
-       if(nchar(standardised_postcode, allowNA = TRUE, keepNA = TRUE)<2)
-         {
-         # print(standardised_postcode)
-         standardised_postcode = paste("0",standardised_postcode,sep="")
-         # print(standardised_postcode)
-         }
-       }
-
-         return(standardised_postcode)
+  if(length(postcode)!=2)
+    {
+    # print(postcode)
+    standardised_postcode = paste("0",postcode)
+    # print(standardised_postcode)
+    }
+  return(standardised_postcode)
 }
 
 # general standardization function
 # input: numerical column
 # output: standardized numerical column
-standardise <- function(x){
+standardize <- function(x){
   mu <- mean(x)
   std <- sd(x)
   result <- (x - mu)/std
   return(result)
 }
+

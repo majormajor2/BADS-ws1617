@@ -1,9 +1,7 @@
 # Preprocessing
 -----------------------------
 # Packages
-if(!require("lubridate")) install.packages("lubridate"); library(lubridate)
 if(!require("corrplot")) install.packages("corrplot"); library(corrplot) 
-if(!require("ggplot2")) install.packages("ggplot2"); library(ggplot2) 
 -----------------------------
 ### 1. form_of_address ###
 # str(known$form_of_address) : 3 levels : Company, Mr, Mrs
@@ -31,24 +29,31 @@ pie(x = address_stats, labels = labels.address, main = "Form of address")
 -----------------------------
 ### DATES ###
 # give me variable names that have a date
+data = known
 selectdatevars = function(data){
-datevarnames = colnames(data)[grep(pattern = "date", x = colnames(data))]
+  # select column names that have "date" in them
+  datevarnames = colnames(data)[grep(pattern = "date", x = colnames(data))]
 return(datevarnames)
 }
-datecolumn = selectdatevars(known) # safe data variables in a list
-c(datecolumn)
+datevarnames = selectdatevars(known) # safe output in a list
 
 # transform to Date
-for(header in c(date_columns))
+for(header in c(datevarnames))
 {
-  known[,header] = as.Date(known[,header])
+  data[,header] = as.Date(data[,header])
 }
 
-### account_creation_date
+  
+### 2.account_creation_date
+## Questions: 
+# correlation with target variable wrt different time spans
 if(!require("lubridate")) install.packages("lubridate"); library(lubridate)
 # original data:
 # typeof(known$account_creation_date) # data type integer
 # str(known$account_creation_date) # factor with 258 levels
+
+checkcorr_acc_creation_date
+
 
 # check for missing values
 sum(is.na(known$account_creation_date)) # 3412 NAs
@@ -62,8 +67,8 @@ known$account_creation_date <- as.Date(known$account_creation_date) # also neede
 # split column up into quarteryear, month, week, weekdays
 # week
 known$acc_creation_week = week(x = known$account_creation_date)
-#head(known$acc_creation_week) # works
-#head(known$account_creation_date) # compare with original dates
+head(known$acc_creation_week) # works
+head(known$account_creation_date) # compare with original dates
 
 # weekends and weekdays
 # create vector of weekdays
@@ -93,6 +98,22 @@ known$acc_creation_quarter = quarter(x = known$account_creation_date, with_year 
 head(known$acc_creation_quarter) # works
 head(known$account_creation_date) # compare with original dates
 
+
+
+
+
+
+
+# Now: do histograms (Yay!)
+# quarter
+acc_dates = list(k)
+known[,c("acc_creation_quarter","acc_creation_month","wDay")]
+head(known[,c("acc_creation_quarter","acc_creation_month", "wDay" == "weekend", "wDay" == "weekday")])
+
+head# 
+if(!require("lubridate")) install.packages("lubridate"); library(lubridate)
+?lubridate
+
 # Distribution of account_creation_date 
 hist(x = known$account_creation_date, breaks = "months") 
 hist(x = known$account_creation_date, breaks = "days")
@@ -101,6 +122,7 @@ hist(x = known$account_creation_date, breaks = "days")
 known$acc.creation_order.date <- known$account_creation_date == known$order_date
 summary(known$acc.creation_order.date)
 stats_firsties <- (as.numeric(summary(known$acc.creation_order.date)[3])/nrow(known))*100
+
 
 # Variable ID - ID is unique 
 idunique <- unique(known$ID) # unique() returns vector/data frame with like (x) but with duplicate elements/rows removed
@@ -171,3 +193,8 @@ rsummary <- matrix(c(rdomain, raccount, rid, rtitle), nrows = return, ncol = 4, 
 rsummary
 
 
+# Which variables are correlated with return_customer?
+# Are there clusters in order_date? Are these clusters correlated with return_customer?
+# How much time lies between account_creation_date and order_date?
+# Correlation between coupon and return_customer?
+# What have customers shopped? 

@@ -45,4 +45,75 @@ for (i in colnames(known.outlierscheck)){
   dev.off()
 }
 
-# talk about outliers
+# we could see that the quantiles matrix and the boxplots are not very informative and we can see that most of the values are 0's. We need a different way to understand how the data looks like.
+
+# create a function
+# input: column of a data frame
+# output: a table (with percentage) for each column
+pertablefun <- function(x){
+  tab <- table(x)
+  pertab <- cbind(tab, prop.table(tab)*100)
+  colnames(pertab) <- c("Count", "Percentage")
+  return(pertab)
+}
+output.pertablefun <- lapply(known.outlierscheck, pertablefun)
+
+# we can see that the vast majority of the values of most variables are 0's and 1's. We can unify all numbers bigger than 1 to have a better look at the data.
+# make a table and unify all numbers bigger than 1 to 3
+known.outlierscheck.lessvalues <- known.outlierscheck
+known.outlierscheck.lessvalues[known.outlierscheck.lessvalues > 1] <- 3
+# apply pertablefun again on the new table
+output.pertablefunless <- lapply(known.outlierscheck.lessvalues, pertablefun)
+
+
+# clustering
+# ----------
+
+# we want to choose only columns with more than 10 different numbers. first change all the columns to factors.
+known.outlierscheck.factor <- lapply(known.outlierscheck, factor)
+
+# then see how many factors we have in each column
+lapply(known.outlierscheck.factor, is.factor)
+lapply(known.outlierscheck.factor, nlevels)
+
+# lastly save a new matrix only with the columns we want to check and turn it back into numeric so that we can cluster
+known.outlierscheck.factormany <- known.outlierscheck.factor[which(sapply(known.outlierscheck.factor, nlevels) > 10)]
+known.outliercheck.forcluster <- lapply(known.outlierscheck.factormany, as.numeric)
+
+# standardize columns
+source("helper.R")
+known.outlierscheck.stand <- as.data.frame(lapply(known.outliercheck.forcluster, standardise))
+
+######### delete the next line after we fix the standartization formula!
+known.outlierscheck.stand <- known.outlierscheck.stand[c(1,3:15)]
+#########
+
+# clustering
+set.seed(666)
+# candidate settings for k
+k.settings = 1:10
+# create matrix to store the results
+cluster.model <- as.data.frame(matrix(data = NA, nrow = length(k.settings), ncol = ncol(known.outlierscheck.stand)))
+colnames(cluster.model) <- colnames(known.outlierscheck.stand)
+rownames(cluster.model) <- 1:10
+
+# create cluster solutions for k
+for (n in 1:ncol(known.outlierscheck.stand)) {
+  for (i in 1:length(k.settings)) {
+    obj.values <- vector(mode="numeric", length = length(k.settings))
+    # Create a cluster solution using the current setting of k
+    clu.sol <- kmeans(known.outlierscheck.stand[n], centers=k.settings[i], iter.max = 50, nstart = 100)
+    obj.values[i] <- clu.sol$tot.withinss
+    cluster.model[i,n] <- obj.values[i]
+  }
+}
+
+# create elbow curves for all variables:
+dev.off()
+for (i in colnames(cluster.model)){
+  pdf(file = paste("elbow ",i,".pdf", sep = ""))
+  plot(k.settings, cluster.model[,i], xlab = "k", ylab="Total within-cluster SS",
+       main = "Elbow curve for k selection", col="red", type = "b")
+  dev.off()
+}
+
