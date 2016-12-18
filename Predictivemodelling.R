@@ -1,4 +1,7 @@
+
 source("helper.R")
+
+known <- get_dataset("assignment_BADS_WS1617_known.csv")
 
 ## clear workspace, if needed
 rm(list = ls())
@@ -9,6 +12,10 @@ DatacleaningDates <- function(x) {
   
   ## Load packages that are needed 
   library(lubridate)
+  if(!require("lubridate")) install.packages("lubridate"); library("lubridate")
+  if(!require("caret")) install.packages("caret"); library("caret")
+  if(!require("rpart")) install.packages("rpart"); library("rpart")
+  if(!require("hmeasure")) install.packages("hmeasure"); library("hmeasure")
   
   ## Order date does not require cleaning, there are no missing values or outliers
   ## Account creation date: Create a dummy variable for NAs
@@ -45,8 +52,6 @@ DatacleaningDates <- function(x) {
   
 }
 
-if(!require("caret")) install.packages("caret"); library("caret")
-if(!require("rpart")) install.packages("rpart"); library("rpart")
 
 known$return_customer <- as.factor(known$return_customer)
 
@@ -59,25 +64,40 @@ idx.validation <- createDataPartition(y = train$return_customer, p = 0.25, list 
 validation <- train[idx.validation, ]
 train60 <- train[-idx.validation, ]
 
+
+is.numeric(known$return_customer)
+is.factor(known$return_customer)
+known$return_customer <- as.factor(known$return_customer)
+
 # Develop models using the training set and compute test set predictions
-dt      <-rpart(return_customer ~ ., data = train60)
+dt      <-rpart(return_customer ~ goods_value + item_count + order_date + account_creation_date_missing + deliverydate_actual_missing, data = train60, method = "class")
 dt.full <-rpart(return_customer ~ ., data = train60, cp = 0, minsplit = 3) # low minimum increase or number of observations in node for a split to be attempted
 dt.prunedLess <- rpart(return_customer ~ ., data = train60, cp = 0.005) # create decision tree classifier
 dt.prunedMore <- rpart(return_customer ~ ., data = train60, cp = 0.015) # create decision tree classifier
-lr <-glm(return_customer~., data = validation, family = binomial(link = "logit"))
+lr <-glm(return_customer ~ goods_value + item_count + order_date + account_creation_date_missing + deliverydate_actual_missing, data = validation, family = binomial(link = "logit"))
+
+
+printcp(dt)
+plotcp(dt)
+summary(dt)
+
+
+yhat.dt <- predict(dt, newdata = validation, type = "prob")[,2]
+
+
 
 
 modelList <- list("dt" = dt, "dt.full" = dt.full, "dt.prunedLess" = dt.prunedLess, "dt.prunedMore" = dt.prunedMore)
 yhat.dt <- lapply(modelList, function(x) predict(x, newdata = validation, type = "prob")[,2])
 yhat.lr <- predict(lr, newdata = validation, type = "response")
 yhat.benchmark <- rep(sum(train60$BAD == "good")/nrow(train60), nrow(validation))
-yhat.validation <- c(list("dt" = yhat.dt, "benchmark" = yhat.benchmark))
+yhat.validation <- c(list("dt" = yhat.dt, "benchmark" = yhat.benchmark, "lr" = yhat.lr))
 
 
 modelList <- list("dt" = dt, "dt.full" = dt.full, "dt.prunedLess" = dt.prunedLess, "dt.prunedMore" = dt.prunedMore)
 
 yhat.dt <- predict(dt, newdata = validation, type = "prob")[,2]
-yhat.benchmark <- rep(sum(train60$return_customer == 0)/nrow(train60), nrow(validation))
+yhat.benchmark <- rep(sum(train60$return_customer == 1)/nrow(train60), nrow(validation))
 
 ?
 predict
@@ -91,15 +111,24 @@ BrierScore <- function(y, yhat){
 brier.validation <- sapply(yhat.validation, BrierScore, y = y.validation, USE.NAMES = TRUE)
 print(brier.validation)
 
-tau <- 0.5
+tau <- 0.25
 # Deal with logistic regression:
 #  convert probability prediction to discrete class predictions
 
 yhat.dt.class <- factor(yhat.validation$dt > tau, labels = c(1,0))
+yhat.lr.class <- ifelse(yhat.validation$lr > tau,1,0)
+
 
 # We can create a simple confusion table with base function table.
 # Using, for example, the logit classifier, this equates to:
-table(yhat.dt.class, validation$return_customer)
+table(yhat.lr.class, validation$return_customer)
 head(yhat.validation$dt)
+
+summary(yhat.validation$dt)
+summary(yhat.dt)
+summary(yhat.lr)
+
+confusionMatrix(data = yhat.lr.class, reference = validation$return_customer, positive = "1")
+
 
 
