@@ -11,7 +11,7 @@ library(tree)
 adaptive_boosting = function(dataset)
 {
   data = dataset
-  adaboost = boosting(y~., data=data, boos=TRUE, mfinal=20, coeflearn='Breiman')
+  adaboost = boosting(return_customer~., data=data, boos=TRUE, mfinal=20, coeflearn='Breiman')
   return(adaboost)
 }
 #######################
