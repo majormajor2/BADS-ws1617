@@ -78,11 +78,18 @@ treat_postcodes = function(dataset) {
   
   ## 2: NAs for postcode delivery 
   # create dummy postcode_delivery_missing
-  data$postcode_delivery_missing = factor(vector(mode="integer",length=length(data$postcode_delivery)), levels=c(0,1), labels=c("no","yes"))
-  summary(data$postcode_delivery)
+  data$postcode_delivery_missing = vector(mode="integer",length=length(data$postcode_delivery))
+
   # replace missing values by NA
   data$postcode_delivery[data$postcode_delivery == ""] = NA
-  summary(data$postcode_delivery)
+
+  # the following 2 lines are performed by standardise_postcode already
+  #data$postcode_invoice = as.character(data$postcode_invoice)
+  #data$postcode_delivery = as.character(data$postcode_delivery) 
+  
+  data$postcode_invoice = sapply(data$postcode_invoice, standardise_postcode)
+  data$postcode_delivery = sapply(data$postcode_delivery, standardise_postcode)
+  
   # check if there are NAs
   if(NA %in% data$postcode_delivery)
   {
@@ -96,17 +103,7 @@ treat_postcodes = function(dataset) {
   }
 
   # factorise dummy variable
-  #data$postcode_delivery_missing = factor(data$postcode_delivery_missing, levels=c(0,1), labels=c("no","yes"))
-  
-
-  
-  # the following 2 lines are performed by standardise_postcode already
-  #data$postcode_invoice = as.character(data$postcode_invoice)
-  #data$postcode_delivery = as.character(data$postcode_delivery) 
-  
-  data$postcode_invoice = sapply(data$postcode_invoice, standardise_postcode)
-  data$postcode_delivery = sapply(data$postcode_delivery, standardise_postcode)
-  
+  data$postcode_delivery_missing = factor(data$postcode_delivery_missing, levels=c(0,1), labels=c("no","yes"))
 
   # factorise postcode variables
   data$postcode_invoice = factor(data$postcode_invoice)
