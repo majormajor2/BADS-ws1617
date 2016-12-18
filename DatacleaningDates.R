@@ -11,8 +11,12 @@ DatacleaningDates <- function(x) {
   
   ## Order date does not require cleaning, there are no missing values or outliers
   ## Account creation date: Create a dummy variable for NAs
+  ## Replace with first order date
   
+  x$account_creation_date <- as.Date(x$account_creation_date)
   x$account_creation_date_missing <- ifelse(is.na(x$account_creation_date), 1, 0)
+  na_index_creation_date <- which(is.na(x$account_creation_date))
+  x$account_creation_date[na_index_creation_date] <- x$order_date[na_index_creation_date]
   
   ## Delivery date estimated has outliers, from 2010 and 4746. Create a dummy to capture both
   
