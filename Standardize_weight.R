@@ -49,21 +49,7 @@ df[is.na(known$weight),"weight"] <- total_avg*df$totalitemcount
 }
 #
 
-  # sum up order-items for each row
-  known$totalitemcount <- rowSums(x = known[,varnames_count], na.rm = TRUE, dims = 1) # sums over all items for each observation
-  # select rows where weight is not NA
-  
-
-  # average weight p. item: sum avg.weight p.item p.customer/number of observation
-  # replace NA: multiply total item count * average weight p. item
-  Inf/5
-  head(known$weight)
-  summary(rowsums)
-  rowsums[rowsums == 0] <- NA
-  head(avgweight_itemcustomer)
-  
-}
-
+ 
 # 2. regress weights on product categories + cancelled items, excluding NAs
 # for regression: regress weight w/o NAs on all items, including cancelled
 ###
@@ -82,6 +68,8 @@ weight_errors <- which(known$weight == 0 & known$totalcount2 != 0)
 # replace by NA
 known$weight[weight_errors] <- NA
 
+
+####### DOESNT WORK LIKE THIS: REGRESSION COEFFICIENTS ARE NOT SIGNIFICANT & NEGATIV 
 # regress weight on product categories
 regweight <- function(data){
   # create data frame: drop rows where weight = NA, use varnames_count
@@ -95,40 +83,10 @@ regweight <- function(data){
 
 
 
-head(weights_error)
 
 
 
 
 
-
-
-
-
-
-
-
-# 1. sum up over all itmes
-calc_itemcount <- function(data){
- 
-  # per customer: weight/totalitemcount = avg. weight p. item p. customer
-  avgweight_itemcustomer <- known$weight/rowsums
-  # average weight p. item: sum avg.weight p.item p.customer/number of observation
-  # replace NA: multiply total item count * average weight p. item
-  Inf/5
-  head(known$weight)
-  summary(rowsums)
-  rowsums[rowsums == 0] <- NA
-  head(avgweight_itemcustomer)
-  
-}
-
-
-
-head(known[,grep("_count&?item", colnames(known))])
-?grep
-# select varnames with count
-select1 <- known[,grep("item_count|totalitemcount|totalcount2", invert = TRUE, colnames(known))]
-varnames_count <- colnames(select1[,grep(pattern = "_count|canceled_items", x = colnames(select1))])
 
 
