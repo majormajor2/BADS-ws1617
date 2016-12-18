@@ -6,27 +6,17 @@
 
 get_dataset = function(name) {
   
+  ##########################################################################
   # read csv-file
   data = read.csv(name, header=T,sep=",")
   
-  
+  ##########################################################################
   # drop data$points_redeemed because it has all zeros -> no informational value
   data$points_redeemed = NULL
   
-  
+  ##########################################################################
   # factorise ID
   data$ID = factor(data$ID)
-  
-  # convert data type of postcodes to "character" (alternatively factorise them) 
-  # also standardise them to 2 digits
-  
-  #data$postcode_invoice = factor(data$postcode_invoice)
-  #data$postcode_delivery = factor(data$postcode_delivery)
-  #data$postcode_invoice = as.character(data$postcode_invoice)
-  #data$postcode_delivery = as.character(data$postcode_delivery)
-  
-  data$postcode_invoice = sapply(data$postcode_invoice, standardise_postcode)
-  data$postcode_delivery = sapply(data$postcode_delivery, standardise_postcode)
   
   
   # factorise website model
@@ -40,19 +30,31 @@ get_dataset = function(name) {
   
   # factorise binary variable data$delivery with appropriate labels
   data$delivery = factor(data$delivery, labels=c("Door delivery","Collection at post office"))
-  
+  ##########################################################################
   # convert date variables to data type Date
   for(header in c("order_date","account_creation_date","deliverydate_estimated","deliverydate_actual"))
   {
     data[,header] = as.Date(data[,header])
   }
+  ##########################################################################
+  # check if return_customer exists in data frame, if yes make it a factor
+  if("return_customer" %in% colnames(data)) 
+  {
+    data$return_customer = factor(data$return_customer,labels=c("no","yes"))
+  }
+  ##########################################################################
+  # standardise postcodes to 2 digits
+  # also convert data type to factor
   
+  # the following 2 lines are performed by standardise_postcode already
+  #data$postcode_invoice = as.character(data$postcode_invoice)
+  #data$postcode_delivery = as.character(data$postcode_delivery) 
   
-  #data$YOB[data$YOB==99] = NA
-  #data$YOB_missing = factor(ifelse(is.na(data$YOB), 1, 0), labels=c("no","yes"))
-  # trade off between information carried in dummy variables and increase in dimensionality
-  #data$YOB[is.na(data$YOB)] = median(data$YOB, na.rm = TRUE)
-  
+  data$postcode_invoice = sapply(data$postcode_invoice, standardise_postcode)
+  data$postcode_delivery = sapply(data$postcode_delivery, standardise_postcode)
+  data$postcode_invoice = factor(data$postcode_invoice)
+  data$postcode_delivery = factor(data$postcode_delivery)
+  ##########################################################################
   
   return(data)
 }
@@ -61,17 +63,26 @@ get_dataset = function(name) {
 # treats the missing values in the data frame
 # input: data frame with missing values
 # output: data frame with treated missing values
-exterminate_missing_values = function(dataset) {
+treat_missing_values = function(dataset) {
   data = dataset
   
-  # TO DO 1: NAs for advertising_code - create dummy no_advertising
-  data$missing_advertising_code = factor(ifelse(data$advertising_code == "", 1, 0), labels=c("no","yes"))
-  # TO DO 2: NAs for postcode delivery - create dummy no_postcode_delivery, replace with postcode invoice
-  data$missing_postcode_delivery = factor(ifelse(is.na(data$postcode_delivery), 1, 0), labels=c("no","yes"))
-  data$postcode_delivery[is.na(data$postcode_delivery)] = data$postcode_invoice
-  # TO DO 3: Replace missing weight with mean weight for the same number of items
+  ## 1: NAs for advertising_code - create dummy advertising_code_missing 
+  # see Data_Cleaning_SF.R courtesy of Stephie
+  data$advertising_code[data$advertising_code == ""] = "NA"
+  data$advertising_code_missing = factor(ifelse(is.na(data$advertising_code), 1, 0), labels=c("no","yes"))
   
-  # TO DO X: replace ?? in class_data?
+  
+  ## 2: NAs for postcode delivery 
+  # index the NAs for postcode_delivery
+  na_index = which(is.na(data$postcode_delivery))
+  # create dummy postcode_delivery_missing
+  data$postcode_delivery_missing = factor(ifelse(na_index, 1, 0), labels=c("no","yes"))
+  # replace missing postcodes with postcode_invoice
+  data$postcode_delivery[na_index] = data$postcode_invoice[na_index]
+  
+  ## 3: Replace missing weight with mean weight for the same number of items
+  # see Data_Cleaning_SF.R courtesy of Stephie
+  data$weight_missing = factor(ifelse(is.na(data$weight), 1, 0), labels=c("no","yes"))
   
   return(data)
 }
@@ -88,7 +99,8 @@ standardise_cardinal_variables = function(dataset) {
 }
 
 
-# standardize postcode function
+# postcode standardisation function
+# takes postcode and adds a leading 0 if it has fewer than 2 chars
 # input: postcode as character
 # output: standardized postcode as character
 standardise_postcode = function(postcode){
