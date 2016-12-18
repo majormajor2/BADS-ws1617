@@ -129,10 +129,12 @@ for (i in colnames(cluster.model)){
 #                                               nrow = nrow(known.outlierscheck.stand)))
 # colnames(known.clustereddummies) <- colnames(known.outlierscheck.stand)
 
-knwon.clusterdummies <- known.outlierscheck.stand
+known.clusterdummies <- known.outlierscheck.stand
 for (n in 1:ncol(known.outlierscheck.stand)){
-  for (i in 1:length[n])
-  clu.sol <- kmeans(known.outlierscheck.stand[n], centers=4, iter.max = 50, nstart = 100)
-  cluster <- vector(mode="numeric", length = length[i])
-  cluster[i] <- 
+  for (i in 1:length[n]){
+    clu.sol <- kmeans(known.outlierscheck.stand[n], centers=4, iter.max = 50, nstart = 100)
+    cluster <- vector(mode="numeric", length = length[i])
+    cluster[i] <- clu.sol$cluster
+    known.clusterdummies[i,n] <- cluster[i]
+  }
 }
