@@ -19,7 +19,7 @@ sum(is.na(known$advertising_code)) # no NAs
 sum((summary(known$advertising_code)[1])) # 41.593 observations don't have advertising code
 sum((summary(known$advertising_code)[1]))/nrow(known) # 80% observations don't have advertising code
 # replace "" with NA
-known$advertising_code[known$advertising_code == ""] <- "NA"
+known$advertising_code[known$advertising_code == ""] <- NA
 ##
 
 # create dummy variable for NAs
