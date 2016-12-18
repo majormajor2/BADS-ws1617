@@ -123,18 +123,14 @@ for (i in colnames(cluster.model)){
 # get more information from the higher values. Now we will assign a dummy variable to each value
 # according to his respective cluster, using k=4.
 
-# trial - probably delete later
-# known.clustereddummies <- as.data.frame(matrix(data = NA,
-#                                               ncol = ncol(known.outlierscheck.stand),
-#                                               nrow = nrow(known.outlierscheck.stand)))
-# colnames(known.clustereddummies) <- colnames(known.outlierscheck.stand)
 
-known.clusterdummies <- known.outlierscheck.stand
-for (n in 1:ncol(known.outlierscheck.stand)){
-  for (i in 1:length[n]){
-    clu.sol <- kmeans(known.outlierscheck.stand[n], centers=4, iter.max = 50, nstart = 100)
-    cluster <- vector(mode="numeric", length = length[i])
-    cluster[i] <- clu.sol$cluster
-    known.clusterdummies[i,n] <- cluster[i]
-  }
+known.clusterdummies <- as.data.frame(matrix(nrow = nrow(known.outlierscheck.stand), ncol = ncol(known.outlierscheck.stand)))
+colnames(known.clusterdummies) <- colnames(known.outlierscheck.stand)
+for (name in colnames(known.outlierscheck.stand)) {
+  clu.sol <- kmeans(known.outlierscheck.stand[,name], centers=4, iter.max = 50, nstart = 100)
+  cluster <- clu.sol$cluster
+  known.clusterdummies[,name] <- cluster
 }
+
+
+
