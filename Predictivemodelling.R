@@ -69,38 +69,30 @@ is.numeric(known$return_customer)
 is.factor(known$return_customer)
 known$return_customer <- as.factor(known$return_customer)
 
-# Develop models using the training set and compute test set predictions
+# Developed only two models, testing models covered in tutorial
+# LR didn't work when tried on the whole dataset
 dt      <-rpart(return_customer ~ goods_value + item_count + order_date + account_creation_date_missing + deliverydate_actual_missing, data = train60, method = "class")
-dt.full <-rpart(return_customer ~ ., data = train60, cp = 0, minsplit = 3) # low minimum increase or number of observations in node for a split to be attempted
-dt.prunedLess <- rpart(return_customer ~ ., data = train60, cp = 0.005) # create decision tree classifier
-dt.prunedMore <- rpart(return_customer ~ ., data = train60, cp = 0.015) # create decision tree classifier
 lr <-glm(return_customer ~ goods_value + item_count + order_date + account_creation_date_missing + deliverydate_actual_missing, data = validation, family = binomial(link = "logit"))
 
 
+#reading rpart
 printcp(dt)
 plotcp(dt)
 summary(dt)
 
 
+#dt estimates - all seem to be the same value (the mean)
 yhat.dt <- predict(dt, newdata = validation, type = "prob")[,2]
 
 
 
-
-modelList <- list("dt" = dt, "dt.full" = dt.full, "dt.prunedLess" = dt.prunedLess, "dt.prunedMore" = dt.prunedMore)
-yhat.dt <- lapply(modelList, function(x) predict(x, newdata = validation, type = "prob")[,2])
+#creating estimates
 yhat.lr <- predict(lr, newdata = validation, type = "response")
-yhat.benchmark <- rep(sum(train60$BAD == "good")/nrow(train60), nrow(validation))
-yhat.validation <- c(list("dt" = yhat.dt, "benchmark" = yhat.benchmark, "lr" = yhat.lr))
-
-
-modelList <- list("dt" = dt, "dt.full" = dt.full, "dt.prunedLess" = dt.prunedLess, "dt.prunedMore" = dt.prunedMore)
-
 yhat.dt <- predict(dt, newdata = validation, type = "prob")[,2]
 yhat.benchmark <- rep(sum(train60$return_customer == 1)/nrow(train60), nrow(validation))
+yhat.validation <- c(list("dt" = yhat.dt, "benchmark" = yhat.benchmark, "lr" = yhat.lr))
+modelList <- list("dt" = dt, "dt.full" = dt.full, "dt.prunedLess" = dt.prunedLess, "dt.prunedMore" = dt.prunedMore)
 
-?
-predict
 
 y.validation <- as.numeric(validation$return_customer)-1
 
@@ -130,5 +122,49 @@ summary(yhat.lr)
 
 confusionMatrix(data = yhat.lr.class, reference = validation$return_customer, positive = "1")
 
+predictions.roc <- data.frame(LR = yhat.validation$lr, DT = yhat.validation$dt) 
+
+h <- HMeasure(y.validation, predictions.roc)
 
 
+#area under the curve
+plotROC(h, which = 1)
+h$metrics["AUC"]
+
+#shuffle rows before trying k-folds
+train.rnd <- train[sample(nrow(train)),]
+# Create k folds of approximately equal size
+k <- 5
+folds <- cut(1:nrow(train.rnd), breaks = k, labels = FALSE)
+
+results <- data.frame(lr = numeric(length = k), dt = numeric(length = k))
+
+for (i in 1:k) {
+  # Split data into training and validation
+  idx.val <- which(folds == i, arr.ind = TRUE)
+  cv.train <- train.rnd[-idx.val,]
+  cv.val <- train.rnd[idx.val,]
+  # Build and evaluate models using these partitions
+  lr <- glm(return_customer ~ goods_value + item_count + account_creation_date_missing + deliverydate_actual_missing, data = cv.train, family = binomial(link = "logit"))
+  dt <- rpart(return_customer ~ goods_value + item_count + account_creation_date_missing + deliverydate_actual_missing, data = cv.train, cp = 0.015) # create decision tree classifier
+  yhat.lr <- predict(lr, newdata = cv.val, type = "response")
+  yhat.dt <- predict(dt, newdata = cv.val, type = "prob")[,2]
+  # We use our above function to calculate the classification error
+  results[i, "lr"] <- BrierScore(as.numeric(cv.val$return_customer )-1, yhat.lr)
+  results[i, "dt"] <- BrierScore(as.numeric(cv.val$return_customer)-1, yhat.dt)
+}
+
+cv.perf <- apply(results, 2, mean)
+cv.perf.sd <- apply(results, 2, sd)
+# Now plot the results
+txt <- paste("Classification brier score across", as.character(k), "folds", sep=" ")
+boxplot(results,  ylab="Brier Score", 
+        main = txt)
+
+#testing different models with k-folds validation
+y.test <- as.numeric(test$return_customer)-1 # This is a good example of why you need to be careful when transforming factor variables to numeric
+yhat.test.lr <- predict(lr, newdata = test, type = "response")
+yhat.test.dt.prunedMore <- predict(dt, newdata = test, type = "prob")[,2]
+brier.test <- sapply(list("lr" = yhat.test.lr, "dt" = yhat.test.dt.prunedMore), BrierScore, y = y.test, USE.NAMES = TRUE)
+print(brier.test)
+```
