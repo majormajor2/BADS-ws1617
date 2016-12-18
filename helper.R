@@ -38,7 +38,7 @@ get_dataset = function(name) {
   }
   ##########################################################################
   # check if return_customer exists in data frame, if yes make it a factor
-  if("return_customer" in colnames(data)) 
+  if("return_customer" %in% colnames(data)) 
   {
     data$return_customer = factor(data$return_customer,labels=c("no","yes"))
   }
