@@ -40,4 +40,3 @@ summary(known$weight)
 summary(known$weight_missing)
 
 
-Contact GitHub API Training Shop Blog About
