@@ -1,17 +1,12 @@
 
-
 #1.  Load dataset using the helper function
 #2. Use the data cleaning (dates) function 
 #3. Partition data into train, test and validation data sets as we did in the tutorial
 #4. Try to develop the models used in TUT 4 onwards, starting with Logistic, 
-#dt and then neural networks
+    #dt and then neural networks
 #5. Model evaluation (looking only at DT and LR)
 #6. Try K-folds validtion - TUT 6
 #7. Neural Networks
-
-
-
-
 
 
 #1.  Load dataset using the helper function
@@ -21,7 +16,6 @@ rm(list = ls())
 
 source("helper.R")
 known <- get_dataset("assignment_BADS_WS1617_known.csv")
-
 
 
 #2. Use the data cleaning (dates) function 
@@ -69,17 +63,16 @@ DatacleaningDates <- function(x) {
   
 }
 
-
 #3. Partition data into train, test and validation data sets as we did in the tutorial
 
 known$return_customer <- as.factor(known$return_customer)
 
 idx.train <- createDataPartition(y = known$return_customer, p = 0.8, list = FALSE) 
-# Draw a random, stratified sample including p percent of the data
+  # Draw a random, stratified sample including p percent of the data
 train <- known[idx.train, grep("postcode_delivery", invert = TRUE, colnames(known))] # training set
 test <-  known[-idx.train, grep("postcode_delivery", invert = TRUE, colnames(known))] # test set (drop all observations with train indeces)
 idx.validation <- createDataPartition(y = train$return_customer, p = 0.25, list = FALSE) 
-# Draw a random, stratified sample of ratio p of the data
+  # Draw a random, stratified sample of ratio p of the data
 validation <- train[idx.validation, ]
 train60 <- train[-idx.validation, ]
 
@@ -89,33 +82,30 @@ is.factor(known$return_customer)
 known$return_customer <- as.factor(known$return_customer)
 
 #4. Try to develop the models used in TUT 4 onwards, 
-# starting with Logistic, dt and then neural networks
+  
+  # starting with Logistic, dt and then neural networks
+  # Developed only two models, testing models covered in tutorial
+  # LR didn't work when tried on the whole dataset
 
-
-# Developed only two models, testing models covered in tutorial
-# LR didn't work when tried on the whole dataset
 dt      <-rpart(return_customer ~ goods_value + item_count + order_date + account_creation_date_missing + deliverydate_actual_missing, data = train60, method = "class")
 lr <-glm(return_customer ~ goods_value + item_count + order_date + account_creation_date_missing + deliverydate_actual_missing, data = validation, family = binomial(link = "logit"))
 
 
-#Helpful functions in reading rpart output
+  #Helpful functions in reading rpart output
 printcp(dt)
 plotcp(dt)
 summary(dt)
 
 
-#dt estimates - all seem to be the same value (the mean)
+  #dt estimates - all seem to be the same value (the mean)
 yhat.dt <- predict(dt, newdata = validation, type = "prob")[,2]
 
-
-
-#creating estimates
+  #creating estimates
 yhat.lr <- predict(lr, newdata = validation, type = "response")
 yhat.dt <- predict(dt, newdata = validation, type = "prob")[,2]
 yhat.benchmark <- rep(sum(train60$return_customer == 1)/nrow(train60), nrow(validation))
 yhat.validation <- c(list("dt" = yhat.dt, "benchmark" = yhat.benchmark, "lr" = yhat.lr))
 modelList <- list("dt" = dt, "dt.full" = dt.full, "dt.prunedLess" = dt.prunedLess, "dt.prunedMore" = dt.prunedMore)
-
 
 
 #5. Model evaluation (looking only at DT and LR)
@@ -125,20 +115,19 @@ y.validation <- as.numeric(validation$return_customer)-1
 BrierScore <- function(y, yhat){
   sum((y - yhat)^2) / length(y) 
 }
-# Apply the brierScore function to each element of y.validation, i.e. all the prediction vectors
+  # Apply the brierScore function to each element of y.validation, i.e. all the prediction vectors
 brier.validation <- sapply(yhat.validation, BrierScore, y = y.validation, USE.NAMES = TRUE)
 print(brier.validation)
 
 tau <- 0.25
-# Deal with logistic regression:
-#  convert probability prediction to discrete class predictions
+  #Deal with logistic regression:
+  #convert probability prediction to discrete class predictions
 
 yhat.dt.class <- factor(yhat.validation$dt > tau, labels = c(1,0))
 yhat.lr.class <- ifelse(yhat.validation$lr > tau,1,0)
 
-
-# We can create a simple confusion table with base function table.
-# Using, for example, the logit classifier, this equates to:
+  #We can create a simple confusion table with base function table.
+  #Using, for example, the logit classifier, this equates to:
 table(yhat.lr.class, validation$return_customer)
 head(yhat.validation$dt)
 
@@ -152,17 +141,16 @@ predictions.roc <- data.frame(LR = yhat.validation$lr, DT = yhat.validation$dt)
 
 h <- HMeasure(y.validation, predictions.roc)
 
-
-#area under the curve
+  #area under the curve
 plotROC(h, which = 1)
 h$metrics["AUC"]
 
 #6. Try K-folds validtion - TUT 6
 
-#shuffle rows before trying k-folds
+  #shuffle rows before trying k-folds
 
 train.rnd <- train[sample(nrow(train)),]
-# Create k folds of approximately equal size
+  # Create k folds of approximately equal size
 k <- 5
 folds <- cut(1:nrow(train.rnd), breaks = k, labels = FALSE)
 
@@ -185,18 +173,16 @@ for (i in 1:k) {
 
 cv.perf <- apply(results, 2, mean)
 cv.perf.sd <- apply(results, 2, sd)
-# Now plot the results
+  # Now plot the results
 txt <- paste("Classification brier score across", as.character(k), "folds", sep=" ")
 boxplot(results,  ylab="Brier Score", 
         main = txt)
 
-#testing different models with k-folds validation
+  #testing different models with k-folds validation
 y.test <- as.numeric(test$return_customer)-1 # This is a good example of why you need to be careful when transforming factor variables to numeric
 yhat.test.lr <- predict(lr, newdata = test, type = "response")
 yhat.test.dt.prunedMore <- predict(dt, newdata = test, type = "prob")[,2]
 brier.test <- sapply(list("lr" = yhat.test.lr, "dt" = yhat.test.dt.prunedMore), BrierScore, y = y.test, USE.NAMES = TRUE)
 print(brier.test)
-```
 
-
-
+#7. 
