@@ -144,30 +144,17 @@ colnames(known.clusterdummies) <- colnames(known.outlierscheck.stand)
 
 merged <- merge(known.clusterdummies, known.outlierscheck.stand, by = "ID", suffixes = c(".clustered", ".original"))
 
-# the rest is at work. still not working.
-# hamayun explains: create a dummy variable - 1 when the variable is in the cluster, 0 when it's not. create corplot for each one. 4 dummies and 1 return
-# relevant columns: 2:15
+# In order to check the correlation, we cannot used our cluster matrix. The reason is that it will
+# give more weight to clusters with high numbers than to low numbers, even though these were assigned
+# arbitrarily. So we will create 4 data frames, one for each cluster, in which the variables will
+# receive value of 1 when they are in the cluster and 0 if not. Then we will use these to check
+# correlations.
 
-# create table for cluster 1 (1 if the cluster is 1, 0 if not)
-merged.dummy1 <- merged
-fdummy1 <- function(x) ifelse(x == 1, 1, 0)
-merged.dummy1[2:15] <- sapply(merged.dummy1[2:15], fdummy1)
-
-
-# create table for cluster 2 (1 if the cluster is 2, 0 if not)
-merged.dummy2 <- merged
-fdummy2 <- function(x) ifelse(x == 2, 1, 0)
-merged.dummy2[2:15] <- sapply(merged.dummy2[2:15], fdummy2)
-
-
-# create table for cluster 3 (1 if the cluster is 3, 0 if not)
-merged.dummy3 <- merged
-fdummy3 <- function(x) ifelse(x == 3, 1, 0)
-merged.dummy3[2:15] <- sapply(merged.dummy3[2:15], fdummy3)
-
-# create table for cluster 4 (1 if the cluster is 4, 0 if not)
-merged.dummy4 <- merged
-fdummy4 <- function(x) ifelse(x == 4, 1, 0)
-merged.dummy4[2:15] <- sapply(merged.dummy4[2:15], fdummy4)
+merged.dummies.vector <- vector("list", 4)
+for (i in 1:length(merged.dummies.vector)){
+  merged.dummies.vector[[i]] <- merged
+  fdummy <- function(x) ifelse (x == i, 1, 0)
+  merged.dummies.vector[[i]][2:15] <- sapply(merged.dummies.vector[[i]][2:15], fdummy)
+}
 
 

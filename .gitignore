@@ -17,6 +17,7 @@
 
 # RStudio files
 .Rproj.user/
+.Rproj.user
 
 # produced vignettes
 vignettes/*.html
@@ -36,3 +37,4 @@ vignettes/*.pdf
 # pdf files
 plot*.pdf
 elbow*.pdf
+

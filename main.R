@@ -2,9 +2,14 @@
 
 #######################
 # Load packages
-library(lubridate)
 # Try to load the package, if it doesn't exist, then install and load it
+# lubridate for dates
+if(!require("lubridate")) install.packages("lubridate"); library("lubridate") 
+# caret for classification and regression training
 if(!require("caret")) install.packages("caret"); library("caret") 
+# hmeasure for Area Under the Curve (alternatives are pROC and ROCR)
+# hmeasure package requires all predictions to be available in one data frame
+if(!require("hmeasure")) install.packages("hmeasure"); library("hmeasure")
 
 #######################
 # Load modules
@@ -31,10 +36,11 @@ class = treat_postcodes(class)
 known = treat_dates(known)
 class = treat_dates(class)
 #######################
-# check plausability of data types
+# Check plausability of data types
 # lapply(known,class)
+# lapply(class,class)
 
-# summarise
+# Summarise
 #lapply(known,summary)
 #lapply(class,summary)
 #######################
@@ -58,8 +64,6 @@ test_data  =  known[-idx_train, ] # test set (drop all observations with train i
 
 
 
-
-
 #######################
 # Try adaptive boosting
 
@@ -75,3 +79,13 @@ t1=adaboost$trees[[1]]
 
 plot(t1)
 text(t1,pretty=0)
+
+
+#######################
+# Check predictive performance
+
+#confusionMatrix(data = prediction, reference = known$return_customer, positive = "yes")
+#predictive_performance(y = known$return_customer, prediction = adaboost)
+
+
+#######################

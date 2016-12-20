@@ -1,14 +1,16 @@
 
 
-
-source("helper.R")
-known <- get_dataset("assignment_BADS_WS1617_known.csv")
+#1.  Load dataset using the helper function
 
 ## clear workspace, if needed
 rm(list = ls())
 
+source("helper.R")
+known <- get_dataset("assignment_BADS_WS1617_known.csv")
 
-##the data cleaning function
+
+
+#2. Use the data cleaning (dates) function 
 DatacleaningDates <- function(x) {
   
   ## Load packages that are needed 
@@ -26,7 +28,8 @@ DatacleaningDates <- function(x) {
   
   known$deliverydate_estimated_outliers <- ifelse(year(known$deliverydate_estimated) == 2010 | year(known$deliverydate_estimated) == 4746, 1, 0)
   
-  ## Change 2010 to 2013, 4746 to 201year(known$deliverydate_estimated[year(known$deliverydate_estimated) == 2010])
+  ## Change 2010 to 2013, 4746 to 2014
+  year(known$deliverydate_estimated[year(known$deliverydate_estimated) == 2010])
   known$deliverydate_estimated  <- as.Date(known$deliverydate_estimated)
   is.Date(known$deliverydate_estimated)
   
@@ -53,6 +56,8 @@ DatacleaningDates <- function(x) {
 }
 
 
+#3. Partition data into train, test and validation data sets as we did in the tutorial
+
 known$return_customer <- as.factor(known$return_customer)
 
 idx.train <- createDataPartition(y = known$return_customer, p = 0.8, list = FALSE) 
@@ -69,13 +74,17 @@ is.numeric(known$return_customer)
 is.factor(known$return_customer)
 known$return_customer <- as.factor(known$return_customer)
 
+#4. Try to develop the models used in TUT 4 onwards, 
+# starting with Logistic, dt and then neural networks
+
+
 # Developed only two models, testing models covered in tutorial
 # LR didn't work when tried on the whole dataset
 dt      <-rpart(return_customer ~ goods_value + item_count + order_date + account_creation_date_missing + deliverydate_actual_missing, data = train60, method = "class")
 lr <-glm(return_customer ~ goods_value + item_count + order_date + account_creation_date_missing + deliverydate_actual_missing, data = validation, family = binomial(link = "logit"))
 
 
-#reading rpart
+#Helpful functions in reading rpart output
 printcp(dt)
 plotcp(dt)
 summary(dt)
@@ -93,6 +102,9 @@ yhat.benchmark <- rep(sum(train60$return_customer == 1)/nrow(train60), nrow(vali
 yhat.validation <- c(list("dt" = yhat.dt, "benchmark" = yhat.benchmark, "lr" = yhat.lr))
 modelList <- list("dt" = dt, "dt.full" = dt.full, "dt.prunedLess" = dt.prunedLess, "dt.prunedMore" = dt.prunedMore)
 
+
+
+#5. Model evaluation (looking only at DT and LR)
 
 y.validation <- as.numeric(validation$return_customer)-1
 
@@ -132,6 +144,7 @@ plotROC(h, which = 1)
 h$metrics["AUC"]
 
 #shuffle rows before trying k-folds
+
 train.rnd <- train[sample(nrow(train)),]
 # Create k folds of approximately equal size
 k <- 5
