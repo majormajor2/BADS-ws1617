@@ -32,8 +32,8 @@
 # 0. preliminary steps
 
 # select product categories (10), that affect weight (used for calculating average per item)
-exclude = c("item_count|ebook_count|audiobook_download_count")
-include = c("_count|canceled_items")
+exclude_pattern = c("item_count|ebook_count|audiobook_download_count")
+include_pattern = c("_count|canceled_items")
 
 # helper function to get the list of included products
 # input: patterns to include and exlude
@@ -41,7 +41,7 @@ include = c("_count|canceled_items")
 getproductlist_w <- function(exclude_pattern, include_pattern)
 {
   list_exclude <- colnames(known[,grep(exclude_pattern, invert = TRUE, colnames(known))])
-  list_include <- list_exclude[grep(pattern = include_pattern, x = list_exclude)]
+  list_include <- list_exclude[grep(include_pattern, x = list_exclude)]
   return(list_include)
 }
 
@@ -77,7 +77,7 @@ avgweight_orderitem <- known$weight/known$productsum_w # length: 40425
 
 # 3. calculate overall average weight per item
 
-avgweight_item <- sum(known[-idx_na_zero, "weight"])/sum(known[-idx_na_zero, "productsum_w"])
+avgweight_item <- sum(avgweight_orderitem)/length(avgweight_orderitem)
 
 
 # 4. replace NAs by average per item
