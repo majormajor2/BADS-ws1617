@@ -31,8 +31,6 @@
 
 # 0. preliminary steps
 
-# safe number of NAs in weight (for later use)
-noweight_na <- sum(is.na(known$weight))
 # select product categories (10), that affect weight (used for calculating average per item)
 exclude = c("item_count|ebook_count|audiobook_download_count")
 include = c("_count|canceled_items")
