@@ -3,10 +3,20 @@
 #######################
 # Load packages
 # Try to load the package, if it doesn't exist, then install and load it
+
 # lubridate for dates
 if(!require("lubridate")) install.packages("lubridate"); library("lubridate") 
+
 # caret for classification and regression training
 if(!require("caret")) install.packages("caret"); library("caret") 
+# tree for classification and regression trees
+if(!require("tree")) install.packages("tree"); library("tree") 
+# rpart for recursive partitioning and regression trees
+if(!require("rpart")) install.packages("rpart"); library("rpart")
+
+# adabag for adaptive boosting and bagging
+if(!require("adabag")) install.packages("adabag"); library("adabag") 
+
 # hmeasure for Area Under the Curve (alternatives are pROC and ROCR)
 # hmeasure package requires all predictions to be available in one data frame
 if(!require("hmeasure")) install.packages("hmeasure"); library("hmeasure")
@@ -48,7 +58,7 @@ class = treat_dates(class)
 
 # Split data set into 80% training and 20% test data
 # sample_size = size of the training set 
-sample_size = ceiling(nrow(known)*0.8) 
+# sample_size = ceiling(nrow(known)*0.8) # only needed for different method of partitioning
 
 # Draw a random stratified sample in which both train and test set have roughly the same ratio of the target classes.
 # The function creatDataPartition returns the indices of a stratified training set with size p * size of data.

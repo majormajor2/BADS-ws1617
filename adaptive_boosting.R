@@ -1,7 +1,9 @@
 #######################
 # Load packages
-library(adabag)
-library(tree)
+# adabag for adaptive boosting and bagging
+if(!require("adabag")) install.packages("adabag"); library("adabag") 
+# tree for classification and regression trees
+if(!require("tree")) install.packages("tree"); library("tree") 
 
 #######################
 
