@@ -13,6 +13,8 @@ if(!require("caret")) install.packages("caret"); library("caret")
 if(!require("tree")) install.packages("tree"); library("tree") 
 # rpart for recursive partitioning and regression trees
 if(!require("rpart")) install.packages("rpart"); library("rpart")
+# rpart.plot to visualize your decision trees
+if(!require("rpart.plot")) install.packages("rpart.plot"); library("rpart.plot")
 
 # adabag for adaptive boosting and bagging
 if(!require("adabag")) install.packages("adabag"); library("adabag") 
