@@ -45,7 +45,7 @@ getproductlist_w <- function(exclude_pattern, include_pattern)
   return(list_include)
 }
 
-productlist_w <- getproductlist_w(exclude_pattern = exclude, include_pattern = include) 
+productlist_w <- getproductlist_w(exclude_pattern = exclude_pattern, include_pattern = include_pattern) 
 
 
 # 1. replace "error zeros" in weight by NA
