@@ -120,7 +120,7 @@ treat_dates = function(dataset) {
 }
 
 # treats postcodes 
-# standardise postcodes to 2 digits
+# standardize postcodes to 2 digits
 # create dummy variable for missing values
 # also convert data type to factor
 # input: data frame
@@ -135,12 +135,12 @@ treat_postcodes = function(dataset) {
   # replace missing values by NA
   data$postcode_delivery[data$postcode_delivery == ""] = NA
 
-  # the following 2 lines are performed by standardise_postcode already
+  # the following 2 lines are performed by standardize_postcode already
   #data$postcode_invoice = as.character(data$postcode_invoice)
   #data$postcode_delivery = as.character(data$postcode_delivery) 
   
-  data$postcode_invoice = sapply(data$postcode_invoice, standardise_postcode)
-  data$postcode_delivery = sapply(data$postcode_delivery, standardise_postcode)
+  data$postcode_invoice = sapply(data$postcode_invoice, standardize_postcode)
+  data$postcode_delivery = sapply(data$postcode_delivery, standardize_postcode)
   
   # check if there are NAs
   if(NA %in% data$postcode_delivery)
@@ -165,10 +165,10 @@ treat_postcodes = function(dataset) {
 return(data)
 }
 
-# standardise cardinal variables to range from 0 to 1 (e.g. item count)
+# standardize cardinal variables to range from 0 to 1 (e.g. item count)
 # input: data frame
 # output: data frame
-standardise_cardinal_variables = function(dataset) {
+standardize_cardinal_variables = function(dataset) {
   data = dataset
   
   # TO DO:
@@ -181,28 +181,28 @@ standardise_cardinal_variables = function(dataset) {
 # takes postcode and adds a leading 0 if it has fewer than 2 chars
 # input: postcode as character
 # output: standardized postcode as character
-standardise_postcode = function(postcode){
+standardize_postcode = function(postcode){
   # convert to character to be sure
-  standardised_postcode = as.character(postcode)
+  standardized_postcode = as.character(postcode)
   
   # if postcode has fewer than 2 characters, add a preceding 0 
-  if(!(is.na(standardised_postcode)))
+  if(!(is.na(standardized_postcode)))
   {
-    if(nchar(standardised_postcode, allowNA = TRUE, keepNA = TRUE)<2)
+    if(nchar(standardized_postcode, allowNA = TRUE, keepNA = TRUE)<2)
     {
-      # print(standardised_postcode)
-      standardised_postcode = paste("0",standardised_postcode,sep="")
-      # print(standardised_postcode)
+      # print(standardized_postcode)
+      standardized_postcode = paste("0",standardized_postcode,sep="")
+      # print(standardized_postcode)
     }
   }
   
-  return(standardised_postcode)
+  return(standardized_postcode)
 }
 
 # general standardization function
 # input: numerical column
 # output: standardized numerical column
-standardise <- function(x){
+standardize <- function(x){
   mu <- mean(x)
   std <- sd(x)
   result <- (x - mu)/std
