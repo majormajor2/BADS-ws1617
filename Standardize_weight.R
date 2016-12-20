@@ -15,7 +15,7 @@
 # item_count: Number of differnent things ordered
 # exampole: item_count 20, cancelled 17, book_count 3
 # weights: weight of cancelled items + product count
-# remitted_items : lists remitted items, leaves ordered items in product categories
+# remitted_items: lists remitted items, leaves ordered items in product categories
 ###
 
 ### Steps: 
@@ -34,12 +34,18 @@
 # select product categories (10), that affect weight (used for calculating average per item)
 exclude = c("item_count|ebook_count|audiobook_download_count")
 include = c("_count|canceled_items")
-getproductlist_w <- function(exclude, include){
-list_exclude <- colnames(known[,grep(exclude, invert = TRUE, colnames(known))])
-list_include <- list_exclude[grep(pattern = include, x = list_exclude)]
-return(list_include)
+
+# helper function to get the list of included products
+# input: patterns to include and exlude
+# output: list of included columns
+getproductlist_w <- function(exclude_pattern, include_pattern)
+{
+  list_exclude <- colnames(known[,grep(exclude_pattern, invert = TRUE, colnames(known))])
+  list_include <- list_exclude[grep(pattern = include_pattern, x = list_exclude)]
+  return(list_include)
 }
-productlist_w <- getproductlist_w(exclude = exclude, include = include) 
+
+productlist_w <- getproductlist_w(exclude_pattern = exclude, include_pattern = include) 
 
 
 # 1. replace "error zeros" in weight by NA
