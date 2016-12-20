@@ -79,13 +79,15 @@ test_data  =  known[-idx_train, ] # test set (drop all observations with train i
 #######################
 # Try adaptive boosting
 
-adaboost = adaptive_boosting(test_data)
+# !!! Don't include ID? Error message when using predict on data.frame class:
+# !!! "Faktor 'ID' hat neue Stufen 51885 [...]"
+adaboost = adaptive_boosting(test_data[,grep("weight",test_data,invert = TRUE)])
 summary(adaboost)
 adaboost$trees
 adaboost$weights
 adaboost$importance
-errorevol(adaboost,test_data)
-predict(adaboost,test_data)
+errorevol(adaboost,test_data[,grep("weight",test_data,invert = TRUE)])
+predict(adaboost,test_data[,grep("weight",test_data,invert = TRUE)])
 
 t1=adaboost$trees[[1]]
 
@@ -97,7 +99,7 @@ text(t1,pretty=0)
 # Check predictive performance
 
 #confusionMatrix(data = prediction, reference = known$return_customer, positive = "yes")
-#predictive_performance(y = known$return_customer, prediction = adaboost)
+predictive_performance(y = test_data$return_customer, prediction = adaboost$prob[,2])
 
 
 #######################

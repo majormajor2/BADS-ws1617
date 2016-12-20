@@ -210,7 +210,7 @@ standardize <- function(x){
 }
 
 # Helper funciton to compute measures of predictive accuracy
-predictive_performance <- function(y=NULL, prediction=NULL, cutoff=.5) 
+predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5) 
 {
   # Assumptions:
   # y is a vector of factors
@@ -228,7 +228,8 @@ predictive_performance <- function(y=NULL, prediction=NULL, cutoff=.5)
   brier_score = sum(((as.numeric(y) - 1) - prediction)^2) / length(y)
   
   # Classification error
-  classification = factor(as.numeric(prediction >= cutoff), labels=c("negative", "positive")) 
+  classification = factor(as.numeric(prediction >= cutoff), labels=levels(y)) 
+  #classification = factor(as.numeric(prediction >= cutoff), labels=c("negative", "positive")) 
   classification_error = 1 - sum(y==classification) / length(y)
   
   return(list(brier_score = brier_score, classification_error = classification_error))
