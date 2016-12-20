@@ -1,6 +1,20 @@
 
 
 #1.  Load dataset using the helper function
+#2. Use the data cleaning (dates) function 
+#3. Partition data into train, test and validation data sets as we did in the tutorial
+#4. Try to develop the models used in TUT 4 onwards, starting with Logistic, 
+#dt and then neural networks
+#5. Model evaluation (looking only at DT and LR)
+#6. Try K-folds validtion - TUT 6
+#7. Neural Networks
+
+
+
+
+
+
+#1.  Load dataset using the helper function
 
 ## clear workspace, if needed
 rm(list = ls())
@@ -142,6 +156,8 @@ h <- HMeasure(y.validation, predictions.roc)
 #area under the curve
 plotROC(h, which = 1)
 h$metrics["AUC"]
+
+#6. Try K-folds validtion - TUT 6
 
 #shuffle rows before trying k-folds
 
