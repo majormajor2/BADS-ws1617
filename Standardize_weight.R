@@ -1,12 +1,15 @@
 # fix standardize code for weight
 
 ### Description of Problem
+
 # We want to standardize weight for clustering use etc. For this, we replace NA values in weight by the average weight 
 # per item. 
 ###
 
 ### Description of relevant categories
-# import count: is a product category
+
+# product categories that affect weight: "canceled_items", "book_count", "paperback_count", "schoolbook_count", "audiobook_count", "film_count", "musical_count"   
+# "hardware_count", "imported_count", "other_count"  
 # product count: physical & non-physical products
 # cancelled items: cancels out the counts on respective product category 
 # item_count: Number of differnent things ordered
@@ -15,80 +18,80 @@
 # remitted_items : lists remitted items, leaves ordered items in product categories
 ###
 
+### Steps: 
 
-
-### Replace error-Zeros in weight by NA
-# define dataframe: all product categories - downloads + canceled_items 
-df_werror <- known[,grep("item_count|ebook_count|audiobook_download_count|totalitemcount", invert = TRUE, colnames(known))]
-varnames_werror <- colnames(df_werror[,grep(pattern = "_count|canceled_items", x = colnames(df_werror))])
-# rowSum over product-columns
-df_werror$totalcount_werror <- rowSums(x = known[,varnames_werror], na.rm = TRUE, dims = 1) # sums over all items for each observation
-# select rows where product categories >1
-idx_werrors <- which(df_werror$weight == 0 & df_werror$totalcount_werror != 0)
-# replace by NA
-df_werror$weight[idx_werrors] <- NA
-
-
-### Calculate avg, for known-dataset
-calc_itemcount <- function(exclude, include){
-# pick columns we want to sum over (_count)
-select1 <- colnames(known[,grep(pattern = exclude, invert = TRUE, colnames(known))]) # select all colNames but item_count
-varnames_count <- select1[grep(pattern = include, x = select1)] # grap all colNames wrt order-items 
-# sum up order-items for each row
-known$totalitemcount <- (rowSums(x = known[,varnames_count], na.rm = TRUE, dims = 1)) # sums over all items for each observation
-df <- known[!is.na(known$weight),c(varnames_count,"weight", "totalitemcount")]
-# Loop for each customer: weight/totalitemcount = avg. weight p. item p. customer#
-
-for (i in nrow(df)){
-  df$rowavg <- df$weight/df$totalitemcount
-}
-colsum_weight <- sum(df$weight)
-colsum_rowavg <- sum(df$rowavg)
-total_avg <- colsum_weight/colsum_rowavg
-
-for (i in row(df)){
-df[is.na(known$weight),"weight"] <- total_avg*df$totalitemcount
-}
-#
-
- 
-# 2. regress weights on product categories + cancelled items, excluding NAs
-# for regression: regress weight w/o NAs on all items, including cancelled
+# 1. replace "error zeros" in weight by NA
+# 2. calculate average weight per customer and item
+# 3. calculate overall average weight per item
+# 4. replace NAs by average per item
+# 5. standardize weight
 ###
-# exclude NAs and errors from data set
-# Zero-errors: if weight == 0 and product category counts|cancelled item counts != 0, replace those zeros by NA
-# replace Zero-erros by NA
-summary(known) # weight has 3947 NAs, no of columns: 51884
 
-# row sums of all categories + canceled_items - downloads larger than zero 
-select2 <- known[,grep("item_count|ebook_count|audiobook_download_count|totalitemcount", invert = TRUE, colnames(known))] # select all colNames but 3 counts
-varnames_count2 <- colnames(select2[,grep(pattern = "_count|canceled_items", x = colnames(select2))]) # gra
-known$totalcount2 <- rowSums(x = known[,varnames_count2], na.rm = TRUE, dims = 1) # sums over all items for each observation
+### Code starts here ###
 
-# select rows where product categories >1
-weight_errors <- which(known$weight == 0 & known$totalcount2 != 0)
-# replace by NA
-known$weight[weight_errors] <- NA
+# 0. preliminary steps
 
-
-####### DOESNT WORK LIKE THIS: REGRESSION COEFFICIENTS ARE NOT SIGNIFICANT & NEGATIV 
-# regress weight on product categories
-regweight <- function(data){
-  # create data frame: drop rows where weight = NA, use varnames_count
-  df <- known[!is.na(known$weight),c(varnames_count,"weight")]
-  yhat.weights <- lm(weight~., data = df)
-  str(summary(yhat.weights)$coefficients)[,2]
-  str(summary(yhat.weights))
-  yhat.pvalues <- summary(yhat.weights)$coefficients[,4]<0.05
-  names(summary(yhat.weights)$coefficients[,yhat.pvalues])
-  }
+# safe number of NAs in weight (for later use)
+noweight_na <- sum(is.na(known$weight))
+# select product categories (10), that affect weight (used for calculating average per item)
+exclude = c("item_count|ebook_count|audiobook_download_count")
+include = c("_count|canceled_items")
+getproductlist_w <- function(exclude, include){
+list_exclude <- colnames(known[,grep(exclude, invert = TRUE, colnames(known))])
+list_include <- list_exclude[grep(pattern = include, x = list_exclude)]
+return(list_include)
+}
+productlist_w <- getproductlist_w(exclude = exclude, include = include) 
 
 
+# 1. replace "error zeros" in weight by NA
+
+# logic: wherever productlist_w is nonzero & weight is zero, we replace it by NA
+# sum over productlist_w
+known$productsum_w <- rowSums(x = known[,productlist_w], na.rm = TRUE, dims = 1) # length: all 51884 observations
+# get index of errors in weight
+idxerrors_w <- which(known$weight == 0 & known$productsum_w != 0) 
+# feedback
+print(paste("number of zero-errors in weight:", length(idxerrors_w))) 
+print(paste("number of NAs in weight before replacement of error-zeros:", sum(is.na(known$weight)))) 
+# replace error zeros by NA
+known[idxerrors_w, "weight"] <- NA
+# feedback
+print(paste("number of NAs in weight after replacement of error-zeros:", sum(is.na(known$weight))))
 
 
 
+# 2. calculate average weight per item for each row
+
+# get index where weight != na or zero  (zeros should now only show cases where productsum_w = 0 and downloadables != 0)
+idx_na_zero <- which(known$weight == 0 | is.na(known$weight))
+# calcualte avg weight per item for each row
+for (row in known[-idx_na_zero, "weight"]){
+avgweight_orderitem <- known$weight/known$productsum_w # length: 40425
+}
 
 
+# 3. calculate overall average weight per item
 
+avgweight_item <- sum(known[-idx_na_zero, "weight"])/sum(known[-idx_na_zero, "productsum_w"])
+
+
+# 4. replace NAs by average per item
+
+# get index for NAs in weight
+idx_na <- which(is.na(known$weight))
+# feedback 
+print(paste("number of NAs to be replaced by average:", sum(is.na(known$weight))))
+# replace each NA by avg weight per item
+for (row in idx_na){
+  known[row,"weight"] <- known[row, "productsum_w"]*avgweight_item
+}
+# feedback
+print(paste("number of NAs after replacement by average:", sum(is.na(known$weight))))
+
+# 5. standardize weight
+
+source("helper.R")
+known[,"weight"] <- lapply(known[,"weight"], standardise)
 
 
