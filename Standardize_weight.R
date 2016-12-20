@@ -15,6 +15,8 @@
 # remitted_items : lists remitted items, leaves ordered items in product categories
 ###
 
+
+
 ### Replace error-Zeros in weight by NA
 # define dataframe: all product categories - downloads + canceled_items 
 df_werror <- known[,grep("item_count|ebook_count|audiobook_download_count|totalitemcount", invert = TRUE, colnames(known))]
