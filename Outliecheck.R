@@ -15,7 +15,7 @@ known.outlierscheck <- known
 # nullify uneeded columns
 known.outlierscheck[ ,c(2:14,17:22)] <- c(NULL)
 
-# Assign row and column names
+# save row and column names
 known.outlierscheck.colnames <- colnames(known.outlierscheck)
 known.outlierscheck.rownames <- paste("Quantile", seq(0,1,0.25), sep = " ")
 
@@ -80,23 +80,31 @@ print(output.pertablefunless)
 # ----------
 
 # we want to choose only columns with more than 10 different numbers. first change all the columns to factors.
-known.outlierscheck.factor <- lapply(known.outlierscheck, factor)
+known.outlierscheck.factor <- as.data.frame(lapply(known.outlierscheck, factor))
 
-# then see how many factors we have in each column
+# then see how many levels we have in each column
 lapply(known.outlierscheck.factor, is.factor)
-lapply(known.outlierscheck.factor[-1], nlevels)
+lapply(known.outlierscheck.factor, nlevels)
 
-# lastly save a new matrix only with the columns we want to check and turn it back into numeric so that we can cluster
-known.outlierscheck.factormany <- known.outlierscheck.factor[which(sapply(known.outlierscheck.factor, nlevels) > 10)]
-known.outliercheck.forcluster <- as.data.frame(lapply(known.outlierscheck.factormany, as.numeric))
+# lastly save a new matrix only with the columns we want to check. We use the original known matrix
+# to avoid turning factors back into numeric values.
+
+known.outlierscheck.forcluster <- known.outlierscheck
+known.outlierscheck.forcluster[,c(2,16)] <- c(NULL)
+
+#known.outlierscheck.factormany <- cbind(known.outlierscheck.factor[which(sapply(known.outlierscheck.factor, nlevels) > 10)], return_customer=known.outlierscheck.factor$return_customer)
+#known.outliercheck.forcluster <- as.data.frame(sapply(known.outlierscheck.factormany, as.numeric))
 
 # standardize columns
 source("helper.R")
-known.outlierscheck.stand <- known.outliercheck.forcluster
-known.outlierscheck.stand <- as.data.frame(cbind(known.outliercheck.forcluster[,1, drop = FALSE], sapply(known.outlierscheck.stand[,-1], standardise)))
+known.outlierscheck.stand <- known.outlierscheck.forcluster
+# we standardise but leave columns ID and return_customer out of the standardisation
+known.outlierscheck.stand <- as.data.frame(cbind(known.outlierscheck.forcluster[,c(1, 17), drop = FALSE], sapply(known.outlierscheck.stand[,c(-1,-2,-17)], standardise)))
+
+
 
 ######### delete the next line after we fix the standartization formula!
-known.outlierscheck.stand <- known.outlierscheck.stand[c(1:2,4:16)]
+known.outlierscheck.stand <- known.outlierscheck.stand[,-3]
 #########
 
 # clustering
@@ -104,11 +112,20 @@ set.seed(666)
 # candidate settings for k
 k.settings = 1:10
 # create matrix to store the results
-cluster.model <- as.data.frame(matrix(data = NA, nrow = length(k.settings), ncol = ncol(known.outlierscheck.stand)))
-colnames(cluster.model) <- colnames(known.outlierscheck.stand)
+cluster.model <- as.data.frame(matrix(data = NA, nrow = length(k.settings), ncol = ncol(known.outlierscheck.stand[,c(-1,-2)])))
+colnames(cluster.model) <- colnames(known.outlierscheck.stand[,c(-1,-2)])
 rownames(cluster.model) <- 1:10
 
-
+# create cluster solutions for k
+for (n in 1:ncol(known.outlierscheck.stand[,c(-1,-2)])) {
+  for (i in 1:length(k.settings)) {
+    obj.values <- vector(mode="numeric", length = length(k.settings))
+      # Create a cluster solution using the current setting of k
+      clu.sol <- kmeans(known.outlierscheck.stand[,c(-1,-2)][n], centers=k.settings[i], iter.max = 50, nstart = 100)
+      obj.values[i] <- clu.sol$tot.withinss
+      cluster.model[i,n] <- obj.values[i]
+    }
+}
 
 # create elbow curves for all variables:
 dev.off()
@@ -128,12 +145,12 @@ for (i in colnames(cluster.model)){
 
 known.clusterdummies <- as.data.frame(matrix(nrow = nrow(known.outlierscheck.stand), ncol = ncol(known.outlierscheck.stand)))
 colnames(known.clusterdummies) <- colnames(known.outlierscheck.stand)
-for (name in colnames(known.outlierscheck.stand)) {
-  clu.sol <- kmeans(known.outlierscheck.stand[,name], centers=4, iter.max = 50, nstart = 100)
+for (name in colnames(known.outlierscheck.stand[,c(-1,-2)])) {
+  clu.sol <- kmeans(known.outlierscheck.stand[,c(-1,-2)][,name], centers=4, iter.max = 50, nstart = 100)
   cluster <- clu.sol$cluster
-  known.clusterdummies[,name] <- cluster
+  known.clusterdummies[,c(-1,-2)][,name] <- cluster
 }
-known.clusterdummies[,1] <- known.outlierscheck.stand[,1]
+known.clusterdummies[,c(1,2)] <- known.outlierscheck.stand[,c(1,2)]
 colnames(known.clusterdummies) <- colnames(known.outlierscheck.stand)
 
 # now we can check correlations between the return column and the other columns, using our clustered
@@ -143,6 +160,7 @@ colnames(known.clusterdummies) <- colnames(known.outlierscheck.stand)
 ##### did this so that the number of columns will fit
 
 merged <- merge(known.clusterdummies, known.outlierscheck.stand, by = "ID", suffixes = c(".clustered", ".original"))
+merged$return_customer.clustered <- NULL
 
 # In order to check the correlation, we cannot used our cluster matrix. The reason is that it will
 # give more weight to clusters with high numbers than to low numbers, even though these were assigned
@@ -151,10 +169,16 @@ merged <- merge(known.clusterdummies, known.outlierscheck.stand, by = "ID", suff
 # correlations.
 
 merged.dummies.vector <- vector("list", 4)
-for (i in 1:length(merged.dummies.vector)){
-  merged.dummies.vector[[i]] <- merged
+corr.cluster.vector <- vector("list", length = length(merged.dummies.vector))
+for (i in 1:4){
+  merged.dummies.vector[[i]] <- merged[2:15]
   fdummy <- function(x) ifelse (x == i, 1, 0)
-  merged.dummies.vector[[i]][2:15] <- sapply(merged.dummies.vector[[i]][2:15], fdummy)
-}
+  merged.dummies.vector[[i]][1:13] <- sapply(merged.dummies.vector[[i]][1:13], fdummy)
+  merged.dummies.vector[i] <- as.matrix(merged.dummies.vector[i])
+  corr.cluster.vector[[i]] <- cor(merged.dummies.vector[[i]])
+  pdf(file = paste("corplot",i,".pdf", sep = ""))
+  corrplot(corr.cluster.vector[[i]])
+  dev.off()
+  }
 
 
