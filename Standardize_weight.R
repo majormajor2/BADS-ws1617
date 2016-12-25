@@ -40,13 +40,11 @@
 
 # 0. preliminary steps
 
-## save weight statistics in varibales
-weight_zeros <- sum(known$weight == 0, na.rm = TRUE)
-weight_na <- sum(is.na(known$weight))
-print(paste("initial no. of zeros in weight:", weight_zeros <- sum(known$weight == 0, na.rm = TRUE)))
-print(paste("initial no. of NAs in weight:", weight_na <- sum(is.na(known$weight))))
+## weight statistics 
+print(paste("initial no. of zeros in weight:", sum(known$weight == 0, na.rm = TRUE))) 
+print(paste("initial no. of NAs in weight:", sum(is.na(known$weight))))
 
-# helper function to get the list of included products
+# function: get the list of included products
 # input: patterns to include and exlude
 # output: list of included columns
 getproductlist <- function(exclude_pattern, include_pattern)
@@ -68,7 +66,7 @@ print("List of products, that affect weight:"); print(productlist_w)
 # 1. replace "error zeros" in weight by NA
 
 # sum over productlist_w
-known$sumofproducts_w <- rowSums(x = known[,productlist_w], na.rm = TRUE, dims = 1) # length: all 51884 observations
+sumofproducts_w <- rowSums(x = known[,productlist_w], na.rm = TRUE, dims = 1) # length: all 51884 observations
 
 # Identify zeros in weight ## THIS COULD BE PUT INTO 1 LINE ##
 idx_zeros <- which(known$weight == 0)
@@ -77,16 +75,16 @@ print(paste("Total number of zeros in weight:", length(idx_zeros))) # length: 75
 # Identify non-error-zeros in weight
 idx_nonerrorzeros <- which(known$weight == 0 & sumofproducts_w == 0 & (known$audiobook_download_count != 0 | known$ebook_count != 0 )) # length: 6.980
 # feedback 
-print(paste("Number of non-error zeros in weight:", length(idx_nonerrorzero))) # length: 6980
+print(paste("Number of non-error zeros in weight:", length(idx_nonerrorzeros))) # length: 6980
 # Identify error-zeros in weight
 idx_errorzeros <- idx_zeros[! idx_zeros %in% idx_nonerrorzeros]
 # feedback
 print(paste("Number of error zeros in weight:", length(idx_errorzeros))) # length: 532
 
+
 # replace error zeros by NA
 known[idx_errorzeros, "weight"] <- NA
 # feedback
-print(paste("initial no. of NAs in weight:", weight_zeros <- sum(is.na(known$weight))))
 print(paste("number of NAs in weight after replacement of error-zeros:", sum(is.na(known$weight))))
 
 
@@ -96,40 +94,58 @@ print(paste("number of NAs in weight after replacement of error-zeros:", sum(is.
 idx_foravgweight <- which(! (known$weight == 0 | is.na(known[,"weight"]))) # length: 40425
 
 # check index idx_foravgweigth
-summary(known$weight[idx_foravgweight]) # Min: 1
-summary(is.na(known$weight[idx_foravgweight])) # no NAs in weight
-summary(known$weight[idx_foravgweight] == 0) # No Zeros in weight --> sumofproducts_w should be nonzero
+#summary(known$weight[idx_foravgweight]) # Min: 1
+#summary(is.na(known$weight[idx_foravgweight])) # no NAs in weight
+#summary(known$weight[idx_foravgweight] == 0) # No Zeros in weight --> sumofproducts_w should be nonzero
 
-summary(known$sumofproducts_w) # no NAs
-summary(known$sumofproducts_w[idx_foravgweight]) # Min is zero
-summary(known$sumofproducts_w[idx_foravgweight] == 0) # Number of zeros: 29
+#summary(known$sumofproducts_w) # no NAs
+#summary(known$sumofproducts_w[idx_foravgweight]) # Min is zero
+#summary(known$sumofproducts_w[idx_foravgweight] == 0) # Number of zeros: 29
 
 # Check column weight where sumofproducts == 0 
-known$weight[idx_foravgweight][known$sumofproducts_w[idx_foravgweight] == 0] # there are 29 such cases
-summary(known[idx_foravgweight,][known$sumofproducts_w[idx_foravgweight] == 0,]) # all product categories == 0, but item_count!
-str(known[idx_foravgweight,][known$sumofproducts_w[idx_foravgweight] == 0,]) # all product categories == 0, but item_count!
+#known$weight[idx_foravgweight][known$sumofproducts_w[idx_foravgweight] == 0] # there are 29 such cases
+#summary(known[idx_foravgweight,][known$sumofproducts_w[idx_foravgweight] == 0,]) # all product categories == 0, but item_count!
+#str(known[idx_foravgweight,][known$sumofproducts_w[idx_foravgweight] == 0,]) # all product categories == 0, but item_count!
 
 ### TO DO ###
 # Decide: how should those 29 cases be treated? 
 ### END TO DO ###
 
-# exclude those 29 cases from index
-excludeID <- known$ID[idx_foravgweight][known$sumofproducts_w[idx_foravgweight] == 0] # get ID
-idx_foravgweight_2 <- idx_foravgweight[!idx_foravgweight %in% excludeID] # exclude those IDs from idx_foravgweight
-# CHECK:
-length(idx_foravgweight) # before: 40425 rows
-length(idx_foravgweight_2) # after: 40396 rows (excluded 29 cases)
-summary(sumofproducts_w[idx_foravgweight_2]) # excluded all lines with zero-sumofproducts_w
+# Problem: There are cases where weight != 0 but sumofproducts == 0
+# Treatment: exclude those 29 cases from index
+excludeID <- as.numeric(known$ID[idx_foravgweight][sumofproducts_w[idx_foravgweight] == 0]) # get ID
+# feedback
+print(paste("Number of cases to exclude:", length(excludeID)))
+print(paste("Length of idx_foravgweight before:", length(idx_foravgweight)))
+idx_foravgweight <- idx_foravgweight[!idx_foravgweight %in% excludeID] # exclude those IDs from idx_foravgweight
+# feedback & check
+print(paste("Length of idx_foravgweight after treatment:", length(idx_foravgweight)))
+if (min(sumofproducts_w[idx_foravgweight]) == 0)
+{
+  stop("There is at least one row where sumofproducts_w == 0.")
+}
+
+
 
 # calculate avg weight per item for each row
-avgweight_orderitem <- known[idx_foravgweight_2,"weight"]/sumofproducts_w[idx_foravgweight_2]
-summary(avgweight_orderitem) # no NAs or Infs in average weight per row
-length(avgweight_orderitem) # 40396 cases
+
+avgweight_orderitem <- known[idx_foravgweight,"weight"]/sumofproducts_w[idx_foravgweight]
+if (length(avgweight_orderitem) != length(idx_foravgweight))
+{
+  stop("Avgweight_orderitem has the wrong dimension.")
+}
+if (sum(is.na(avgweight_orderitem)) >0 | sum(avgweight_orderitem) == Inf)
+{
+  stop("Avgweight_orderitem == NA or Inf in at least one row")
+}
+#summary(avgweight_orderitem) # no NAs or Infs in average weight per row
+#length(avgweight_orderitem) # 40396 cases
 
 
 # 3. calculate overall average weight per item
 
 avgweight_item <- sum(avgweight_orderitem)/length(avgweight_orderitem)
+print(paste("Average weight per item:", round(avgweight_item), "grams"))
 
 
 # 4. replace NAs by average per item
@@ -141,13 +157,21 @@ print(paste("number of NAs to be replaced by average:", length(idx_na)))
 
 # replace each NA by avg weight per item
 known[,"weight"] <- replace(x = known[,"weight"], list = idx_na, values = sumofproducts_w[idx_na]*avgweight_item)
+
 # feedback 
 print(paste("number of NAs in weight after replacement by average:", sum(is.na(known$weight))))
+summary(known$weight)
+class(known$weight)
 
 
 # 5. standardize weight
 
 source("helper.R")
-known[,"weight"] <- lapply(known[,"weight"], standardise)
+known$weight <- standardize(known$weight)
+
+
+
+# feedback
+print("Range of weight:");(summary(known[,"weight"]))
 
 

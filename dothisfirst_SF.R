@@ -14,6 +14,3 @@ if(!require("ggplot2")) install.packages("ggplot2"); library(ggplot2)
 # fix plot resolutions
 par(mar=c(1,1,1,1)) # this code avoids some errors related to screen resolution; feel free to ignore it
 
-# structure of dataset
-str(known)
-summary(known)
