@@ -242,5 +242,3 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   
   return(list(brier_score = brier_score, classification_error = classification_error))
 }
-Contact GitHub API Training Shop Blog About
-© 2016 GitHub, Inc. Terms Privacy Security Status Help
