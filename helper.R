@@ -1,3 +1,20 @@
+Skip to content
+This repository
+Search
+Pull requests
+Issues
+Gist
+@ste-phanie
+Unwatch 4
+Star 0
+Fork 0 Humboldt-BADS/bads-ws1617-group27 Private
+Code  Issues 0  Pull requests 0  Projects 0  Wiki  Pulse  Graphs
+Tree: 4a7005ab1a Find file Copy pathbads-ws1617-group27/helper.R
+4a7005a  37 minutes ago
+@ste-phanie ste-phanie Helper Functions
+3 contributors @dkm1006 @ste-phanie @orenbl
+RawBlameHistory     
+245 lines (184 sloc)  8.89 KB
 
 # getting the dataset, creating a data.frame and 
 # converting variables to correct data types
@@ -60,7 +77,7 @@ treat_missing_values = function(dataset) {
   data$advertising_code_missing = factor(ifelse(is.na(data$advertising_code), 1, 0), labels=c("no","yes"))
   # drop empty level from factor
   data$advertising_code = droplevels(data$advertising_code)
-
+  
   ## 2: Replace missing weight with mean weight for the same number of items
   # see Data_Cleaning_SF.R courtesy of Stephie
   data$weight_missing = factor(ifelse(is.na(data$weight), 1, 0), labels=c("no","yes"))
@@ -157,10 +174,10 @@ treat_postcodes = function(dataset) {
   ## 2: NAs for postcode delivery 
   # create dummy postcode_delivery_missing
   data$postcode_delivery_missing = vector(mode="integer",length=length(data$postcode_delivery))
-
+  
   # replace missing values by NA
   data$postcode_delivery[data$postcode_delivery == ""] = NA
-
+  
   # the following 2 lines are performed by standardize_postcode already ?? can be taken out?
   #data$postcode_invoice = as.character(data$postcode_invoice)
   #data$postcode_delivery = as.character(data$postcode_delivery) 
@@ -180,32 +197,30 @@ treat_postcodes = function(dataset) {
     data$postcode_delivery[na_index] = data$postcode_invoice[na_index] ## ?? justification? in how many cases are they the same? 
     ## .. how many cases are affected by the replacement? in %
   }
-
+  
   # factorise dummy variable
   data$postcode_delivery_missing = factor(data$postcode_delivery_missing, levels=c(0,1), labels=c("no","yes"))
-
+  
   # factorise postcode variables
   data$postcode_invoice = factor(data$postcode_invoice)
   data$postcode_delivery = factor(data$postcode_delivery)
-##########################################################################
-
-return(data)
-}
-
-
-
-# standardize cardinal variables to range from 0 to 1 (e.g. item count)
-# input: data frame
-# output: data frame
-standardize_cardinal_variables = function(dataset) {
-  data = dataset
-  
-  # TO DO:
+  ##########################################################################
   
   return(data)
 }
 
 
+### Normalization 
+# standardize cardinal variables to range from 0 to 1 (e.g. item count)
+# input: data frame
+# output: data frame
+normalize_cardinal_variables = function(x) {
+  min = min(x)
+  max = max(x)
+  normalized = (x - min)/(max - min)
+  
+  return(normalized)
+}
 
 
 # general standardization function
@@ -230,7 +245,7 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
     stop("Data vector and prediction vector must have same length!")
   }
   
-
+  
   
   # Calculate Brier Score
   # y - 1 because levels of factors start at 1 not 0
@@ -243,3 +258,5 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   
   return(list(brier_score = brier_score, classification_error = classification_error))
 }
+Contact GitHub API Training Shop Blog About
+© 2016 GitHub, Inc. Terms Privacy Security Status Help
