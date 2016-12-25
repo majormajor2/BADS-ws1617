@@ -1,20 +1,4 @@
-Skip to content
-This repository
-Search
-Pull requests
-Issues
-Gist
-@ste-phanie
-Unwatch 4
-Star 0
-Fork 0 Humboldt-BADS/bads-ws1617-group27 Private
-Code  Issues 0  Pull requests 0  Projects 0  Wiki  Pulse  Graphs
-Tree: 4a7005ab1a Find file Copy pathbads-ws1617-group27/helper.R
-4a7005a  37 minutes ago
-@ste-phanie ste-phanie Helper Functions
-3 contributors @dkm1006 @ste-phanie @orenbl
-RawBlameHistory     
-245 lines (184 sloc)  8.89 KB
+
 
 # getting the dataset, creating a data.frame and 
 # converting variables to correct data types
