@@ -6,14 +6,15 @@ library(lubridate)
 library(ggplot2)
 library(foreach)
 
+# ?? please comment on what you are doing & why 
 datelist <- list(known$order_date, known$account_creation_date, known$deliverydate_estimated, known$deliverydate_actual)
 
-order_date_new <- known$order_date
-as.vector(order_date_new)
+order_date_new <- as.vector(known$order_date)
+
 
 tempmonth_1 <-  month(order_date_new)
 str_pad(tempmonth_1, 2, pad = "0")
-tempyear_1  <-  year(order_date_new)
+tempyear_1  <-  year(order_date_new) # ?? i get an error here : Fehler in as.POSIXlt.numeric(x, tz = tz(x)) : 'origin' must be supplied
 YrMonth_order_date_new   <- paste(tempyear_1, "-", tempmonth_1, sep = "")  
 
 account_creation_date_new <- known$account_creation_date
