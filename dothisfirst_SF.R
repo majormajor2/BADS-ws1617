@@ -1,6 +1,6 @@
 
 #get data
-setwd("/Users/sfinkenwirth/Documents/MEMS/Lectures and Seminars/Business Analytics & Data Science/Assignment_BADS_WS1617/Input")
+setwd("/Users/sfinkenwirth/Documents/MEMS/Lectures and Seminars/Business Analytics & Data Science/Assignment/bads-ws1617-group27")
 known <- read.csv("assignment_BADS_WS1617_known.csv", header = TRUE, sep = ",")
 
 # load packages
