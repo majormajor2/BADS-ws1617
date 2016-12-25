@@ -1,7 +1,11 @@
 
-#get data
+#get wd and load helper function
 setwd("/Users/sfinkenwirth/Documents/MEMS/Lectures and Seminars/Business Analytics & Data Science/Assignment/bads-ws1617-group27")
-known <- read.csv("assignment_BADS_WS1617_known.csv", header = TRUE, sep = ",")
+source("helper.R")
+
+# get data 
+known <- get_dataset("assignment_BADS_WS1617_known.csv")
+
 
 # load packages
 if(!require("ggplot2")) install.packages("ggplot2"); library(ggplot2)
