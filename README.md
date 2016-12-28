@@ -1,2 +1,1 @@
-# bads-ws1617-group27
-# This is our readme file.
+Clean state - 12:18 at 18.12.2016
