@@ -9,15 +9,15 @@ get_dataset = function(name) {
   
   ##########################################################################
   # read csv-file
-  data = read.csv(name, header=T,sep=",")
+  data = read.csv(name, header=T, sep=",", row.names = 1)
   
   ##########################################################################
   # drop data$points_redeemed because it has all zeros -> no informational value
   data$points_redeemed = NULL
   
   ##########################################################################
-  # factorise ID
-  data$ID = factor(data$ID)
+  # factorise ID - not necessary anymore because we made the ID the row name
+  #data$ID = factor(data$ID)
   
   
   # factorise website model

@@ -66,7 +66,7 @@ class = treat_dates(class)
 # The function creatDataPartition returns the indices of a stratified training set with size p * size of data.
 
 # Draw a random, stratified sample including p percent of the data
-idx_train  = createDataPartition(y = known$return_customer, p = 0.8, list = FALSE) 
+idx_train  = createDataPartition(y = known$return_customer, p = 0.5, list = FALSE) 
 train_data = known[idx_train, ] # training set
 test_data  =  known[-idx_train, ] # test set (drop all observations with train indices)
 # Draw a random, stratified sample of ratio p of the data
@@ -81,25 +81,25 @@ test_data  =  known[-idx_train, ] # test set (drop all observations with train i
 
 # !!! Don't include ID? Error message when using predict on data.frame class:
 # !!! "Faktor 'ID' hat neue Stufen 51885 [...]"
-adaboost = adaptive_boosting(test_data[,grep("weight",test_data,invert = TRUE)])
+adaboost = adaptive_boosting(train_data[,grep("weight",train_data,invert = TRUE)])
 summary(adaboost)
 adaboost$trees
 adaboost$weights
 adaboost$importance
-errorevol(adaboost,test_data[,grep("weight",test_data,invert = TRUE)])
-predict(adaboost,test_data[,grep("weight",test_data,invert = TRUE)])
+errorevol(adaboost,train_data[,grep("weight",train_data,invert = TRUE)])
+adaboost_prediction = predict(adaboost,test_data[,grep("weight",test_data,invert = TRUE)])
 
-t1=adaboost$trees[[1]]
+adaboost_tree = adaboost$trees[[1]]
 
-plot(t1)
-text(t1,pretty=0)
+plot(adaboost_tree)
+text(adaboost_tree,pretty=0)
 
 
 #######################
 # Check predictive performance
 
 #confusionMatrix(data = prediction, reference = known$return_customer, positive = "yes")
-predictive_performance(y = test_data$return_customer, prediction = adaboost$prob[,2])
+predictive_performance(y = test_data$return_customer, prediction = adaboost_prediction$prob[,2])
 
 
 #######################
