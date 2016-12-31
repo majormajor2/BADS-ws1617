@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
-bads-ws1617-group27.Rproj
-=======
 # History files
 .Rhistory
 .Rapp.history
@@ -44,5 +37,3 @@ vignettes/*.pdf
 # pdf files
 plot*.pdf
 elbow*.pdf
-
->>>>>>> 8b90959074c3e040538a08428cf87176e79a227a
