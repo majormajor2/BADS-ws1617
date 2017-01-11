@@ -12,7 +12,7 @@ summary(known)
 # creatge new matrix only for the variables we need to check
 known.outlierscheck <- known
 
-# nullify uneeded columns
+# exclude uneeded columns
 known.outlierscheck[ ,c(2:14,17:22)] <- c(NULL)
 
 # save row and column names
@@ -98,13 +98,14 @@ known.outlierscheck.forcluster[,c(2,16)] <- c(NULL)
 # standardize columns
 source("helper.R")
 known.outlierscheck.stand <- known.outlierscheck.forcluster
-# we standardise but leave columns ID and return_customer out of the standardisation
-known.outlierscheck.stand <- as.data.frame(cbind(known.outlierscheck.forcluster[,c(1, 17), drop = FALSE], sapply(known.outlierscheck.stand[,c(-1,-2,-17)], standardise)))
+# we standardise but leave columns ID and return_customer out of the standardisation. Weight is
+# also excluded since it is standardized in the other code.
+known.outlierscheck.stand <- as.data.frame(cbind(known.outlierscheck.forcluster[,c(1, 17, 3), drop = FALSE], sapply(known.outlierscheck.stand[,c(-1,-2,-3,-17)], standardize)))
 
 
 
 ######### delete the next line after we fix the standartization formula!
-known.outlierscheck.stand <- known.outlierscheck.stand[,-3]
+# known.outlierscheck.stand <- known.outlierscheck.stand[,-3]
 #########
 
 # clustering
@@ -171,9 +172,9 @@ merged$return_customer.clustered <- NULL
 merged.dummies.vector <- vector("list", 4)
 corr.cluster.vector <- vector("list", length = length(merged.dummies.vector))
 for (i in 1:4){
-  merged.dummies.vector[[i]] <- merged[2:15]
+  merged.dummies.vector[[i]] <- merged[2:16]
   fdummy <- function(x) ifelse (x == i, 1, 0)
-  merged.dummies.vector[[i]][1:13] <- sapply(merged.dummies.vector[[i]][1:13], fdummy)
+  merged.dummies.vector[[i]][1:14] <- sapply(merged.dummies.vector[[i]][1:14], fdummy)
   merged.dummies.vector[i] <- as.matrix(merged.dummies.vector[i])
   corr.cluster.vector[[i]] <- cor(merged.dummies.vector[[i]])
   pdf(file = paste("corplot",i,".pdf", sep = ""))
