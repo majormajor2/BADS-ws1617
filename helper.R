@@ -78,30 +78,29 @@ treat_dates = function(dataset) {
   data = dataset
   
   ## Order date does not require cleaning, there are no missing values or outliers
+  # i.e. all are within the correct interval of one year
   
   ## Account creation date: Create a dummy variable for NAs
   data$account_creation_date_missing = ifelse(is.na(data$account_creation_date), 1, 0)
-  ## and adjust existing values to match order date (large clustering at the beginning of the period)
-  ## index the NAs for account creation date
+  ## and replace NAs to match order date (equal in 89% of the cases)
+  # (We notice a large clustering at the beginning of the period)
+  
+  # index the NAs for account creation date
   na_index = which(is.na(data$account_creation_date))
-  ## replace them with order date
+  # replace them with order date
   data$account_creation_date[na_index] = data$order_date[na_index]
   
   ## Delivery date estimated has outliers, from 2010 and 4746. Create a dummy to capture both
-  
   data$deliverydate_estimated_outliers = ifelse(year(data$deliverydate_estimated) == 2010 | year(data$deliverydate_estimated) == 4746, 1, 0)
   
   ## Change 2010 to 2013, 4746 to 201year(known$deliverydate_estimated[year(known$deliverydate_estimated) == 2010]) ?? not clear ?? 
-  data$deliverydate_estimated  = as.Date(data$deliverydate_estimated)
-  # is.Date(data$deliverydate_estimated) # check if it is a Date
   
-  year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) <- year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) + 4
-  year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) <- year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) - 2733
-  
-  
-  ## Delivery date acutal has 0000/00/00, create a dummy wth the missing value
-  data$deliverydate_actual = as.Date(data$deliverydate_actual)
-  # is.Date(data$deliverydate_actual) # check if it is a Date
+  # year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) = year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) + 4
+  year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) = 2013
+  # year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) = year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) - 2733
+  year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) = 2013
+    
+  ## Delivery date actual has 0000/00/00, create a dummy for the missing value
   data$deliverydate_actual_missing = ifelse(is.na(data$deliverydate_actual), 1, 0)
   
   ## and adjust existing values to match delivery date estimated 

@@ -1,11 +1,4 @@
-#######################
-# Load packages
-# adabag for adaptive boosting and bagging
-if(!require("adabag")) install.packages("adabag"); library("adabag") 
-# tree for classification and regression trees
-if(!require("tree")) install.packages("tree"); library("tree") 
-
-#######################
+###### Calculation #################
 
 # calculates an adaptive boosting (adaboost) model
 # input: data frame
@@ -16,4 +9,13 @@ adaptive_boosting = function(dataset)
   adaboost = boosting(return_customer~., data=data, boos=TRUE, mfinal=20, coeflearn='Breiman')
   return(adaboost)
 }
-#######################
+###### Printing #################
+
+print_importance_plot = function(importance_list)
+{
+  dev.off()
+  pdf(file = "plot_adaboost_importance.pdf")
+  par(mar = c(12, 4, 4, 2) + 0.2) # increase margins such that the labels are on the plot
+  barplot(importance_list[importance_list > 0], las=2)
+  dev.off()
+}
