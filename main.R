@@ -16,8 +16,8 @@ if(!require("rpart")) install.packages("rpart"); library("rpart")
 if(!require("rpart.plot")) install.packages("rpart.plot"); library("rpart.plot")
 
 ### from Oren's file ###
-if(!require("matrixStat")) install.packages("matrixStats"); library(matrixStats)
-if(!require("corrplot")) install.packages("corrplot"); library(corrplot)
+if(!require("matrixStat")) install.packages("matrixStats"); library("matrixStats")
+if(!require("corrplot")) install.packages("corrplot"); library("corrplot")
 
 # adabag for adaptive boosting and bagging
 if(!require("adabag")) install.packages("adabag"); library("adabag") 

@@ -93,18 +93,13 @@ treat_dates = function(dataset) {
   ## Delivery date estimated has outliers, from 2010 and 4746. Create a dummy to capture both
   data$deliverydate_estimated_outliers = ifelse(year(data$deliverydate_estimated) == 2010 | year(data$deliverydate_estimated) == 4746, 1, 0)
   
-  ## Change 2010 to 2013, 4746 to 201year(known$deliverydate_estimated[year(known$deliverydate_estimated) == 2010]) ?? not clear ?? 
-  
-  #year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) = year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) + 4
+  ## Change 2010 to 2014, and 4746 to order_date + the mean of delivery time needed 
   year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) = 2014
-  #year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) = year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) - 2733
-  #data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746] = data$order_date + mean()
-  #[year(data$deliverydate_estimated) == 4746]
 
-  # year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) = year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) - 2733
+  deliverytime_estimated = data$deliverydate_estimated - data$order_date
+  mean_deliverytime_estimated = mean(deliverytime[known$deliverydate_estimated_outliers == "no"])
+  data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746] = data$order_date[year(data$deliverydate_estimated) == 4746] + round(mean_deliverytime_estimated)
 
-  year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) = 2013
-    
   ## Delivery date actual has 0000/00/00, create a dummy for the missing value
   data$deliverydate_actual_missing = ifelse(is.na(data$deliverydate_actual), 1, 0)
   
