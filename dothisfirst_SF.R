@@ -1,5 +1,6 @@
 
 #get wd and load helper function
+setwd("/Users/sfinkenwirth/Documents/MEMS/Lectures and Seminars/Business Analytics & Data Science/Input")
 setwd("/Users/sfinkenwirth/Documents/MEMS/Lectures and Seminars/Business Analytics & Data Science/Assignment/bads-ws1617-group27")
 source("helper.R")
 
