@@ -195,7 +195,7 @@ treat_postcodes = function(dataset) {
 
 
 ### Normalization 
-# standardize cardinal variables to range from 0 to 1 (e.g. item count)
+# min-max-scaling of cardinal variables to range from 0 to 1 (e.g. item count)
 # input: data frame
 # output: data frame
 normalize_cardinal_variables = function(x) {

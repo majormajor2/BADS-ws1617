@@ -79,20 +79,29 @@ test_data  =  known[-idx_train, ] # test set (drop all observations with train i
 #######################
 # Try adaptive boosting
 
-# !!! Don't include ID? Error message when using predict on data.frame class:
-# !!! "Faktor 'ID' hat neue Stufen 51885 [...]"
 adaboost = adaptive_boosting(train_data[,grep("weight",train_data,invert = TRUE)])
 summary(adaboost)
 adaboost$trees
 adaboost$weights
-adaboost$importance
+
 errorevol(adaboost,train_data[,grep("weight",train_data,invert = TRUE)])
 adaboost_prediction = predict(adaboost,test_data[,grep("weight",test_data,invert = TRUE)])
 
+# list the variables by their importance
+adaboost_importance = sort(adaboost$importance, decreasing = TRUE)
+adaboost_importance[adaboost_importance > 0]
+
+# print a variable importance plot
+dev.off()
+pdf(file = "plot_adaboost_importance.pdf")
+par(mar = c(12, 4, 4, 2) + 0.2) 
+barplot(adaboost_importance[adaboost_importance > 0], las=2)
+dev.off()
+
 adaboost_tree = adaboost$trees[[1]]
 
-plot(adaboost_tree)
-text(adaboost_tree,pretty=0)
+#plot(adaboost_tree)
+#text(adaboost_tree,pretty=0)
 
 
 #######################
