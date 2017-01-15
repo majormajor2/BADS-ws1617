@@ -62,7 +62,11 @@ treat_missing_values = function(dataset) {
   # drop empty level from factor
   data$advertising_code = droplevels(data$advertising_code)
   
-  ## 2: Replace missing weight with mean weight for the same number of items
+  ## 2: NAs for form_of_address - create dummy form_of_address_missing 
+  # see Data_Cleaning_SF.R courtesy of Stephie
+  data$form_of_address_missing = factor(ifelse(is.na(data$form_of_address), 1, 0), labels=c("no","yes"))
+  
+  ## 3: Replace missing weight with mean weight for the same number of items
   # see Data_Cleaning_SF.R courtesy of Stephie
   data$weight_missing = factor(ifelse(is.na(data$weight), 1, 0), labels=c("no","yes"))
   

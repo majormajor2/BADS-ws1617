@@ -29,6 +29,7 @@ if(!require("hmeasure")) install.packages("hmeasure"); library("hmeasure")
 ####### Load modules ################
 
 source("helper.R")
+source("standardize_weight.R")
 source("adaptive_boosting.R")
 
 ####### Set seed ################
@@ -49,6 +50,8 @@ known = treat_postcodes(known)
 class = treat_postcodes(class)
 known = treat_dates(known)
 class = treat_dates(class)
+known = standardize_weight(known)
+class = standardize_weight(class)
 
 ####### Check plausability of data types ################
 
