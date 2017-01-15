@@ -8,7 +8,7 @@
 get_dataset = function(name) {
   
   ##########################################################################
-  # read csv-file
+  # read csv-file, with headers, separated by ",", set first col ("ID") as row names
   data = read.csv(name, header=T, sep=",", row.names = 1)
   
   ##########################################################################
@@ -211,9 +211,9 @@ normalize_cardinal_variables = function(x) {
 # input: numerical column
 # output: standardized numerical column
 standardize <- function(x){
-  mu <- mean(x)
-  std <- sd(x)
-  result <- (x - mu)/std
+  mu = mean(x)
+  std = sd(x)
+  result = (x - mu)/std
   return(result)
 }
 
@@ -235,7 +235,7 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   # y - 1 because levels of factors start at 1 not 0
   brier_score = sum(((as.numeric(y) - 1) - prediction)^2) / length(y)
   
-  # Classification error
+  # Calculate Classification error
   classification = factor(as.numeric(prediction >= cutoff), labels=levels(y)) 
   #classification = factor(as.numeric(prediction >= cutoff), labels=c("negative", "positive")) 
   classification_error = 1 - sum(y==classification) / length(y)
