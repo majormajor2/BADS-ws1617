@@ -100,6 +100,9 @@ treat_dates = function(dataset) {
   #year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) = year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) - 2733
   #data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746] = data$order_date + mean()
   #[year(data$deliverydate_estimated) == 4746]
+
+  # year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) = year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) - 2733
+
   year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746]) = 2013
     
   ## Delivery date actual has 0000/00/00, create a dummy for the missing value
