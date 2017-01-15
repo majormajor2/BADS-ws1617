@@ -97,7 +97,7 @@ treat_dates = function(dataset) {
   year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) = 2014
 
   deliverytime_estimated = data$deliverydate_estimated - data$order_date
-  mean_deliverytime_estimated = mean(deliverytime[known$deliverydate_estimated_outliers == "no"])
+  mean_deliverytime_estimated = mean(deliverytime_estimated[known$deliverydate_estimated_outliers == "no"])
   data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746] = data$order_date[year(data$deliverydate_estimated) == 4746] + round(mean_deliverytime_estimated)
 
   ## Delivery date actual has 0000/00/00, create a dummy for the missing value
