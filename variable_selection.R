@@ -1,4 +1,4 @@
-### Variable Transformation ####
+### Variable Transformation ###
 
 # why it matters
 # 1. continuous variables can be problematic (unwanted impact of outliers, deal w/ missing values, fit theoretical concepts..)
