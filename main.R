@@ -74,7 +74,7 @@ class = standardize_weight(class)
 # The function creatDataPartition returns the indices of a stratified training set with size p * size of data.
 
 # Draw a random, stratified sample including p percent of the data
-idx_train  = createDataPartition(y = known$return_customer, p = 0.2, list = FALSE) 
+idx_train  = createDataPartition(y = known$return_customer, p = 0.8, list = FALSE) 
 train_data = known[idx_train, ] # training set
 test_data  =  known[-idx_train, ] # test set (drop all observations with train indices)
 
