@@ -1,14 +1,23 @@
-### Variable Transformation ###
+### Variable Transformation ####
 
-# Tasks 
-# 1. discretize continuous variables (to avoid impact of outliers, deal w/ missing values, fit theoretical concepts..)
-# 2. reduce no of factor levels (factors with too many levels slow down calculations (they are all transformed into dummy varibales))
-# 3. projection to numeric scale according to "weight of evidence" approach
+# why it matters
+# 1. continuous variables can be problematic (unwanted impact of outliers, deal w/ missing values, fit theoretical concepts..)
+# --> discretization of continuous variables 
+# 2. huge no of factor levels slow down calculations (bc they are all transformed into dummy varibales)
+# --> reduce no of factor levels OR
+# --> use woe-apprach: supervised (i.e. based on the target variable) approach to project a categorical 
+#variable with many levels onto one numeric variable.
+
+# Packages
+if(!require("caret")) install.packages("caret"); library("caret")
+if(!require("cluster")) install.packages("cluster"); library("cluster") 
 
 
 ### 1.Binning
 # transforms continuous variables into factors
-# potential candidates: postcode_invoice, item_count, weight, & all other item counts
+# candidates: item_count, weight, & all other item counts
+# check orens kmeans clustering for number of bins
+
 
 ## set up function
 
@@ -56,8 +65,13 @@ loans$YOB_missing <- NULL
 ### 2. Reduce no of factor levels ###
 
 # Coarse classification with Chi-Squared ($\chi^2$) method
-# project the categorical variable onto a numeric scale with the weight-of-evidence approach
-# attention: problematic if some levels are very rare
+
+# Motivation: # R transforms m-levels of factor-variables into m-1 dummy variables 
+# -->  1. slows down computation 
+# -->  2. some of those dummies might not be relevant 
+# Goal: reduce no of levels by grouping & prepare for woe-projection 
+# Method: Test goodness of grouping by Chi-Squared test (H_0: Distributions are independent)
+
 
 # 0. potential candidates: email_domain, postcode_delivery, postcode_invoice, advertising_code, 
 # 1. create two possible grouping options of rare values
@@ -65,14 +79,14 @@ loans$YOB_missing <- NULL
 
 
 
-### --- code starts here --- ###
+### --- code starts here --- ### (from tutorial)
 
-```{r}
 if(!require("caret")) install.packages("caret"); library("caret") # load the package
 
-# Analyze the frequency of the levels of EMPS_A
-summary(loans)
-summary(loans$EMPS_A)
+# Analyze the frequency of the levels of email_domain, postcode_delivery, postcode_invoice, advertising_code, 
+summary(known[,c("email_domain", "postcode_delivery", "postcode_invoice", "advertising_code")])
+
+
 # B, M, N, U, W, Z are significantly rarer than the other levels
 # That may cause problems when a level does not occur in the training data
 
