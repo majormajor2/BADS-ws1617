@@ -125,30 +125,6 @@ treat_dates = function(dataset) {
 }
 
 
-
-## postcode standardisation function 
-# takes postcode and adds a leading 0 if it has fewer than 2 chars
-# input: postcode as character
-# output: standardized postcode as character
-standardize_postcode = function(postcode){
-  # convert to character to be sure
-  standardized_postcode = as.character(postcode)
-  
-  # if postcode has fewer than 2 characters, add a preceding 0 
-  if(!(is.na(standardized_postcode)))
-  {
-    if(nchar(standardized_postcode, allowNA = TRUE, keepNA = TRUE)<2)
-    {
-      # print(standardized_postcode)
-      standardized_postcode = paste("0",standardized_postcode,sep="")
-      # print(standardized_postcode)
-    }
-  }
-  
-  return(standardized_postcode)
-}
-
-
 # treats postcodes 
 # standardize postcodes to 2 digits
 # create dummy variable for missing values
@@ -162,27 +138,29 @@ treat_postcodes = function(dataset) {
   # create dummy postcode_delivery_missing
   data$postcode_delivery_missing = vector(mode="integer",length=length(data$postcode_delivery))
   
-  # replace missing values by NA
-  data$postcode_delivery[data$postcode_delivery == ""] = NA
+  # replace missing values by NA, get rid of non-numeric postal codes
+  data$postcode_invoice = sapply(data$postcode_invoice, as.character) 
+  data$postcode_delivery = sapply(data$postcode_delivery, as.character)
+  data$postcode_invoice = sapply(data$postcode_invoice, as.numeric) 
+  data$postcode_delivery = sapply(data$postcode_delivery, as.numeric)
   
-  # the following 2 lines are performed by standardize_postcode already ?? can be taken out?
-  #data$postcode_invoice = as.character(data$postcode_invoice)
-  #data$postcode_delivery = as.character(data$postcode_delivery) 
+  # check if there are NAs in postcode_invoice and replace by 1 
+  # this should only affect under 10 entries (where it is "??" or 0)
+
+  data$postcode_invoice[is.na(data$postcode_invoice)] = 1
+  data$postcode_invoice[data$postcode_invoice == 0] = 1
+  data$postcode_delivery[data$postcode_delivery == 0] = 1 
+  # no line for NA in postcode_delivery because NAs are missing entries
   
-  data$postcode_invoice = sapply(data$postcode_invoice, standardize_postcode) 
-  data$postcode_delivery = sapply(data$postcode_delivery, standardize_postcode)
-  
-  # check if there are NAs
+  # check if there are NAs in postcode_delivery
   if(NA %in% data$postcode_delivery)
   {
     # index NAs for later use in postcode_invoice
     na_index = which(is.na(data$postcode_delivery))
-    #print(na_index)
     # set true values in the dummy variable
     data$postcode_delivery_missing[na_index] = 1
     # replace missing postcodes with postcode_invoice
-    data$postcode_delivery[na_index] = data$postcode_invoice[na_index] ## ?? justification? in how many cases are they the same? 
-    ## .. how many cases are affected by the replacement? in %
+    data$postcode_delivery[na_index] = data$postcode_invoice[na_index] ## same in about 90% of cases, affects 49608 cases
   }
   
   # factorise dummy variable
