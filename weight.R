@@ -42,6 +42,8 @@ treat_weight = function(dataset)
 data = dataset  
 
 # 0. preliminary steps
+# create dummy variable for NAs
+data$weight_missing = factor(ifelse(is.na(data$weight), 1, 0), labels=c("no","yes"))
 
 ## weight statistics 
 print(paste("initial no. of zeros in weight:", sum(data$weight == 0, na.rm = TRUE))) 

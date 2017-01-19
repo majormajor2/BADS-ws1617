@@ -32,7 +32,7 @@ if(!require("hmeasure")) install.packages("hmeasure"); library("hmeasure")
 ####### Load modules ################
 
 source("helper.R")
-source("standardize_weight.R")
+source("weight.R")
 source("adaptive_boosting.R")
 
 ####### Set seed ################

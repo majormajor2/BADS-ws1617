@@ -70,10 +70,6 @@ treat_missing_values = function(dataset) {
   #data$form_of_address_missing = factor(ifelse(is.na(data$form_of_address), 1, 0), labels=c("no","yes"))
   data$form_of_address = fct_explicit_na(data$form_of_address, "Missing")
   
-  ## 3: Replace missing weight with mean weight for the same number of items
-  # see Data_Cleaning_SF.R courtesy of Stephie
-  data$weight_missing = factor(ifelse(is.na(data$weight), 1, 0), labels=c("no","yes"))
-  
   return(data)
 }
 
@@ -101,24 +97,24 @@ treat_dates = function(dataset) {
   ## Delivery date estimated has outliers, from 2010 and 4746. Create a dummy to capture both
   data$deliverydate_estimated_outliers = ifelse(year(data$deliverydate_estimated) == 2010 | year(data$deliverydate_estimated) == 4746, 1, 0)
   
-  ## Change 2010 to 2014, and 4746 to order_date + the mean of delivery time needed 
+  ## Change 2010 to 2014 (all order dates are within that year)
   year(data$deliverydate_estimated[year(data$deliverydate_estimated) == 2010]) = 2014
 
+  # replace deliverydate_estimated for year 4746 by order_date + median estimated delivery time
   deliverytime_estimated = data$deliverydate_estimated - data$order_date
-  mean_deliverytime_estimated = mean(deliverytime_estimated[known$deliverydate_estimated_outliers == "no"])
-  data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746] = data$order_date[year(data$deliverydate_estimated) == 4746] + round(mean_deliverytime_estimated)
+  median_deliverytime_estimated = median(deliverytime_estimated[data$deliverydate_estimated_outliers == 0])
+  data$deliverydate_estimated[year(data$deliverydate_estimated) == 4746] = data$order_date[year(data$deliverydate_estimated) == 4746] + round(median_deliverytime_estimated)
 
-  ## Delivery date actual has 0000/00/00, create a dummy for the missing value
+  ## Delivery date actual has 0000/00/00 which has been coerced to NA by the transformation to dates
+  ## Create a dummy for the missing value
   data$deliverydate_actual_missing = ifelse(is.na(data$deliverydate_actual), 1, 0)
-  
-  ## and adjust existing values to match delivery date estimated 
   
   ## index the NAs for delivery_date_actual
   na_index = which(is.na(data$deliverydate_actual))
   
-  ## replace them with estimated delivery date  ?? we should check that those estimated dates aren't errors/outliers themselves
-  ## ..or maybe replace them by average deviation of deliverydate actual & deliverydate estimated ?
-  data$deliverydate_actual[na_index] = data$deliverydate_estimated[na_index]
+  ## replace them with estimated delivery date (which are not outliers because they have just been treated)
+  ## + average deviation of deliverydate_actual & deliverydate_estimated
+  data$deliverydate_actual[na_index] = data$deliverydate_estimated[na_index] + median(data$deliverydate_estimated[-na_index]-data$deliverydate_actual[-na_index])
   
   ## factorise dummy variables
   data$account_creation_date_missing = factor(data$account_creation_date_missing, labels=c("no","yes"))
