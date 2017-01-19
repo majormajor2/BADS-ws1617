@@ -55,16 +55,20 @@ get_dataset = function(name) {
 treat_missing_values = function(dataset) {
   data = dataset
   
-  ## 1: NAs for advertising_code - create dummy advertising_code_missing 
+  ## 1: NAs for advertising_code
   # see Data_Cleaning_SF.R courtesy of Stephie
   data$advertising_code[data$advertising_code == ""] = NA
-  data$advertising_code_missing = factor(ifelse(is.na(data$advertising_code), 1, 0), labels=c("no","yes"))
+  # dummy variable is no longer needed as NAs are encoded as level "Missing"
+  #data$advertising_code_missing = factor(ifelse(is.na(data$advertising_code), 1, 0), labels=c("no","yes"))
   # drop empty level from factor
   data$advertising_code = droplevels(data$advertising_code)
+  data$advertising_code = fct_explicit_na(data$advertising_code, "Missing")
   
-  ## 2: NAs for form_of_address - create dummy form_of_address_missing 
+  ## 2: NAs for form_of_address
   # see Data_Cleaning_SF.R courtesy of Stephie
-  data$form_of_address_missing = factor(ifelse(is.na(data$form_of_address), 1, 0), labels=c("no","yes"))
+  # dummy variable is no longer needed as NAs are encoded as level "Missing"
+  #data$form_of_address_missing = factor(ifelse(is.na(data$form_of_address), 1, 0), labels=c("no","yes"))
+  data$form_of_address = fct_explicit_na(data$form_of_address, "Missing")
   
   ## 3: Replace missing weight with mean weight for the same number of items
   # see Data_Cleaning_SF.R courtesy of Stephie
@@ -160,7 +164,8 @@ treat_postcodes = function(dataset) {
     # set true values in the dummy variable
     data$postcode_delivery_missing[na_index] = 1
     # replace missing postcodes with postcode_invoice
-    data$postcode_delivery[na_index] = data$postcode_invoice[na_index] ## same in about 90% of cases, affects 49608 cases
+    # same in about 60% of cases, affects 49608 cases
+    data$postcode_delivery[na_index] = data$postcode_invoice[na_index] 
   }
   
   # factorise dummy variable

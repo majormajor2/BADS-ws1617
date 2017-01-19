@@ -19,6 +19,9 @@ if(!require("rpart.plot")) install.packages("rpart.plot"); library("rpart.plot")
 if(!require("matrixStats")) install.packages("matrixStats"); library("matrixStats")
 if(!require("corrplot")) install.packages("corrplot"); library("corrplot")
 
+# forcats to handle NAs as factor levels
+if(!require("forcats")) install.packages("forcats"); library("forcats")
+
 # adabag for adaptive boosting and bagging
 if(!require("adabag")) install.packages("adabag"); library("adabag") 
 
@@ -42,7 +45,7 @@ known = get_dataset("assignment_BADS_WS1617_known.csv")
 # class - data to be classified
 class = get_dataset("assignment_BADS_WS1617_class.csv")
 
-######### Treat postcodes and missing variables ##############
+######### Treat missing variables ##############
 
 known = treat_missing_values(known)
 class = treat_missing_values(class)
@@ -50,8 +53,8 @@ known = treat_postcodes(known)
 class = treat_postcodes(class)
 known = treat_dates(known)
 class = treat_dates(class)
-known = standardize_weight(known)
-class = standardize_weight(class)
+known = treat_weight(known)
+class = treat_weight(class)
 
 ####### Check plausability of data types ################
 

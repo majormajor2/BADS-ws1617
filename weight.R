@@ -37,7 +37,7 @@
 
 
 ### Code starts here ###
-standardize_weight = function(dataset)
+treat_weight = function(dataset)
 {
 data = dataset  
 
@@ -148,14 +148,6 @@ print(paste("number of NAs in weight after replacement by average:", sum(is.na(d
 summary(data$weight)
 class(data$weight)
 
-
-# 5. standardize weight
-
-source("helper.R")
-data$weight = normalize_cardinal_variables(data$weight)
-
-
-
 # feedback
 print("Range of weight:");summary(data$weight)
 
@@ -171,3 +163,15 @@ get_matching_columns = function(dataset, exclude_pattern, include_pattern)
   list_include = list_exclude[grep(include_pattern, x = list_exclude)]
   return(list_include)
 }
+
+
+
+# 5. standardize weight
+standardize_weight = function(weight)
+{
+  source("helper.R")
+  weight = normalize_cardinal_variables(weight)
+  return(weight)
+}
+
+
