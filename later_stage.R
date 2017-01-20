@@ -6,7 +6,7 @@ number_of_nodes = 6
 number_of_layers = 1
 
 linear_model = glm(return_customer ~ ., data = train_data, family = binomial(link = "logit"))
-decision_tree = rpart(return_customer ~ ., data = train_data, method = "class")
+decision_tree = rpart(return_customer ~ ., data = train_data, method = "class", cp = 0.01)
 neuralnet = nnet(return_customer~ ., data = train_data, # the data and formula to be used
                   trace = FALSE, maxit = 1000, # general options
                   size = number_of_nodes) # the number of nodes in the model

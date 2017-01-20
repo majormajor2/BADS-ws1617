@@ -24,5 +24,26 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   #classification = factor(as.numeric(prediction >= cutoff), labels=c("negative", "positive")) 
   classification_error = 1 - sum(y==classification) / length(y)
   
-  return(list(brier_score = brier_score, classification_error = classification_error))
+  
+  # Calculate Area Under the Curve with pROC
+  auc = as.numeric(roc(response = y, predictor = prediction)$auc)
+  
+  # Compute the H-measure and other scalar classification performance metrics
+  H = HMeasure(y, prediction)
+  gini = H$metrics$Gini
+  precision = H$metrics$Precision
+  TP = H$metrics$TP
+  FP = H$metrics$FP
+  TN = H$metrics$TN
+  FN = H$metrics$FN
+  
+  return(list(brier_score = brier_score, 
+              classification_error = classification_error, 
+              area_under_curve = auc,
+              gini = gini,
+              precision = precision,
+              true_positives = TP,
+              false_positives = FP,
+              true_negatives = TN,
+              false_negatives = FN))
 }
