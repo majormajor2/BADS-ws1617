@@ -1,12 +1,15 @@
 ######## Build models ###############
 
 # starting with Logistic, dt and then neural networks
+# set the number of nodes and hidden layers for the neural net
+number_of_nodes = 6
+number_of_layers = 1
 
 linear_model = glm(return_customer ~ ., data = train_data, family = binomial(link = "logit"))
 decision_tree = rpart(return_customer ~ ., data = train_data, method = "class")
-neuralnet <- nnet(return_customer~ ., data = train_data, # the data and formula to be used
+neuralnet = nnet(return_customer~ ., data = train_data, # the data and formula to be used
                   trace = FALSE, maxit = 1000, # general options
-                  size = nnet.sizes[n]) # the number of nodes in the model
+                  size = number_of_nodes) # the number of nodes in the model
 
 #Helpful functions in reading rpart output
 printcp(decision_tree)

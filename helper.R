@@ -199,10 +199,25 @@ standardize <- function(x){
   return(result)
 }
 
-# Weight of Evidence function to turn the factor variables into numbers according to their WoE
+# Weight of Evidence function to turn a factor variable into a numerical one according to their WoE
 # Input: factor column
-# Output: Numerical culumn
-weights_of_evidence <- function(dataset){
-  woe_object = woe(return_customer ~ form_of_address + title + email_domain + model + payment + delivery + postcode_invoice + postcode_delivery + advertising_code, data = dataset, zeroadj = 0.5)
+# Output: numerical column
+# !!! We use the function below instead to turn all columns into WoE at once
+replace_by_woe = function(target, colnames_to_replace, dataset)
+{
+  woe_object = woe(as.formula(paste(target, paste(colnames_to_replace, collapse="+"), sep = "~")), data = dataset, zeroadj = 0.5)
   return(woe_object$xnew)
 }
+
+# Weight of Evidence function to turn factors with more than 2 levels into numerical variables according to their WoE
+# Input: dataset
+# Output: dataset with replaced factors
+replace_factors_by_woe = function(dataset)
+{
+  target = "return_customer"
+  columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
+  woe_object = woe(as.formula(paste(target, paste(columns_to_replace, collapse="+"), sep = "~")), data = dataset, zeroadj = 0.5)
+  dataset[,columns_to_replace] = woe_object$xnew
+  return(dataset)
+}
+
