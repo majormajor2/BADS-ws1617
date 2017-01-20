@@ -25,15 +25,18 @@ if(!require("forcats")) install.packages("forcats"); library("forcats")
 # adabag for adaptive boosting and bagging
 if(!require("adabag")) install.packages("adabag"); library("adabag") 
 
+# nnet for Artificial Neural Networks
+if(!require("nnet")) install.packages("nnet"); library("nnet")
+
 # hmeasure for Area Under the Curve (alternatives are pROC and ROCR)
 # hmeasure package requires all predictions to be available in one data frame
 if(!require("hmeasure")) install.packages("hmeasure"); library("hmeasure")
+if(!require("pROC")) install.packages("pROC"); library("pROC")
 
 ####### Load modules ################
 
 source("helper.R")
 source("weight.R")
-source("adaptive_boosting.R")
 
 ####### Set seed ################
 
