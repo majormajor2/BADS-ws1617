@@ -1,3 +1,21 @@
+######## Try adaptive boosting ###############
+
+adaboost = adaptive_boosting(train_data)
+summary(adaboost)
+adaboost$trees
+adaboost$weights
+
+errorevol(adaboost,train_data)
+adaboost_prediction = predict(adaboost,test_data)
+
+# list the variables by their importance
+adaboost_importance = sort(adaboost$importance, decreasing = TRUE)
+adaboost_importance[adaboost_importance > 0]
+
+# print a variable importance plot
+print_importance_plot(adaboost_importance)
+
+
 ###### Calculation #################
 
 # calculates an adaptive boosting (adaboost) model
