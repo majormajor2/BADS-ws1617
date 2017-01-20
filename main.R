@@ -68,6 +68,12 @@ class = treat_weight(class)
 #lapply(known,summary)
 #lapply(class,summary)
 
+### Weight of Evidence
+# Will create a new dataframe consisting of all the variables of known but replaces the factor
+# variables into numerical variables according to the weight of evidence
+known_woe <- known
+known_woe [ ,c("form_of_address", "title", "email_domain", "model", "payment", "delivery", "postcode_invoice", "postcode_delivery", "advertising_code")] <- weights_of_evidence(known_woe)
+
 ######### Partition the data ##############
 
 # Split data set into 80% training and 20% test data
@@ -91,5 +97,3 @@ test_data  =  known[-idx_train, ] # test set (drop all observations with train i
 
 ### Plotting
 par(mar=c(1,1,1,1)) # to make sure the plot works on a small screen
-
-

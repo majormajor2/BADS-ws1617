@@ -198,3 +198,11 @@ standardize <- function(x){
   result = (x - mu)/std
   return(result)
 }
+
+# Weight of Evidence function to turn the factor variables into numbers according to their WoE
+# Input: factor column
+# Output: Numerical culumn
+weights_of_evidence <- function(dataset){
+  woe_object = woe(return_customer ~ form_of_address + title + email_domain + model + payment + delivery + postcode_invoice + postcode_delivery + advertising_code, data = dataset, zeroadj = 0.5)
+  return(woe_object$xnew)
+}
