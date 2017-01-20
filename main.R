@@ -86,4 +86,7 @@ test_data  =  known[-idx_train, ] # test set (drop all observations with train i
 # validation_data = train_data[idx_validation, ]
 # train_data = train_data[-idx_validation, ]
 
+### Plotting
+par(mar=c(1,1,1,1)) # to make sure the plot works on a small screen
+
 
