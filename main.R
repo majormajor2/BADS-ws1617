@@ -74,7 +74,7 @@ class = treat_weight(class)
 ###### Weight of Evidence ######
 # Will create a new dataframe consisting of all the variables of known but replaces the factor
 # variables into numerical variables according to the weight of evidence
-known_woe = replace_factors_by_woe(known)
+woe_data = replace_factors_by_woe(known)
 
 ######### Partition the data ##############
 

@@ -220,4 +220,3 @@ replace_factors_by_woe = function(dataset)
   dataset[,columns_to_replace] = woe_object$xnew
   return(dataset)
 }
-
