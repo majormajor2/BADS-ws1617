@@ -22,6 +22,9 @@ if(!require("corrplot")) install.packages("corrplot"); library("corrplot")
 # forcats to handle NAs as factor levels
 if(!require("forcats")) install.packages("forcats"); library("forcats")
 
+# klaR to find weights of evidence (WoE)
+if(!require("klaR")) install.packages("klaR"); library("klaR")
+
 # adabag for adaptive boosting and bagging
 if(!require("adabag")) install.packages("adabag"); library("adabag") 
 
@@ -71,8 +74,10 @@ class = treat_weight(class)
 ### Weight of Evidence
 # Will create a new dataframe consisting of all the variables of known but replaces the factor
 # variables into numerical variables according to the weight of evidence
-known_woe <- known
-known_woe [ ,c("form_of_address", "title", "email_domain", "model", "payment", "delivery", "postcode_invoice", "postcode_delivery", "advertising_code")] <- weights_of_evidence(known_woe)
+known_woe = known
+known_woe [ ,c("form_of_address", "title", "email_domain", "model", "payment", "delivery", "postcode_invoice", "postcode_delivery", "advertising_code")] = weights_of_evidence(known_woe)
+
+revised_woe = replace_factors_by_woe(known)
 
 ######### Partition the data ##############
 
