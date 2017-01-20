@@ -198,3 +198,8 @@ plot(k.settings, bigcluster.model, xlab = "k", ylab="Total within-cluster SS",
 main = "Elbow curve for k selection", col="red", type = "b")
 dev.off()
 
+# We see that the elbow is not very sharp but 25 clusters seem to be a good number.
+# We can see our clusters in:
+bigclu.sol <- kmeans(known.outlierscheck.stand[,c(-1,-2)], centers=25, iter.max = 50, nstart = 100)
+print(bigclu.sol$cluster)
+
