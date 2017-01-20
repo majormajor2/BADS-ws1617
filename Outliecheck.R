@@ -182,4 +182,19 @@ for (i in 1:4){
   dev.off()
   }
 
+# We did not get much. We see that the correlations are not impressive.
+# We will not give up. Now we will try to cluster all the columns together.
+k.settings <- 1:50
+bigcluster.model <- vector(mode = "list", length = length(k.settings))
+for (i in 1:length(k.settings)) {
+  bigclu.sol <- kmeans(known.outlierscheck.stand[,c(-1,-2)], centers=k.settings[i], iter.max = 50, nstart = 100)
+  obj.values[i] <- bigclu.sol$tot.withinss
+  bigcluster.model[i] <- obj.values[i]
+}
+# create elbow curve and save it to a file
+dev.off()
+pdf(file = paste("elbow big cluster.pdf"))
+plot(k.settings, bigcluster.model, xlab = "k", ylab="Total within-cluster SS",
+main = "Elbow curve for k selection", col="red", type = "b")
+dev.off()
 
