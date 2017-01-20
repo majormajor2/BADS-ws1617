@@ -1,4 +1,6 @@
+
 ###################### DISREGARD - NOT REQUIRED SINCE WE'RE NOW USING MAIN.R
+-------------------------------------------------------------------------------
 library(lubridate)
 source("helper.R")
 known <- get_dataset("assignment_BADS_WS1617_known.csv")
@@ -25,7 +27,7 @@ summary(predict(model_xgb_pca, test))
 summary(test$return_customer)
 
 ############################ END OF CODE TO BE DISREGARDED
-
+--------------------------------------------------------------------------------
 
 
 ####### CODE STARTS HERE  #########
@@ -34,6 +36,7 @@ summary(test$return_customer)
 ### Load packages and set up the basic cleaned dataset
 
 if(!require("pROC")) install.packages("pROC"); library("pROC") # load the package
+if(!require("randomForest")) install.packages("randomForest")
 source("main.R")
 
 
@@ -63,7 +66,8 @@ xgb.parms <- expand.grid(nrounds = c(20, 40, 60, 80),
 xgb <- train(return_customer~., data = train_data,  
                  method = "xgbTree",
                  tuneGrid = xgb.parms,
-                 metric = "ROC", trControl = model.control)
+                 metric = "ROC", 
+                 trControl = model.control)
 
 ## 2.2 xgb with PCA
 xgb_PCA <- train(return_customer~., data = train_data,  
@@ -93,3 +97,54 @@ tau <- 0.05  #confused about how we pick the tau, decreasing it imrpoves the acc
 yhat.xgb.class <- factor(xgb.pred> tau, labels = c("yes", "no"))
 confusionMatrix(data = yhat.xgb.class, reference = test_data$return_customer, positive = "yes")
 
+
+
+------------------------------------------------------------------------------------------------
+############# RANDOM FOREST STARTS HERE
+
+## Specify the number of folds
+# Remember that each candidate model will be constructed on each fold
+k <- 3
+# Set a seed for the pseudo-random number generator
+set.seed(123)
+
+### Initialize the caret framework
+# This part specifies how we want to compare the models
+# It includes the validation procedure, e.g. cross-validation
+# and the error metric that is return (summaryFunction)
+# Note: You can look into the summaryFunctions to see what
+# happens and even write your own
+# Try: print(twoClassSummary)
+
+model.control <- trainControl(
+  method = "cv", # 'cv' for cross validation
+  number = k, # number of folds in cross validation
+  classProbs = TRUE, # Return class probabilities
+  summaryFunction = twoClassSummary, # twoClassSummary returns AUC
+  allowParallel = TRUE # Enable parallelization if available
+)
+
+# Define a search grid of values to test for a sequence of randomly
+# sampled variables as candidates at each split
+rf.parms <- expand.grid(mtry = 1:10)
+
+# Train random forest rf with a 5-fold cross validation 
+rf.caret <- train(return_customer~., data = train_data,  
+                  method = "rf", ntree = 500, tuneGrid = rf.parms, 
+                  metric = "ROC", trControl = model.control)
+
+# Compare the performance of the model candidates
+# on each cross-validation fold
+rf.caret$results
+plot(rf.caret)
+
+# Predict the outcomes of the test set with the predict function, 
+# i.e. the probability of someone being a bad risk
+yhat.rf.caret   <- predict(rf.caret, newdata = test_data, type = "prob")[,2]
+
+# As done in previous exercises, the AUC is computed in order to evaluate our model performance. 
+if(!require("pROC")) install.packages("pROC"); library("pROC") # load the package
+auc.caret <- auc(test_data$return_customer, yhat.rf.caret) 
+auc.caret
+
+-------------------------------------------------------------------------------------------------
