@@ -9,6 +9,7 @@ known <- treat_dates(known)
 known <- treat_postcodes(known)
 known <- standardize_weight(known)
 
+
 ## Partition data, excluding columns with NA
 
 # which columns have NAs
@@ -70,6 +71,11 @@ xgb <- train(return_customer~., data = train_data,
                  trControl = model.control)
 
 ## 2.2 xgb with PCA
+if(!require("woe")) install.packages("woe")
+library(woe)
+train_data_woe <- replace_factors_by_woe(known) #doesn't work
+
+
 xgb_PCA <- train(return_customer~., data = train_data,  
              method = "xgbTree",
              tuneGrid = xgb.parms,
@@ -84,6 +90,7 @@ xgb.pca.pred <- predict(xgb_PCA, newdata = test_data, type = "prob")[,2]
 ### 4. MODEL EVALUATION: 
 ## 4.1 Estimate performance on unseen data based on test set
 auc(test_data$return_customer, xgb.pred)
+# Area under the curve: 0.672
 auc(test_data$return_customer, xgb.pca.pred)
 
 y.validation <- as.numeric(test_data$return_customer)-1
@@ -147,4 +154,5 @@ if(!require("pROC")) install.packages("pROC"); library("pROC") # load the packag
 auc.caret <- auc(test_data$return_customer, yhat.rf.caret) 
 auc.caret
 
+# Area under the curve: 0.645
 -------------------------------------------------------------------------------------------------
