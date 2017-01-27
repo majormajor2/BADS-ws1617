@@ -35,7 +35,8 @@ summary(test$return_customer)
 
 
 ### Load packages and set up the basic cleaned dataset
-
+if(!require("klaR")) install.packages("klaR")
+library(klaR)
 if(!require("pROC")) install.packages("pROC"); library("pROC") # load the package
 if(!require("randomForest")) install.packages("randomForest")
 source("main.R")
@@ -62,8 +63,14 @@ xgb.parms <- expand.grid(nrounds = c(20, 40, 60, 80),
                          min_child_weight = 1,
                          subsample = 0.8)
 
-test_data_woe <- replace_factors_by_woe(test_data) 
+### 1.2 PREPROCESSING [Optional step]
+# Replace factors (more than 2) with WOE
 train_data_woe <- replace_factors_by_woe(train_data)
+# Predict factor levels in the test dataset
+test_data_woe <- predict(woe_object, newdata = test_data, replace = TRUE)
+# Replace column names so they are the same in the test and train datasets respectively
+colnames(test_data_woe) [35:41] <- c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
+
 
 ### 2. MODELS
 ## 2.1 xgb without preprocessing
@@ -80,8 +87,6 @@ xgb_woe <- train(return_customer~., data = train_data_woe,
                 trControl = model.control)
 
 ## 2.2 xgb with woe + PCA
-if(!require("klaR")) install.packages("klaR")
-library(klaR)
 
 xgb_PCA <- train(return_customer~., data = train_data_woe,  
              method = "xgbTree",
@@ -102,9 +107,9 @@ xgb.pca.pred <- predict(xgb_PCA, newdata = test_data_woe, type = "prob")[,2]
 auc(test_data$return_customer, xgb.pred)
 # Area under the curve: 0.672
 auc(test_data_woe$return_customer, xgb.pred.woe)
-# Area under the curve: 0.6857
+# Area under the curve: 0.667
 auc(test_data$return_customer, xgb.pca.pred)
-# Area under the curve: 0.668
+# Area under the curve: 0.651
 
 
 xgb.pred.woe[1:20]
@@ -125,11 +130,10 @@ confusionMatrix(data = yhat.xgb.class, reference = test_data$return_customer, po
 ### 5. SCORE
 predictive_performance(test_data$return_customer, xgb.pred, cutoff = 0.19)
 #  maxmizes the score for xgb + woe i.e. 
+predictive_performance(test_data_woe$return_customer, xgb.pred.woe, cutoff = 0.231)
+# 0.231 maxmizes the score for xgb + woe i.e. 0.846
 predictive_performance(test_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
 # 0.19 maxmizes the score for xgb + woe i.e. 0.835
-predictive_performance(test_data_woe$return_customer, xgb.pred.woe, cutoff = 0.2216)
-# 0.2216 maxmizes the score for xgb + woe i.e. 0.896
-
 
 ------------------------------------------------------------------------------------------------
 ############# RANDOM FOREST STARTS HERE
