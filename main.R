@@ -30,6 +30,13 @@ if(!require("adabag")) install.packages("adabag"); library("adabag")
 
 # nnet for Artificial Neural Networks
 if(!require("nnet")) install.packages("nnet"); library("nnet")
+# darch for Deep Architectures and Restricted Boltzmann Machines
+if(!require("darch")) install.packages("darch"); library("darch")
+
+# Deep Networks with mxnet - do not work at the moment due to broken dependency (27Jan17)
+#if(!require("drat")) install.packages("drat", repos="https://cran.rstudio.com")
+#drat:::addRepo("dmlc")
+#if(!require("mxnet")) install.packages("mxnet"); library("mxnet")
 
 # hmeasure for Area Under the Curve (alternatives are pROC and ROCR)
 # hmeasure package requires all predictions to be available in one data frame
@@ -40,6 +47,7 @@ if(!require("pROC")) install.packages("pROC"); library("pROC")
 
 source("helper.R")
 source("weight.R")
+source("performance_measures.R")
 
 ####### Set seed ################
 

@@ -29,9 +29,9 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   auc = as.numeric(roc(response = y, predictor = prediction)$auc)
   
   # print confusion matrix
-  class.counts <- misclassCounts(classification, y); class.counts$conf.matrix
+  # class_counts = misclassCounts(classification, y); class_counts$conf.matrix
   # print misclassification-based statistic - e.g. error rate
-  print(class.counts$metrics, digits = 3)
+  # print(class_counts$metrics, digits = 3)
   
   # Compute the H-measure and other scalar classification performance metrics
   H = HMeasure(y, prediction, threshold = cutoff)
@@ -42,8 +42,8 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   TN = H$metrics$TN
   FN = H$metrics$FN
   
-  # Compute Score
-  score <- (TN*3 + FN*(-10))/(TP+FP+TN+FN)
+  # Compute Average Return per Customer
+  score = (3*TN - 10*FN)/(TP+FP+TN+FN)
   
   # Calculate ROC
   plotROC(results = H)
@@ -57,5 +57,5 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
               false_positives = FP,
               true_negatives = TN,
               false_negatives = FN,
-              Score = score))
+              score = score))
 }

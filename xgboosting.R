@@ -106,7 +106,7 @@ auc(test_data_woe$return_customer, xgb.pred.woe)
 auc(test_data$return_customer, xgb.pca.pred)
 # Area under the curve: 0.668
 
-predictive_performance(test_data_woe$return_customer, xgb.pred.woe, cutoff = 0.6)
+
 xgb.pred.woe[1:20]
 summary(xgb.pred.woe)
 
@@ -121,6 +121,14 @@ tau <- 0.05  #confused about how we pick the tau, decreasing it imrpoves the acc
 yhat.xgb.class <- factor(xgb.pred> tau, labels = c("yes", "no"))
 confusionMatrix(data = yhat.xgb.class, reference = test_data$return_customer, positive = "yes")
 
+
+### 5. SCORE
+predictive_performance(test_data$return_customer, xgb.pred, cutoff = 0.19)
+#  maxmizes the score for xgb + woe i.e. 
+predictive_performance(test_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
+# 0.19 maxmizes the score for xgb + woe i.e. 0.835
+predictive_performance(test_data_woe$return_customer, xgb.pred.woe, cutoff = 0.2216)
+# 0.2216 maxmizes the score for xgb + woe i.e. 0.896
 
 
 ------------------------------------------------------------------------------------------------
@@ -163,8 +171,8 @@ rf.caret <- train(return_customer~.,
                   metric = "ROC", 
                   trControl = model.control)
 # 2.2 RF with woe
-rf.caret <- train(return_customer~., 
-                  data = train_data,  
+rf.caret.woe <- train(return_customer~., 
+                  data = train_data_woe,  
                   method = "rf", 
                   ntree = 500, 
                   tuneGrid = rf.parms, 
@@ -185,15 +193,18 @@ plot(rf.caret)
 # i.e. the probability of someone being a bad risk
 yhat.rf.caret   <- predict(rf.caret, newdata = test_data, type = "prob")[,2]
 
-yhat.rf.caret.woe   <- predict(rf.caret, newdata = test_data_woe, type = "prob")[,2]
+yhat.rf.caret.woe   <- predict(rf.caret.woe, newdata = test_data_woe, type = "prob")[,2]
 
 
-4. MODEL EVALUATION
+### 4. MODEL EVALUATION
 # As done in previous exercises, the AUC is computed in order to evaluate our model performance. 
 if(!require("pROC")) install.packages("pROC"); library("pROC") # load the package
 auc.caret <- auc(test_data$return_customer, yhat.rf.caret) 
-auc.caret
 # Area under the curve: 0.645
+auc.caret.woe <- auc(test_data_woe$return_customer, yhat.rf.caret.woe) 
+# Area under the curve: 0.6503
 
+### 5. SCORE
+predictive_performance(test_data_woe$return_customer, yhat.rf.caret.woe, cutoff = 0.227)
+# 0.227 maxmizes the score for xgb + woe i.e. 0.7803
 
--------------------------------------------------------------------------------------------------
