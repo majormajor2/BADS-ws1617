@@ -46,7 +46,7 @@ source("main.R")
 ## the options for model selection
 model.control<- trainControl(
   method = "cv", # 'cv' for cross validation
-  number = 5, # number of folds in cross validation
+  number = 15, # number of folds in cross validation
   classProbs = TRUE,
   summaryFunction = twoClassSummary,
   allowParallel = TRUE, # Enable parallelization if available
@@ -89,11 +89,11 @@ xgb_woe <- train(return_customer~., data = train_data_woe,
 ## 2.2 xgb with woe + PCA
 
 xgb_PCA <- train(return_customer~., data = train_data_woe,  
-             method = "xgbTree",
-             preProcess = "pca",
-             tuneGrid = xgb.parms,
-             metric = "ROC", 
-             trControl = model.control)
+                method = "xgbTree",
+                preProcess = "pca",
+                tuneGrid = xgb.parms,
+                metric = "ROC", 
+                trControl = model.control)
 
 
 ### 3. PREDICTION
@@ -134,6 +134,48 @@ predictive_performance(test_data_woe$return_customer, xgb.pred.woe, cutoff = 0.2
 # 0.231 maxmizes the score for xgb + woe i.e. 0.846
 predictive_performance(test_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
 # 0.19 maxmizes the score for xgb + woe i.e. 0.835
+
+
+
+### 6. LOSS FUNCTION FOR XGBOOST
+library(xgboost)
+install.packages("readr")
+library(readr)
+library(stringr)
+library(car)
+install.packages("MatrixModels")
+library(Matrix)
+train <- sparse.model.matrix(return_customer ~ .-1, data = train_data_woe)
+test <- sparse.model.matrix(return_customer ~ .-1, data = test_data_woe)
+
+dtrain <- xgb.DMatrix(data = train, label = as.numeric(train_data_woe$return_customer)-1)
+dtest <- xgb.DMatrix(data = test, label = as.numeric(test_data_woe$return_customer)-1)
+
+
+watchlist <- list(eval = dtest, train = dtrain)
+
+
+bst <- xgb.train(data=dtrain, max.depth=2, eta=1, nthread = 2, nround=2, watchlist=watchlist, objective = "binary:logistic")
+bst <- xgb.train(data=dtrain, max.depth=2, eta=1, nthread = 2, nround=2, watchlist=watchlist, eval.metric = "error", eval.metric = "logloss", objective = "binary:logistic")
+bst <- xgb.train(data=dtrain, booster = "gblinear", max.depth=2, nthread = 2, nround=2, watchlist=watchlist, eval.metric = "error", eval.metric = "logloss", objective = "binary:logistic")
+
+importance_matrix <- xgb.importance(model = bst)
+print(importance_matrix)
+xgb.plot.importance(importance_matrix = importance_matrix)
+
+
+logregobj <- function(preds, train_data_woe) {
+  labels <- getinfo(train_data_woe, "label")
+  preds <- 1/(1 + exp(-preds))
+  grad <- preds - labels
+  hess <- preds * (1 - preds)
+  return(list(grad = grad, hess = hess))
+}
+
+
+
+
+
 
 ------------------------------------------------------------------------------------------------
 ############# RANDOM FOREST STARTS HERE
