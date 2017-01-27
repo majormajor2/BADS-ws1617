@@ -212,6 +212,16 @@ replace_by_woe = function(target, colnames_to_replace, dataset)
 # Weight of Evidence function to turn factors with more than 2 levels into numerical variables according to their WoE
 # Input: dataset
 # Output: dataset with replaced factors
+replace_factors_by_woe() = function(dataset)
+{
+  target = "return_customer"
+  columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
+  woe_object = woe(as.formula(paste(target, paste(columns_to_replace, collapse="+"), sep = "~")), data = dataset, zeroadj = 0.5)
+  dataset[, columns_to_replace] <- woe_object$xnew
+  return(woe_object)
+}
+
+# calculate woe
 calculate_woe = function(dataset_train)
 {
   target = "return_customer"
@@ -220,9 +230,13 @@ calculate_woe = function(dataset_train)
   return(woe_object)
 }
 
-# replace factors by woe in test dataset
+# replace factors by woe in test dataset (names have prefix woe.)
 test_data_woe <- predict(woe_object, newdata = test_data, replace = TRUE)
+  
 
+ 
+
+## this is not working yet
 # replace factory by woe in class dataset
 replace_factors_by_woe = function(dataset_train = train_data, dataset_test = test_data, dataset_class = class){
   # specify target & columns to replace by woe
@@ -235,8 +249,6 @@ replace_factors_by_woe = function(dataset_train = train_data, dataset_test = tes
   # replace values in test_data by woe-values
   test_data_woe <- predict(woe_object, newdata = test_data, replace = TRUE)
   
-  
-  ## this is not working yet
   # replacement in dataset_test 
   for i in 1:length(columns_to_replace)){
     found<-train_data[,predictors[i]] %in% modelFactors[modelFactors$factors==predictors[i],]$factorLevels
