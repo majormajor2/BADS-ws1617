@@ -231,8 +231,18 @@ calculate_woe = function(dataset_train)
 }
 
 # replace factors by woe in test dataset (names have prefix woe.)
-test_data_woe <- predict(woe_object, newdata = test_data, replace = TRUE)
-  
+test_data_woe[,columns_to_replace] <- predict(woe_object, newdata = test_data, replace = TRUE)
+# change names
+test_data_woe$form_of_address <- test_data_woe$woe.form_of_address
+test_data_woe$email_domain <- test_data_woe$woe.email_domain
+test_data_woe$model <- test_data_woe$woe.model
+test_data_woe$payment <- test_data_woe$woe.payment
+test_data_woe$postcode_invoice <- test_data_woe$woe.postcode_invoice
+test_data_woe$postcode_delivery <- test_data_woe$woe.postcode_delivery
+test_data_woe$advertising_code <- test_data_woe$woe.advertising_code
+col_del <- c("woe.form_of_address", "woe.email_domain", "woe.model", "woe.payment", "woe.postcode_invoice", "woe.postcode_delivery","woe.advertising_code")
+test_data_woe[,col_del] <- NULL
+
 
  
 
