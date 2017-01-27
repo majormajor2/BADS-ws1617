@@ -29,7 +29,7 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   auc = as.numeric(roc(response = y, predictor = prediction)$auc)
   
   # print confusion matrix
-  class.counts <- misclassCounts(prediction, y); class.counts$conf.matrix
+  class.counts <- misclassCounts(classification, y); class.counts$conf.matrix
   # print misclassification-based statistic - e.g. error rate
   print(class.counts$metrics, digits = 3)
   
