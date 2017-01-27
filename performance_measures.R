@@ -29,9 +29,9 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   auc = as.numeric(roc(response = y, predictor = prediction)$auc)
   
   # print confusion matrix
-  class.counts <- misclassCounts(classification, y); class.counts$conf.matrix
+  # class_counts = misclassCounts(classification, y); class_counts$conf.matrix
   # print misclassification-based statistic - e.g. error rate
-  print(class.counts$metrics, digits = 3)
+  # print(class_counts$metrics, digits = 3)
   
   # Compute the H-measure and other scalar classification performance metrics
   H = HMeasure(y, prediction, threshold = cutoff)

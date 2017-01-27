@@ -1,5 +1,5 @@
 ######## Standardize  ###############
-multilevel_factors = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
+multilevel_factors = c("return_customer", "form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
 print("Performing normalization on all parameters that are not multilevel factors:")
 for(column in colnames(known))
 {
@@ -39,7 +39,7 @@ summary(decision_tree)
 
 
 #creating estimates for the two models + benchmart, creating a list with all of them
-prediction_lr = predict(linear_model, newdata = test_data, type = "response")
+prediction_lr = predict(linear_model, newdata = test_data[grep(c("AS|BH|BK|BN|BU"),test_data$advertising_code, invert = TRUE),], type = "response")
 prediction_dt = predict(decision_tree, newdata = test_data, type = "prob")[,2]
 prediction_nn = as.numeric(predict(neuralnet, newdata = test_data, type = "raw"))
 
