@@ -38,7 +38,7 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   FN = H$metrics$FN
   
   # Compute Score
-  score <- TN*3 + FN*(-10)
+  score <- (TN*3 + FN*(-10))/(TP+FP+TN+FN)
   
   # Calculate ROC
   plotROC(results = H)
