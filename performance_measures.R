@@ -42,8 +42,8 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   TN = H$metrics$TN
   FN = H$metrics$FN
   
-  # Compute Score
-  score <- (TN*3 + FN*(-10))/(TP+FP+TN+FN)
+  # Compute Average Return per Customer
+  score = (3*TN - 10*FN)/(TP+FP+TN+FN)
   
   # Calculate ROC
   plotROC(results = H)
@@ -57,5 +57,5 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
               false_positives = FP,
               true_negatives = TN,
               false_negatives = FN,
-              Score = score))
+              score = score))
 }

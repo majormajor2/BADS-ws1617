@@ -6,10 +6,11 @@ number_of_nodes = 6
 number_of_layers = 1
 
 linear_model = glm(return_customer ~ ., data = train_data, family = binomial(link = "logit"))
-decision_tree = rpart(return_customer ~ ., data = train_data, method = "class", cp = 0.01)
+decision_tree = rpart(return_customer ~ ., data = train_data, method = "class", cp = 0.0001)
 neuralnet = nnet(return_customer~ ., data = train_data, # the data and formula to be used
                   trace = FALSE, maxit = 1000, # general options
-                  size = number_of_nodes) # the number of nodes in the model
+                  size = 20, # the number of nodes in the model
+                  MaxNWts = 10000) 
 
 #Helpful functions in reading rpart output
 printcp(decision_tree)
@@ -20,7 +21,7 @@ summary(decision_tree)
 #creating estimates for the two models + benchmart, creating a list with all of them
 prediction_lr = predict(linear_model, newdata = test_data, type = "response")
 prediction_dt = predict(decision_tree, newdata = test_data, type = "prob")[,2]
-prediction_nn = predict(neuralnet, newdata = test_data, type = "raw")
+prediction_nn = as.numeric(predict(neuralnet, newdata = test_data, type = "raw"))
 
 ######## Check predictive performance ###############
 
