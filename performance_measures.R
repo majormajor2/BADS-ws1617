@@ -37,6 +37,17 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   TN = H$metrics$TN
   FN = H$metrics$FN
   
+  # Compute Score
+  score <- TN*3 + FN*(-10)
+  
+  # Calculate ROC
+  plotROC(results = H)
+ 
+  # print confusion matrix 
+  class.counts <- misclassCounts(prediction, y); class.counts$conf.matrix
+  # print misclassification-based statistic - e.g. error rate
+  print(lass.counts$metrics, digits = 3)
+  
   return(list(brier_score = brier_score, 
               classification_error = classification_error, 
               area_under_curve = auc,
@@ -45,5 +56,6 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
               true_positives = TP,
               false_positives = FP,
               true_negatives = TN,
-              false_negatives = FN))
+              false_negatives = FN
+              Score = score))
 }
