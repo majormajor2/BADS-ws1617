@@ -28,6 +28,11 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   # Calculate Area Under the Curve with pROC
   auc = as.numeric(roc(response = y, predictor = prediction)$auc)
   
+  # print confusion matrix
+  class.counts <- misclassCounts(prediction, y); class.counts$conf.matrix
+  # print misclassification-based statistic - e.g. error rate
+  print(lass.counts$metrics, digits = 3)
+  
   # Compute the H-measure and other scalar classification performance metrics
   H = HMeasure(y, prediction)
   gini = H$metrics$Gini
@@ -42,11 +47,6 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   
   # Calculate ROC
   plotROC(results = H)
- 
-  # print confusion matrix 
-  class.counts <- misclassCounts(prediction, y); class.counts$conf.matrix
-  # print misclassification-based statistic - e.g. error rate
-  print(lass.counts$metrics, digits = 3)
   
   return(list(brier_score = brier_score, 
               classification_error = classification_error, 
