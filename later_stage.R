@@ -1,25 +1,3 @@
-############# Test  ################
-
-# function to check / replace new levels in factor variables 
-# input: known and class dataset
-check_new_levels = function(known_data, class_data, target = "return_customer")
-for(column in colnames(known_data)) # loops over all columns
-{
-  if(is.factor(known_data[,column]) && !column == target) # checks if the column is a factor and if it is not the target variable
-  {
-    if(length(setdiff(levels(known_data[,column]),levels(class_data[,column]))) != 0) # checks if there are new factor levels
-    {
-      for(level in setdiff(levels(known_data[,column]),levels(class_data[,column]))) # loops through new factor levels
-      {
-        print(level)
-        # this replaces values in the class dataset in the factor column 
-        # where the level equals one of the levels not contained in the known dataset
-        # class_data[class_data[,column] == level,column] = 0
-      }
-    }
-  }
-}
-
 ######## Standardize  ###############
 multilevel_factors = c("return_customer", "form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
 print("Performing normalization on all parameters that are not multilevel factors:")
@@ -32,12 +10,16 @@ for(column in colnames(known))
     known[column] = normalize_cardinal_variables(known[column])
   }
 }
-#known[columns_to_replace] = sapply(known[-columns_to_replace], as.numeric)
-#known[columns_to_replace] = sapply(known[-columns_to_replace], normalize_cardinal_variables)
 
-idx_train  = createDataPartition(y = known$return_customer, p = 0.5, list = FALSE) 
+idx_train  = createDataPartition(y = known$return_customer, p = 0.8, list = FALSE)
 train_data = known[idx_train, ] # training set
 test_data  =  known[-idx_train, ] # test set (drop all observations with train indices)
+
+idx_validation = createDataPartition(y = train_data$return_customer, p = 0.25, list = FALSE)
+validation_data = train_data[idx_validation, ]
+train_data = train_data[-idx_validation, ]
+
+
 
 ######## Build models ###############
 
@@ -52,7 +34,15 @@ neuralnet = nnet(return_customer~ ., data = train_data, # the data and formula t
                   trace = FALSE, maxit = 1000, # general options
                   size = number_of_nodes, # the number of nodes in the model
                   MaxNWts = 10000) 
-deep_arch = darch(return_customer~ ., data = train_data, bp.learnRate = 0.5)
+deep_arch = darch(return_customer~ ., data = train_data, # darch = deep_arch,
+                  layers = c(292, 12, 6, 2),
+                  bp.learnRate = 1, bp.learnRateScale = 0.9, # Backpropagation Learn Rate
+                  darch.fineTuneFunction = rpropagation, 
+                  darch.numEpochs = 10,
+                  #dataSetValid = validation_data,
+                  darch.unitFunction = softmaxUnit,
+                  darch.weightDecay = 0.01
+                  )
 
 #Helpful functions in reading rpart output
 printcp(decision_tree)
@@ -64,6 +54,7 @@ summary(decision_tree)
 prediction_lr = predict(linear_model, newdata = test_data[grep(c("AS|BH|BK|BN|BU"),test_data$advertising_code, invert = TRUE),], type = "response")
 prediction_dt = predict(decision_tree, newdata = test_data, type = "prob")[,2]
 prediction_nn = as.numeric(predict(neuralnet, newdata = test_data, type = "raw"))
+prediction_dn = predict(deep_arch, newdata = test_data)[,2]
 
 ######## Check predictive performance ###############
 
