@@ -56,6 +56,6 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
               true_positives = TP,
               false_positives = FP,
               true_negatives = TN,
-              false_negatives = FN
+              false_negatives = FN,
               Score = score))
 }
