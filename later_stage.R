@@ -1,3 +1,25 @@
+############# Test  ################
+
+# function to check / replace new levels in factor variables 
+# input: known and class dataset
+check_new_levels = function(known_data, class_data, target = "return_customer")
+for(column in colnames(known_data)) # loops over all columns
+{
+  if(is.factor(known_data[,column]) && !column == target) # checks if the column is a factor and if it is not the target variable
+  {
+    if(length(setdiff(levels(known_data[,column]),levels(class_data[,column]))) != 0) # checks if there are new factor levels
+    {
+      for(level in setdiff(levels(known_data[,column]),levels(class_data[,column]))) # loops through new factor levels
+      {
+        print(level)
+        # this replaces values in the class dataset in the factor column 
+        # where the level equals one of the levels not contained in the known dataset
+        # class_data[class_data[,column] == level,column] = 0
+      }
+    }
+  }
+}
+
 ######## Standardize  ###############
 multilevel_factors = c("return_customer", "form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
 print("Performing normalization on all parameters that are not multilevel factors:")
