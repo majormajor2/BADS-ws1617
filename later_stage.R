@@ -1,3 +1,11 @@
+############ TEST ################
+# Matrix of histograms
+if(!require("Hmisc")){install.packages("Hmisc")};library("Hmisc")
+hist.data.frame(train_data)
+
+##### Drop Correlated Variables #####
+
+
 ######## Standardize  ###############
 multilevel_factors = c("return_customer", "form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
 print("Performing normalization on all parameters that are not multilevel factors:")
@@ -35,13 +43,13 @@ neuralnet = nnet(return_customer~ ., data = train_data, # the data and formula t
                   size = number_of_nodes, # the number of nodes in the model
                   MaxNWts = 10000) 
 deep_arch = darch(return_customer~ ., data = train_data, # darch = deep_arch,
-                  layers = c(292, 12, 6, 2),
-                  bp.learnRate = 1, bp.learnRateScale = 0.9, # Backpropagation Learn Rate
-                  darch.fineTuneFunction = rpropagation, 
-                  darch.numEpochs = 10,
-                  #dataSetValid = validation_data,
-                  darch.unitFunction = softmaxUnit,
-                  darch.weightDecay = 0.01
+                  layers = c(292, 6, 3, 2),
+                  bp.learnRate = 1, bp.learnRateScale = 0.1, # Backpropagation Learn Rate
+                  #darch.fineTuneFunction = rpropagation, 
+                  darch.numEpochs = 5,
+                  #dataSetValid = validation_data, # gives error
+                  # darch.unitFunction = softmaxUnit,
+                  darch.weightDecay = 0.05
                   )
 
 #Helpful functions in reading rpart output
@@ -50,7 +58,7 @@ plotcp(decision_tree)
 summary(decision_tree)
 
 
-#creating estimates for the two models + benchmart, creating a list with all of them
+#creating estimates for the two models + benchmark, creating a list with all of them
 prediction_lr = predict(linear_model, newdata = test_data[grep(c("AS|BH|BK|BN|BU"),test_data$advertising_code, invert = TRUE),], type = "response")
 prediction_dt = predict(decision_tree, newdata = test_data, type = "prob")[,2]
 prediction_nn = as.numeric(predict(neuralnet, newdata = test_data, type = "raw"))
@@ -59,6 +67,9 @@ prediction_dn = predict(deep_arch, newdata = test_data)[,2]
 ######## Check predictive performance ###############
 
 #confusionMatrix(data = prediction, reference = known$return_customer, positive = "yes")
+predictive_performance(y = test_data[grep(c("AS|BH|BK|BN|BU"),test_data$advertising_code, invert = TRUE),"return_customer"], prediction = prediction_lr)
+predictive_performance(y = test_data$return_customer, prediction = prediction_dt)
+predictive_performance(y = test_data$return_customer, prediction = prediction_nn)
 predictive_performance(y = test_data$return_customer, prediction = adaboost_prediction$prob[,2])
 
 
