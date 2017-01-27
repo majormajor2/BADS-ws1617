@@ -62,6 +62,9 @@ xgb.parms <- expand.grid(nrounds = c(20, 40, 60, 80),
                          min_child_weight = 1,
                          subsample = 0.8)
 
+test_data_woe <- replace_factors_by_woe(test_data) 
+train_data_woe <- replace_factors_by_woe(train_data)
+
 ### 2. MODELS
 ## 2.1 xgb without preprocessing
 xgb <- train(return_customer~., data = train_data,  
@@ -69,12 +72,16 @@ xgb <- train(return_customer~., data = train_data,
                  tuneGrid = xgb.parms,
                  metric = "ROC", 
                  trControl = model.control)
+## 2.1.2 xgb with woe
+xgb_woe <- train(return_customer~., data = train_data_woe,  
+                method = "xgbTree",
+                tuneGrid = xgb.parms,
+                metric = "ROC", 
+                trControl = model.control)
 
-## 2.2 xgb with PCA
+## 2.2 xgb with woe + PCA
 if(!require("klaR")) install.packages("klaR")
 library(klaR)
-train_data_woe <- replace_factors_by_woe(train_data) #doesn't work
-
 
 xgb_PCA <- train(return_customer~., data = train_data_woe,  
              method = "xgbTree",
@@ -86,15 +93,22 @@ xgb_PCA <- train(return_customer~., data = train_data_woe,
 
 ### 3. PREDICTION
 xgb.pred <- predict(xgb, newdata = test_data, type = "prob")[,2]
-xgb.pca.pred <- predict(xgb_PCA, newdata = test_data, type = "prob")[,2]
+xgb.pred.woe <- predict(xgb_woe, newdata = test_data_woe, type = "prob")[,2]
+xgb.pca.pred <- predict(xgb_PCA, newdata = test_data_woe, type = "prob")[,2]
 
 
 ### 4. MODEL EVALUATION: 
 ## 4.1 Estimate performance on unseen data based on test set
 auc(test_data$return_customer, xgb.pred)
 # Area under the curve: 0.672
+auc(test_data_woe$return_customer, xgb.pred.woe)
+# Area under the curve: 0.6857
 auc(test_data$return_customer, xgb.pca.pred)
-# Area under the curve:
+# Area under the curve: 0.668
+
+predictive_performance(test_data_woe$return_customer, xgb.pred.woe, cutoff = 0.6)
+xgb.pred.woe[1:20]
+summary(xgb.pred.woe)
 
 y.validation <- as.numeric(test_data$return_customer)-1
 h <- HMeasure(y.validation, xgb.pred)
@@ -112,6 +126,7 @@ confusionMatrix(data = yhat.xgb.class, reference = test_data$return_customer, po
 ------------------------------------------------------------------------------------------------
 ############# RANDOM FOREST STARTS HERE
 
+### 1. Setup  
 ## Specify the number of folds
 # Remember that each candidate model will be constructed on each fold
 k <- 3
@@ -134,28 +149,51 @@ model.control <- trainControl(
   allowParallel = TRUE # Enable parallelization if available
 )
 
+### 2. Model
 # Define a search grid of values to test for a sequence of randomly
 # sampled variables as candidates at each split
 rf.parms <- expand.grid(mtry = 1:10)
 
-# Train random forest rf with a 5-fold cross validation 
-rf.caret <- train(return_customer~., data = train_data,  
-                  method = "rf", ntree = 500, tuneGrid = rf.parms, 
-                  metric = "ROC", trControl = model.control)
+# 2.1 Train random forest rf with a 5-fold cross validation 
+rf.caret <- train(return_customer~., 
+                  data = train_data,  
+                  method = "rf", 
+                  ntree = 500, 
+                  tuneGrid = rf.parms, 
+                  metric = "ROC", 
+                  trControl = model.control)
+# 2.2 RF with woe
+rf.caret <- train(return_customer~., 
+                  data = train_data,  
+                  method = "rf", 
+                  ntree = 500, 
+                  tuneGrid = rf.parms, 
+                  metric = "ROC", 
+                  trControl = model.control)
+
+
+
+
 
 # Compare the performance of the model candidates
 # on each cross-validation fold
 rf.caret$results
 plot(rf.caret)
 
+### 3. PREDICTION
 # Predict the outcomes of the test set with the predict function, 
 # i.e. the probability of someone being a bad risk
 yhat.rf.caret   <- predict(rf.caret, newdata = test_data, type = "prob")[,2]
 
+yhat.rf.caret.woe   <- predict(rf.caret, newdata = test_data_woe, type = "prob")[,2]
+
+
+4. MODEL EVALUATION
 # As done in previous exercises, the AUC is computed in order to evaluate our model performance. 
 if(!require("pROC")) install.packages("pROC"); library("pROC") # load the package
 auc.caret <- auc(test_data$return_customer, yhat.rf.caret) 
 auc.caret
-
 # Area under the curve: 0.645
+
+
 -------------------------------------------------------------------------------------------------
