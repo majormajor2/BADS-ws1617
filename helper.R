@@ -231,7 +231,9 @@ calculate_woe = function(dataset_train)
 }
 
 # replace factors by woe in test dataset (names have prefix woe.)
-test_data_woe[,columns_to_replace] <- predict(woe_object, newdata = test_data, replace = TRUE)
+replace_test_by_woe <- function(dataset, woe_object){
+columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
+test_data_woe[,columns_to_replace] <- predict(woe_object, newdata = dataset, replace = TRUE)
 # change names
 test_data_woe$form_of_address <- test_data_woe$woe.form_of_address
 test_data_woe$email_domain <- test_data_woe$woe.email_domain
@@ -242,37 +244,6 @@ test_data_woe$postcode_delivery <- test_data_woe$woe.postcode_delivery
 test_data_woe$advertising_code <- test_data_woe$woe.advertising_code
 col_del <- c("woe.form_of_address", "woe.email_domain", "woe.model", "woe.payment", "woe.postcode_invoice", "woe.postcode_delivery","woe.advertising_code")
 test_data_woe[,col_del] <- NULL
-
-
- 
-
-## this is not working yet
-# replace factory by woe in class dataset
-replace_factors_by_woe = function(dataset_train = train_data, dataset_test = test_data, dataset_class = class){
-  # specify target & columns to replace by woe
-  target = "return_customer"
-  columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
-
-  # train woe-model
-  woe_object = woe(as.formula(paste(target, paste(columns_to_replace, collapse="+"), sep = "~")), data = dataset_train, zeroadj = 0.5)
-
-  # replace values in test_data by woe-values
-  test_data_woe <- predict(woe_object, newdata = test_data, replace = TRUE)
-  
-  # replacement in dataset_test 
-  for i in 1:length(columns_to_replace)){
-    found<-train_data[,predictors[i]] %in% modelFactors[modelFactors$factors==predictors[i],]$factorLevels
-    if (any(!found)) data[!found,predictors[i]]<-NA
-  }
-  idx_dataset_test <- which(levels(dataset_train[,columns_to_replace]) %in% levels(dataset_test[,columns_to_replace]))
-  test_data_woe <- ifelse(idx_dataset_test, predict(woe_object, newdata = dataset_test, replace = TRUE), 0)
-  
-  # replacement in dataset_class
-  idx_dataset_class <- which(levels(train[,columns_to_replace]) %in% levels(dataset_class[,columns_to_replace]))
-  class_woe <- ifelse(idx_dataset_class, predict(woe_object, newdata = dataset_replace, replace = TRUE), 0)
-  
-  return(list(woe_object = woe_object, test_data_woe = test_data_woe, class_woe = class_woe))
+return(test_data_woe)
 }
-
-
 
