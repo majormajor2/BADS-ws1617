@@ -121,6 +121,15 @@ treat_dates = function(dataset) {
   data$deliverydate_actual_missing = factor(data$deliverydate_actual_missing, labels=c("no","yes"))
   data$deliverydate_estimated_outliers = factor(data$deliverydate_estimated_outliers, labels=c("no","yes"))
   
+  ## Replace date variables by deltas, since the dates are naturally strongly correlated
+  ## and additional information is captured in their differences.
+  ## We choose order_date as the starting point as there are no missing values or outliers.
+  ## order_date captures a decision of the customer, 
+  ## while delivery times and difference between estimated and actual delivery date capture the workings of the company.
+  data$account_creation_date = data$account_creation_date - data$order_date
+  data$deliverydate_actual = data$deliverydate_actual - data$order_date
+  data$deliverydate_estimated = data$deliverydate_estimated - data$deliverydate_actual
+  
   return(data)
 }
 
@@ -166,6 +175,7 @@ treat_postcodes = function(dataset) {
   
   # factorise dummy variable
   data$postcode_delivery_missing = factor(data$postcode_delivery_missing, levels=c(0,1), labels=c("no","yes"))
+  data$postcodes_different = factor(ifelse(data$postcode_invoice != data$postcode_delivery, 1, 0), levels=c(0,1), labels=c("no","yes"))
   
   # factorise postcode variables
   data$postcode_invoice = factor(data$postcode_invoice)
