@@ -127,8 +127,8 @@ treat_dates = function(dataset) {
   ## order_date captures a decision of the customer, 
   ## while delivery times and difference between estimated and actual delivery date capture the workings of the company.
   data$account_creation_date = data$account_creation_date - data$order_date
-  data$deliverydate_actual = data$deliverydate_actual - data$order_date
   data$deliverydate_estimated = data$deliverydate_estimated - data$deliverydate_actual
+  data$deliverydate_actual = data$deliverydate_actual - data$order_date
   
   return(data)
 }
