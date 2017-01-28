@@ -47,6 +47,7 @@ if(!require("pROC")) install.packages("pROC"); library("pROC")
 
 source("helper.R")
 source("weight.R")
+source("woe.R")
 source("performance_measures.R")
 
 ####### Set seed ################
