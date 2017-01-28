@@ -79,11 +79,6 @@ class = treat_weight(class)
 #lapply(known,summary)
 #lapply(class,summary)
 
-###### Weight of Evidence ######
-# Will create a new dataframe consisting of all the variables of known but replaces the factor
-# variables into numerical variables according to the weight of evidence
-woe_data = replace_factors_by_woe(known)
-
 ######### Partition the data ##############
 
 # Split data set into 80% training and 20% test data
@@ -104,6 +99,21 @@ test_data  =  known[-idx_train, ] # test set (drop all observations with train i
 # idx_validation = createDataPartition(y = train_data$return_customer, p = 0.25, list = FALSE)
 # validation_data = train_data[idx_validation, ]
 # train_data = train_data[-idx_validation, ]
+
+
+
+###### Weight of Evidence ######
+# Will create a new dataframe consisting of all the variables of known but replaces the factor
+# variables into numerical variables according to the weight of evidence
+woe_data = replace_factors_by_woe(known)
+
+# apply woe to test and class datasets
+# return woe object
+woe_object = calculate_woe(train_data)
+# apply woe to test (input any dataset where levels are identical to trained woe_object)
+test_data_woe = apply_woe(dataset = test_data, woe_object = woe_object)
+# apply woe to class (input any dataset where new levels emerge compared to training datset, specify pattern to ignore in input "grep")
+class_woe = predict_woe(woe_object = woe_object, newdata = class)
 
 ### Plotting
 par(mar=c(1,1,1,1)) # to make sure the plot works on a small screen
