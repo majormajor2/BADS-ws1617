@@ -202,7 +202,7 @@ normalize_cardinal_variables = function(x) {
 # general standardization function
 # input: numerical column
 # output: standardized numerical column
-standardize <- function(x){
+standardize = function(x){
   mu = mean(x)
   std = sd(x)
   result = (x - mu)/std
@@ -233,11 +233,12 @@ check_new_levels = function(known_data, class_data, target = "return_customer")
 }
 
 
-### Master Dataset to store results
-predictions_all <- data.frame(return_customer = known$return_customer)
-# input: vector of probability prediction + informative name
-save_prediction_to_master <- function(newprediction, name){
-  predictions_all[,name] <- newprediction
+
+# input: predictions_all data frame, vector of probability prediction + informative name
+# output: predictions_all dataframe with added predictions
+save_prediction_to_master = function(predictions_all, newprediction, name)
+{
+  predictions_all[,name] = newprediction
   return(predictions_all)
 }
 

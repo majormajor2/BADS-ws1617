@@ -71,6 +71,9 @@ class = treat_dates(class)
 known = treat_weight(known)
 class = treat_weight(class)
 
+##### Create Master Dataset to store results #####
+predictions_all = data.frame(return_customer = known$return_customer)
+
 ####### Check plausability of data types ################
 
 # lapply(known,class)
