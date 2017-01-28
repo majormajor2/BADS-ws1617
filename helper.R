@@ -241,4 +241,28 @@ save_prediction_to_master <- function(newprediction, name){
   return(predictions_all)
 }
 
+### MASTER FILE for PREDICTIONS ###
+
+# input: vector of probability prediction + informative name of 
+# attention: put predname and filename in " "
+# attention: include suffix .csv for filename
+# outputs 
+# - a data frame including the new predictions (if saved to object)
+# - csv file 
+
+save_prediction_to_master <- function(newprediction, predname, filename.csv, master){
+  # download current version of masterfile
+  master = read.csv(filename.csv, header=T, sep=",", row.names = 1)
+  # check for consistency
+  if(nrow(master) != length(newprediction)){
+    print("Numbers of rows in master-file and length of prediction vectors do not match.")
+    break
+  }
+  # add new column
+  master[,predname] <- newprediction
+  # save as csv
+  write.csv(x = master, file = filename.csv)
+  return(master)
+}
+
 
