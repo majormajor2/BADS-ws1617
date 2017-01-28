@@ -22,8 +22,9 @@ normalize_dataset = function(dataset, multilevel_factors = c("return_customer", 
     if(!column %in% multilevel_factors)
     {
       print(column)
-      data[column] = sapply(data[column],as.numeric) # convert to numeric
-      data[column] = normalize(data[column], new_min = -1, new_max = 1) # run minmax-normalization
+      data[,column] = sapply(data[,column],as.numeric) # convert to numeric
+      data[,column] = standardize(data[,column]) # standardise
+      data[,column] = normalize(data[,column], new_min = -1, new_max = 1) # run minmax-normalization
     }
   }
   return(data)
@@ -59,14 +60,16 @@ neuralnet = nnet(return_customer~ ., data = train_data, # the data and formula t
                   size = number_of_nodes, # the number of nodes in the model
                   MaxNWts = 10000) 
 deep_arch = darch(return_customer~ ., data = train_data, # darch = deep_arch,
-                  layers = c(292, 6, 3, 2),
+                  layers = c(41, 24, 12, 2),
                   bp.learnRate = 1, bp.learnRateScale = 0.1, # Backpropagation Learn Rate
                   darch.batchSize = 4,
-                  darch.fineTuneFunction = rpropagation, 
+                  #darch.fineTuneFunction = minimizeAutoencoder, 
                   darch.numEpochs = 5,
-                  #dataSetValid = validation_data, # gives error
+                  # xValid = validation_data, # gives error message
                   # darch.unitFunction = softmaxUnit,
-                  darch.weightDecay = 0.05
+                  darch.weightDecay = 0.05,
+                  preProc.factorToNumeric = TRUE
+                  #preProc.factorToNumeric.targets = TRUE
                   )
 
 #Helpful functions in reading rpart output
@@ -80,7 +83,7 @@ summary(decision_tree)
 prediction_lr = predict(linear_model, newdata = test_data[grep(c("AC|AG|AL|BU"),test_data$advertising_code, invert = TRUE),], type = "response")
 prediction_dt = predict(decision_tree, newdata = test_data, type = "prob")[,2]
 prediction_nn = as.numeric(predict(neuralnet, newdata = test_data, type = "raw"))
-prediction_dn = predict(deep_arch, newdata = test_data)[,2]
+prediction_dn = predict(deep_arch, newdata = test_data)
 
 ######## Check predictive performance ###############
 
