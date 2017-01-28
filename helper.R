@@ -272,4 +272,12 @@ predict_woe <- function(woe_object, newdata, grep = NULL)
 }
 
 
+### Master Dataset to store results
+predictions_all <- data.frame(return_customer = known$return_customer)
+# input: vector of probability prediction + informative name
+save_prediction_to_master <- function(newprediction, name){
+  predictions_all[,name] <- newprediction
+  return(predictions_all)
+}
+
 
