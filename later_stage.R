@@ -7,31 +7,10 @@
 
 
 ######## Normalize  ###############
-multilevel_factors = c("return_customer", "form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
-## Normalization function (minmax)
-## cannot normalize multilevel factors, therefore those are remain untouched
-## input: dataset, colnames of multilevel factors
-## output: dataset
-normalize_dataset = function(dataset, multilevel_factors = c("return_customer", "form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code"))
-{
-  data = dataset
-  print("Performing normalization on all parameters that are not multilevel factors:")
-  
-  for(column in colnames(data)) # loop over all columns
-  {
-    if(!column %in% multilevel_factors)
-    {
-      print(column)
-      data[,column] = sapply(data[,column],as.numeric) # convert to numeric
-      data[,column] = standardize(data[,column]) # standardise
-      data[,column] = normalize(data[,column], new_min = -1, new_max = 1) # run minmax-normalization
-    }
-  }
-  return(data)
-}
+multilevel_factors = c("return_customer", "order_date_weekday", "deliverydate_estimated_weekday", "deliverydate_actual_weekday","form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
 
-known_normalized = normalize_dataset(known)
-class_normalized = normalize_dataset(class)
+known_normalized = normalize_dataset(known, multilevel_factors = multilevel_factors)
+class_normalized = normalize_dataset(class, multilevel_factors = multilevel_factors)
 
 idx_train  = createDataPartition(y = known_normalized$return_customer, p = 0.8, list = FALSE)
 train_data = known_normalized[idx_train, ] # training set
