@@ -23,7 +23,7 @@ normalize_dataset = function(dataset, multilevel_factors = c("return_customer", 
     {
       print(column)
       data[column] = sapply(data[column],as.numeric) # convert to numeric
-      data[column] = normalize_cardinal_variables(data[column]) # run minmax-normalization
+      data[column] = normalize(data[column], new_min = -1, new_max = 1) # run minmax-normalization
     }
   }
   return(data)
@@ -61,7 +61,8 @@ neuralnet = nnet(return_customer~ ., data = train_data, # the data and formula t
 deep_arch = darch(return_customer~ ., data = train_data, # darch = deep_arch,
                   layers = c(292, 6, 3, 2),
                   bp.learnRate = 1, bp.learnRateScale = 0.1, # Backpropagation Learn Rate
-                  #darch.fineTuneFunction = rpropagation, 
+                  darch.batchSize = 4,
+                  darch.fineTuneFunction = rpropagation, 
                   darch.numEpochs = 5,
                   #dataSetValid = validation_data, # gives error
                   # darch.unitFunction = softmaxUnit,
@@ -76,7 +77,7 @@ summary(decision_tree)
 
 #creating estimates for the two models + benchmark, creating a list with all of them
 #prediction_lr = predict(linear_model, newdata = test_data, type = "response")
-prediction_lr = predict(linear_model, newdata = test_data[grep(c("BU"),test_data$advertising_code, invert = TRUE),], type = "response")
+prediction_lr = predict(linear_model, newdata = test_data[grep(c("AC|AG|AL|BU"),test_data$advertising_code, invert = TRUE),], type = "response")
 prediction_dt = predict(decision_tree, newdata = test_data, type = "prob")[,2]
 prediction_nn = as.numeric(predict(neuralnet, newdata = test_data, type = "raw"))
 prediction_dn = predict(deep_arch, newdata = test_data)[,2]
@@ -84,7 +85,7 @@ prediction_dn = predict(deep_arch, newdata = test_data)[,2]
 ######## Check predictive performance ###############
 
 #confusionMatrix(data = prediction, reference = known$return_customer, positive = "yes")
-predictive_performance(y = test_data[grep(c("AS|BH|BK|BN|BU"),test_data$advertising_code, invert = TRUE),"return_customer"], prediction = prediction_lr)
+predictive_performance(y = test_data[grep(c("AC|AG|AL|BU"),test_data$advertising_code, invert = TRUE),"return_customer"], prediction = prediction_lr)
 predictive_performance(y = test_data$return_customer, prediction = prediction_dt)
 predictive_performance(y = test_data$return_customer, prediction = prediction_nn)
 predictive_performance(y = test_data$return_customer, prediction = adaboost_prediction$prob[,2])

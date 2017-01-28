@@ -198,6 +198,14 @@ normalize_cardinal_variables = function(x) {
   return(normalized)
 }
 
+# min-max-scaling of variable to range [new_min;new_max]
+# input: column
+# output: normalized column
+normalize = function(x, new_min=0, new_max=1)
+{
+  normalized = (new_max-new_min) / (max(x)-min(x)) * (x - min(x)) + new_min
+  return(normalized)
+}
 
 # general standardization function
 # input: numerical column
