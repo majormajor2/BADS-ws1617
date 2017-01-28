@@ -46,7 +46,7 @@ source("main.R")
 ## the options for model selection
 model.control<- trainControl(
   method = "cv", # 'cv' for cross validation
-  number = 15, # number of folds in cross validation
+  number = 5, # number of folds in cross validation
   classProbs = TRUE,
   summaryFunction = twoClassSummary,
   allowParallel = TRUE, # Enable parallelization if available
@@ -55,7 +55,8 @@ model.control<- trainControl(
 
 
 ## Define a search grid for model selection
-xgb.parms <- expand.grid(nrounds = c(20, 40, 60, 80), 
+## TUNES
+xgb.parms.default <- expand.grid(nrounds = c(20, 40, 60, 80), 
                          max_depth = c(2, 4), 
                          eta = c(0.01, 0.05, 0.1, 0.15), 
                          gamma = 0,
@@ -63,13 +64,31 @@ xgb.parms <- expand.grid(nrounds = c(20, 40, 60, 80),
                          min_child_weight = 1,
                          subsample = 0.8)
 
+
+xgb.parms.1 <- expand.grid(nrounds = c(20, 40, 60, 80, 200), 
+                         max_depth = c(2, 4, 6), 
+                         eta = c(0.01, 0.05, 0.1, 0.15, 0.2), 
+                         gamma = 0,
+                         colsample_bytree = c(0.5, 0.8, 1),
+                         min_child_weight = 1,
+                         subsample = 0.8)
+
+
+
+xgb.parms.2 <- expand.grid(nrounds = c(200, 800, 1000), 
+                         max_depth = c(2, 4, 6), 
+                         eta = c(0.01, 0.05, 0.1, 0.15, 0.2), 
+                         gamma = 0,
+                         colsample_bytree = c(0.5, 0.8, 1),
+                         min_child_weight = 1,
+                         subsample = 0.8)
+
+
 ### 1.2 PREPROCESSING [Optional step]
 # Replace factors (more than 2) with WOE
-train_data_woe <- replace_factors_by_woe(train_data)
-# Predict factor levels in the test dataset
-test_data_woe <- predict(woe_object, newdata = test_data, replace = TRUE)
-# Replace column names so they are the same in the test and train datasets respectively
-colnames(test_data_woe) [35:41] <- c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
+woe_object <- calculate_woe(train_data)
+train_data_woe <- apply_woe(train_data, woe_object)
+test_data_woe <- apply_woe(test_data, woe_object)
 
 
 ### 2. MODELS
@@ -80,11 +99,12 @@ xgb <- train(return_customer~., data = train_data,
                  metric = "ROC", 
                  trControl = model.control)
 ## 2.1.2 xgb with woe
-xgb_woe <- train(return_customer~., data = train_data_woe,  
-                method = "xgbTree",
-                tuneGrid = xgb.parms,
-                metric = "ROC", 
-                trControl = model.control)
+xgb_woe <- train(return_customer~., 
+                  data = train_data_woe,  
+                  method = "xgbTree",
+                  tuneGrid = xgb.parms1,
+                  metric = "ROC", 
+                  trControl = model.control)
 
 ## 2.2 xgb with woe + PCA
 
@@ -130,7 +150,7 @@ confusionMatrix(data = yhat.xgb.class, reference = test_data$return_customer, po
 ### 5. SCORE
 predictive_performance(test_data$return_customer, xgb.pred, cutoff = 0.19)
 #  maxmizes the score for xgb + woe i.e. 
-predictive_performance(test_data_woe$return_customer, xgb.pred.woe, cutoff = 0.231)
+predictive_performance(test_data_woe$return_customer, xgb.pred.woe, cutoff = 0.212)
 # 0.231 maxmizes the score for xgb + woe i.e. 0.846
 predictive_performance(test_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
 # 0.19 maxmizes the score for xgb + woe i.e. 0.835
@@ -253,4 +273,11 @@ auc.caret.woe <- auc(test_data_woe$return_customer, yhat.rf.caret.woe)
 ### 5. SCORE
 predictive_performance(test_data_woe$return_customer, yhat.rf.caret.woe, cutoff = 0.227)
 # 0.227 maxmizes the score for xgb + woe i.e. 0.7803
+
+
+
+
+
+
+
 
