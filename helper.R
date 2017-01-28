@@ -198,6 +198,14 @@ normalize_cardinal_variables = function(x) {
   return(normalized)
 }
 
+# min-max-scaling of variable to range [new_min;new_max]
+# input: column
+# output: normalized column
+normalize = function(x, new_min=0, new_max=1)
+{
+  normalized = (new_max-new_min) / (max(x)-min(x)) * (x - min(x)) + new_min
+  return(normalized)
+}
 
 # general standardization function
 # input: numerical column
@@ -240,6 +248,30 @@ save_prediction_to_master = function(predictions_all, newprediction, name)
 {
   predictions_all[,name] = newprediction
   return(predictions_all)
+}
+
+### MASTER FILE for PREDICTIONS ###
+
+# input: vector of probability prediction + informative name of 
+# attention: put predname and filename in " "
+# attention: include suffix .csv for filename
+# outputs 
+# - a data frame including the new predictions (if saved to object)
+# - csv file 
+
+save_prediction_to_master <- function(newprediction, predname, filename.csv, master){
+  # download current version of masterfile
+  master = read.csv(filename.csv, header=T, sep=",", row.names = 1)
+  # check for consistency
+  if(nrow(master) != length(newprediction)){
+    print("Numbers of rows in master-file and length of prediction vectors do not match.")
+    break
+  }
+  # add new column
+  master[,predname] <- newprediction
+  # save as csv
+  write.csv(x = master, file = filename.csv)
+  return(master)
 }
 
 
