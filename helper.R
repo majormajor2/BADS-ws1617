@@ -121,6 +121,14 @@ treat_dates = function(dataset) {
   data$deliverydate_actual_missing = factor(data$deliverydate_actual_missing, labels=c("no","yes"))
   data$deliverydate_estimated_outliers = factor(data$deliverydate_estimated_outliers, labels=c("no","yes"))
   
+  ## Create factor variables for the weekdays
+  ## since these are not captured in the deltas that follow from the next steps
+  ## (No weekday for account_creation_date because the correlation with order_date is high)
+  ## Encode it with a sin-function because the variable is cyclic.
+  data$order_date_weekday = sin(normalize(as.numeric(factor(weekdays(data$order_date), levels = c("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"), ordered = TRUE)), new_min = 0, new_max = 6*pi/7))
+  data$deliverydate_estimated_weekday = sin(normalize(as.numeric(factor(weekdays(data$deliverydate_estimated), levels = c("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"), ordered = TRUE)), new_min = 0, new_max = 6*pi/7))
+  data$deliverydate_actual_weekday = sin(normalize(as.numeric(factor(weekdays(data$deliverydate_actual), levels = c("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"), ordered = TRUE)), new_min = 0, new_max = 6*pi/7))
+  
   ## Replace date variables by deltas, since the dates are naturally strongly correlated
   ## and additional information is captured in their differences.
   ## We choose order_date as the starting point as there are no missing values or outliers.
@@ -215,6 +223,28 @@ standardize = function(x){
   std = sd(x)
   result = (x - mu)/std
   return(result)
+}
+
+## Normalization function (minmax) for the entire dataset
+## cannot normalize multilevel factors, therefore those are remain untouched
+## input: dataset, colnames of multilevel factors
+## output: dataset
+normalize_dataset = function(dataset, multilevel_factors = c("return_customer", "form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code"))
+{
+  data = dataset
+  print("Performing normalization on all parameters that are not multilevel factors:")
+  
+  for(column in colnames(data)) # loop over all columns
+  {
+    if(!column %in% multilevel_factors)
+    {
+      print(column)
+      data[,column] = sapply(data[,column],as.numeric) # convert to numeric
+      data[,column] = standardize(data[,column]) # standardise
+      data[,column] = normalize(data[,column], new_min = -1, new_max = 1) # run minmax-normalization
+    }
+  }
+  return(data)
 }
 
 # function to check for new levels in factor variables in dataset we want to apply woe to
