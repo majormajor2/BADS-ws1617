@@ -1,7 +1,7 @@
 ### Optimal Cutpoints
 
 if(!require("OptimalCutpoints")) install.packages("OptimalCutpoints"); library("OptimalCutpoints")
-
+source("performance_measures.R")
 
 ###### --------- control.cutpoints ---------  ######
 
