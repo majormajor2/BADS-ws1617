@@ -121,6 +121,15 @@ treat_dates = function(dataset) {
   data$deliverydate_actual_missing = factor(data$deliverydate_actual_missing, labels=c("no","yes"))
   data$deliverydate_estimated_outliers = factor(data$deliverydate_estimated_outliers, labels=c("no","yes"))
   
+  ## Replace date variables by deltas, since the dates are naturally strongly correlated
+  ## and additional information is captured in their differences.
+  ## We choose order_date as the starting point as there are no missing values or outliers.
+  ## order_date captures a decision of the customer, 
+  ## while delivery times and difference between estimated and actual delivery date capture the workings of the company.
+  data$account_creation_date = data$account_creation_date - data$order_date
+  data$deliverydate_estimated = data$deliverydate_estimated - data$deliverydate_actual
+  data$deliverydate_actual = data$deliverydate_actual - data$order_date
+  
   return(data)
 }
 
@@ -166,6 +175,7 @@ treat_postcodes = function(dataset) {
   
   # factorise dummy variable
   data$postcode_delivery_missing = factor(data$postcode_delivery_missing, levels=c(0,1), labels=c("no","yes"))
+  data$postcodes_different = factor(ifelse(data$postcode_invoice != data$postcode_delivery, 1, 0), levels=c(0,1), labels=c("no","yes"))
   
   # factorise postcode variables
   data$postcode_invoice = factor(data$postcode_invoice)
@@ -199,51 +209,10 @@ standardize <- function(x){
   return(result)
 }
 
-# Weight of Evidence function to turn a factor variable into a numerical one according to their WoE
-# Input: factor column
-# Output: numerical column
-# !!! We use the function below instead to turn all columns into WoE at once
-#replace_by_woe = function(target, colnames_to_replace, dataset)
-#{
-#  woe_object = woe(as.formula(paste(target, paste(colnames_to_replace, collapse="+"), sep = "~")), data = dataset, zeroadj = 0.5)
-#  return(woe_object$xnew)
-#}
-
-# Weight of Evidence function to turn factors with more than 2 levels into numerical variables according to their WoE
-# Input: dataset
-# Output: dataset with replaced factors
-replace_factors_by_woe = function(dataset)
-{
-  target = "return_customer"
-  columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
-  woe_object = woe(as.formula(paste(target, paste(columns_to_replace, collapse="+"), sep = "~")), data = dataset, zeroadj = 0.5)
-  dataset[, columns_to_replace] <- woe_object$xnew
-  return(woe_object)
-}
-
-# calculate woe & return woe object
-calculate_woe = function(dataset_train)
-{
-  target = "return_customer"
-  columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
-  woe_object = woe(as.formula(paste(target, paste(columns_to_replace, collapse="+"), sep = "~")), data = dataset_train, zeroadj = 0.5)
-  return(woe_object)
-}
-
-# apply woe & return data set with columns replaced by woe
-apply_woe <- function(dataset, woe_object){
-columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
-# predict
-test_data_woe <- predict(woe_object, newdata = dataset, replace = TRUE)
-# change names
-colnames(test_data_woe)[35:41] <- columns_to_replace
-return(test_data_woe)
-}
-
-
 # function to check for new levels in factor variables in dataset we want to apply woe to
 # input: train (or any dataset woe_object was trained on) and class dataset (or any dateset woe shall be applied to)
 check_new_levels = function(known_data, class_data, target = "return_customer")
+{
   for(column in colnames(known_data)) # loops over all columns
   {
     if(is.factor(known_data[,column]) && !column == target) # checks if the column is a factor and if it is not the target variable
@@ -261,14 +230,6 @@ check_new_levels = function(known_data, class_data, target = "return_customer")
       }
     }
   }
-
-# WOE-replacement for class data-set
-predict_woe <- function(woe_object, newdata, grep = NULL)
-{
-  grep = grep(pattern = "AA", x = newdata$advertising_code, invert = TRUE)
-  class_woe <- predict(woe_object, newdata = class[grep,], replace = TRUE)
-  colnames(class_woe)[34:40] <- c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
-  return(class_woe) 
 }
 
 

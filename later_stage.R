@@ -1,7 +1,7 @@
 ############ TEST ################
 # Matrix of histograms
-if(!require("Hmisc")){install.packages("Hmisc")};library("Hmisc")
-hist.data.frame(train_data)
+#if(!require("Hmisc")){install.packages("Hmisc")};library("Hmisc")
+#hist.data.frame(train_data)
 
 ##### Drop Correlated Variables #####
 
@@ -28,6 +28,9 @@ validation_data = train_data[idx_validation, ]
 train_data = train_data[-idx_validation, ]
 
 
+######## Plot correlation matrix ###############
+correlation_matrix = cor(known[grep(paste(multilevel_factors, collapse = "|"), colnames(known), invert = TRUE)])
+corrplot(correlation_matrix, title = "Correlation Matrix", type = "full", order = "AOE", tl.cex = 0.5, tl.srt = 45, mar = c(1,0,1,1))
 
 ######## Build models ###############
 
