@@ -198,11 +198,19 @@ normalize_cardinal_variables = function(x) {
   return(normalized)
 }
 
+# min-max-scaling of variable to range [new_min;new_max]
+# input: column
+# output: normalized column
+normalize = function(x, new_min=0, new_max=1)
+{
+  normalized = (new_max-new_min) / (max(x)-min(x)) * (x - min(x)) + new_min
+  return(normalized)
+}
 
 # general standardization function
 # input: numerical column
 # output: standardized numerical column
-standardize <- function(x){
+standardize = function(x){
   mu = mean(x)
   std = sd(x)
   result = (x - mu)/std
@@ -233,11 +241,12 @@ check_new_levels = function(known_data, class_data, target = "return_customer")
 }
 
 
-### Master Dataset to store results
-predictions_all <- data.frame(return_customer = known$return_customer)
-# input: vector of probability prediction + informative name
-save_prediction_to_master <- function(newprediction, name){
-  predictions_all[,name] <- newprediction
+
+# input: predictions_all data frame, vector of probability prediction + informative name
+# output: predictions_all dataframe with added predictions
+save_prediction_to_master = function(predictions_all, newprediction, name)
+{
+  predictions_all[,name] = newprediction
   return(predictions_all)
 }
 
