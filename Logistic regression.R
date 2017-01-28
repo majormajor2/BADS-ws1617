@@ -1,22 +1,16 @@
 ### REGRESSIONS - LOGISTIC REGRESSION
 
 source("helper.R")
+source("main.R")
 
 
-colnames(train_data)[colSums(is.na(train_data))>0]
-
-train <- known[idx_train, -which(names(known) %in% c("form_of_address","advertising_code","deliverydate_estimated","deliverydate_actual"))]
-test <-  known[-idx_train, -which(names(known) %in% c("form_of_address","advertising_code","deliverydate_estimated","deliverydate_actual"))]
-
-subtest <- subset(test, postcode_delivery != c("EN", "NW", "TR"))
-train <- subtrain
 
 ### logistic regression
-lr <- glm(return_customer~., data = train, family = binomial(link = "logit")) # all variables go into regression (including categorical etc., but no missing values)
+lr <- glm(return_customer~., data = train_data, family = binomial(link = "logit")) # all variables go into regression (including categorical etc., but no missing values)
 summary(lr)
 coef(summary(lr)) # grab coefs
 # prediction
-pred.lr <- predict(lr, newdata = test, type = "response")
+pred.lr <- predict(lr, newdata = test_data, type = "response")
 # predictive performance
 predictive_performance(y = known$return_customer, prediction = pred.lr, cutoff = 0.5)
 
