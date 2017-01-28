@@ -114,6 +114,8 @@ woe_data = replace_factors_by_woe(known)
 # apply woe to test and class datasets
 # return woe object
 woe_object = calculate_woe(train_data)
+# apply woe to train data
+train_data_woe = apply_woe(dataset = train_data, woe_object = woe_object)
 # apply woe to test (input any dataset where levels are identical to trained woe_object)
 test_data_woe = apply_woe(dataset = test_data, woe_object = woe_object)
 # apply woe to class (input any dataset where new levels emerge compared to training datset, specify pattern to ignore in input "grep")
