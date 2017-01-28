@@ -1,46 +1,33 @@
-# set to your library
-setwd("/Users/orenblumenfeld/Google Drive/MEMS Degree/WiSe16:17/Business Analytics/Assignment/bads-ws1617-group27")
-
 # download and install necessary packages.
 if(!require("matrixStat")) install.packages("matrixStats"); library(matrixStats)
 if(!require("corrplot")) install.packages("corrplot"); library(corrplot)
 
-# read the data set and summarize it for fun
-known <- read.csv("assignment_BADS_WS1617_known.csv", sep = ",", header = TRUE)
-str(known)
-summary(known)
+########### DELETE FROM HERE
 # creatge new matrix only for the variables we need to check
-known.outlierscheck <- known
+# known.outlierscheck <- known
 
 # exclude uneeded columns
-known.outlierscheck[ ,c(2:14,17:22)] <- c(NULL)
+# known.outlierscheck[ ,c(2:14,17:22)] <- c(NULL)
+########### DELETE UNTIL HERE
+
+known.outlierscheck <- known_woe
 
 # save row and column names
 known.outlierscheck.colnames <- colnames(known.outlierscheck)
 known.outlierscheck.rownames <- paste("Quantile", seq(0,1,0.25), sep = " ")
 
 # create matrix of the quantiles
-known.quantiles <- matrix(data = colQuantiles(known.outlierscheck, probs=seq(from = 0, to = 1, by = 0.25), na.rm = TRUE), ncol = ncol(known.outlierscheck), byrow = TRUE)
-colnames(known.quantiles) <- known.outlierscheck.colnames
+known.outlierscheck.numerics <- Filter(is.numeric, known.outlierscheck)
+known.quantiles <- matrix(data = colQuantiles(known.outlierscheck.numerics, probs=seq(from = 0, to = 1, by = 0.25), na.rm = TRUE), ncol = ncol(known.outlierscheck.numerics), byrow = TRUE)
+known.outlierscheck.numerics.colnames <- colnames(known.outlierscheck.numerics)
+colnames(known.quantiles) <- known.outlierscheck.numerics.colnames
 rownames(known.quantiles) <- known.outlierscheck.rownames
-
-# create a matrix for the quantiles without the zeros and ones (stupid - delete?).
-# known.outlierscheck.nozeros <- known.outlierscheck
-# known.outlierscheck.nozeros[known.outlierscheck.nozeros== 0] <- NA
-# known.outlierscheck.nozeros[known.outlierscheck.nozeros== 1] <- NA
-# known.quantiles.nozeros <- matrix(data = colQuantiles(known.outlierscheck.nozeros, probs=seq(from = 0, to = 1, by = 0.25), na.rm = TRUE), ncol = ncol(known.outlierscheck), byrow = TRUE)
-# colnames(known.quantiles.nozeros) <- known.outlierscheck.colnames
-# rownames(known.quantiles.nozeros) <- known.outlierscheck.rownames
-
 
 # create boxplots
 dev.off()
 # the former line makes sure the device is off to avoid a possible error
-pdf(file = "plot goods_value.pdf")
-boxplot(known.outlierscheck$goods_value)
-dev.off()
-known.outlierscheck <- known.outlierscheck
-for (i in colnames(known.outlierscheck[,-1])){
+known.outlierscheck <- known.outlierscheck.numerics
+for (i in colnames(known.outlierscheck.numerics)){
   pdf(file = paste("plot ",i,".pdf", sep = ""))
   boxplot(known.outlierscheck[,i])
   dev.off()
@@ -59,14 +46,14 @@ pertablefun <- function(x){
   colnames(pertab) <- c("Count", "Percentage")
   return(pertab)
 }
-output.pertablefun <- lapply(known.outlierscheck[,-1], pertablefun)
+output.pertablefun <- lapply(known.outlierscheck.numerics[,-1], pertablefun)
 print(output.pertablefun)
 
 # we can see that the vast majority of the values of most variables are 0's and 1's.
 # There are many other values in small numbers and it makes it very hard to understand
 # how the data looks like. Ee can unify all numbers bigger than 1 to have a better look at the data.
 # so we will make a table and unify all numbers bigger than 1 to 3
-known.outlierscheck.lessvalues <- known.outlierscheck
+known.outlierscheck.lessvalues <- known.outlierscheck.numerics
 known.outlierscheck.lessvalues[known.outlierscheck.lessvalues > 1] <- 3
 # apply pertablefun again on the new table
 output.pertablefunless <- lapply(known.outlierscheck.lessvalues[,-1], pertablefun)
@@ -199,7 +186,29 @@ main = "Elbow curve for k selection", col="red", type = "b")
 dev.off()
 
 # We see that the elbow is not very sharp but 25 clusters seem to be a good number.
+
+
+# Now we will try to cluster the new Weight of Evidence
 # We can see our clusters in:
-bigclu.sol <- kmeans(known.outlierscheck.stand[,c(-1,-2)], centers=25, iter.max = 50, nstart = 100)
-print(bigclu.sol$cluster)
+# standardize columns
+source("helper.R")
+known.forcluster <- Filter(is.numeric, known_woe)
+known.forcluster.stand <- as.data.frame(sapply(known.forcluster, standardize))
+
+
+k.settings <- 1:50
+bigcluster.model <- vector(mode = "list", length = length(k.settings))
+obj.values <- vector(mode="numeric", length = length(k.settings))
+
+for (i in 1:length(k.settings)) {
+  bigclu.sol <- kmeans(known.forcluster.stand, centers=k.settings[i], iter.max = 50, nstart = 100)
+  obj.values[i] <- bigclu.sol$tot.withinss
+  bigcluster.model[i] <- obj.values[i]
+}
+# create elbow curve and save it to a file
+dev.off()
+pdf(file = paste("elbow big cluster.pdf"))
+plot(k.settings, bigcluster.model, xlab = "k", ylab="Total within-cluster SS",
+     main = "Elbow curve for k selection", col="red", type = "b")
+dev.off()
 
