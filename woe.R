@@ -20,14 +20,14 @@ calculate_woe = function(dataset_train)
 }
 
 # apply woe & return data set with columns replaced by woe
-apply_woe <- function(dataset, woe_object)
+apply_woe <- function(dataset, woe_object = woe_object)
   {
   columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
   # predict
-  test_data_woe <- predict(woe_object, newdata = dataset, replace = TRUE)
+  newdataset_woe <- predict(woe_object, newdata = dataset, replace = TRUE)
   # change names
-  colnames(test_data_woe)[35:41] <- columns_to_replace
-  return(test_data_woe)
+  colnames(newdataset_woe)[35:41] <- columns_to_replace
+  return(newdataset_woe)
 }
 
 # WOE-replacement for class data-set
