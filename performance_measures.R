@@ -20,7 +20,7 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   brier_score = sum(((as.numeric(y) - 1) - prediction)^2) / length(y)
   
   # Calculate Classification error
-  classification = factor(as.numeric(prediction >= cutoff), labels=levels(y)) 
+  classification = factor(as.numeric(prediction >= cutoff), levels = c(0,1), labels=levels(y)) 
   #classification = factor(as.numeric(prediction >= cutoff), labels=c("negative", "positive")) 
   classification_error = 1 - sum(y==classification) / length(y)
   
