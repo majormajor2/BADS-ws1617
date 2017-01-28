@@ -37,7 +37,7 @@
 
 
 ### Code starts here ###
-treat_weight = function(dataset)
+treat_weight = function(dataset, shallPrint = FALSE)
 {
 data = dataset  
 
@@ -46,17 +46,21 @@ data = dataset
 data$weight_missing = factor(ifelse(is.na(data$weight), 1, 0), labels=c("no","yes"))
 
 ## weight statistics 
-print(paste("initial no. of zeros in weight:", sum(data$weight == 0, na.rm = TRUE))) 
-print(paste("initial no. of NAs in weight:", sum(is.na(data$weight))))
-
+if(shallPrint)
+{
+  print(paste("initial no. of zeros in weight:", sum(data$weight == 0, na.rm = TRUE))) 
+  print(paste("initial no. of NAs in weight:", sum(is.na(data$weight))))
+}
 # select product categories (10), that affect weight (used for calculating average per item)
 exclude = c("item_count|ebook_count|audiobook_download_count")
 include = c("_count|canceled_items")
 productlist = get_matching_columns(data, exclude_pattern = exclude, include_pattern = include) # gives names of columns
 
 # feedback 
-print("List of products that affect weight:"); print(productlist)
-
+if(shallPrint)
+{
+  print("List of products that affect weight:"); print(productlist)
+}
 
 # 1. replace "error zeros" in weight by NA
 
@@ -66,25 +70,36 @@ sum_of_products = rowSums(x = data[,productlist], na.rm = TRUE, dims = 1) # leng
 # Identify zeros in weight ## THIS COULD BE PUT INTO 1 LINE ##
 idx_zeros = which(data$weight == 0)
 # feedback
-print(paste("Total number of zeros in weight:", length(idx_zeros))) # length: 7512
+if(shallPrint)
+{
+  print(paste("Total number of zeros in weight:", length(idx_zeros))) # length: 7512
+}
 # Identify non-error-zeros in weight
 idx_nonerrorzeros = which(data$weight == 0 & sum_of_products == 0)
 # old definition:
 # idx_nonerrorzeros = which(data$weight == 0 & sum_of_products == 0 & (data$audiobook_download_count != 0 | data$ebook_count != 0 )) # length: 6.980
 
 # feedback 
-print(paste("Number of non-error zeros in weight:", length(idx_nonerrorzeros))) # length: 6980
+if(shallPrint)
+{
+  print(paste("Number of non-error zeros in weight:", length(idx_nonerrorzeros))) # length: 6980
+}
+
 # Identify error-zeros in weight
 idx_errorzeros = idx_zeros[! idx_zeros %in% idx_nonerrorzeros]
 # feedback
-print(paste("Number of error zeros in weight:", length(idx_errorzeros))) # length: 532
-
+if(shallPrint)
+{
+  print(paste("Number of error zeros in weight:", length(idx_errorzeros))) # length: 532
+}
 
 # replace error zeros by NA
 data[idx_errorzeros, "weight"] = NA
 # feedback
-print(paste("number of NAs in weight after replacement of error-zeros:", sum(is.na(data$weight))))
-
+if(shallPrint)
+{
+  print(paste("number of NAs in weight after replacement of error-zeros:", sum(is.na(data$weight))))
+}
 
 # 2. calculate average weight per item for each row
 
@@ -111,10 +126,18 @@ idx_foravgweight = which(! (data$weight == 0 | is.na(data$weight))) # length: 40
 
 # Problem: There are cases where weight != 0 but sumofproducts == 0
 # Treatment: exclude those 29 cases from index
-print(paste("Length of idx_foravgweight before:", length(idx_foravgweight)))
+if(shallPrint)
+{
+  print(paste("Length of idx_foravgweight before:", length(idx_foravgweight)))
+}
+
 idx_foravgweight = idx_foravgweight[sum_of_products[idx_foravgweight] != 0] # exclude those IDs from idx_foravgweight
 # feedback & check
-print(paste("Length of idx_foravgweight after treatment:", length(idx_foravgweight)))
+if(shallPrint)
+{
+  print(paste("Length of idx_foravgweight after treatment:", length(idx_foravgweight)))
+}
+
 if (min(sum_of_products[idx_foravgweight]) == 0)
 {
   stop("There is at least one row where sum_of_products == 0.")
@@ -132,26 +155,37 @@ avgweight_item = mean(data[idx_foravgweight,"weight"]/sum_of_products[idx_foravg
 #{
 #  stop("Avgweight_item == NA or Inf in at least one row")
 #}
-
-print(paste("Average weight per item:", round(avgweight_item), "grams"))
+if(shallPrint)
+{
+  print(paste("Average weight per item:", round(avgweight_item), "grams"))
+}
 
 # 4. replace NAs by average per item
 
 # get index for NAs in weight
 idx_na = which(is.na(data$weight))
 # feedback 
-print(paste("number of NAs to be replaced by average:", length(idx_na)))
+if(shallPrint)
+{
+  print(paste("number of NAs to be replaced by average:", length(idx_na)))
+}
 
 # replace each NA by avg weight per item
 data$weight = replace(x = data$weight, list = idx_na, values = sum_of_products[idx_na]*avgweight_item)
 
 # feedback 
-print(paste("number of NAs in weight after replacement by average:", sum(is.na(data$weight))))
-summary(data$weight)
-class(data$weight)
+if(shallPrint)
+{
+  print(paste("number of NAs in weight after replacement by average:", sum(is.na(data$weight))))
+}
+
 
 # feedback
-print("Range of weight:");summary(data$weight)
+if(shallPrint)
+{
+  print("Range of weight:")
+  print(summary(data$weight))
+}
 
 return(data)
 }
