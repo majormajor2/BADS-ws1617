@@ -341,3 +341,91 @@ build_cost_matrix <- function(CBTN = +3, CBFN = -10, CBFP = 0, CBTP = 0){
   return(cost.matrix)
   }
 
+
+
+###### --- UNSUPERVISED BINNING --- ######## 
+
+# this functions cuts a column into a pre-specified no of bins, either with equal width or equal frequency
+# input: datset, columns (default is set)
+# output: new dataset with columns replaced by factor levels = number of bins
+create_bins  <- function(dataset, columns = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code"), NO_BINS = 5, DO_EQUAL_WIDTH = TRUE){
+  
+  # check if dataset is numeric
+  for(column in columns){
+    if(!is.numeric(dataset[,column])){
+      stop("Please use the woe-version of your dataset. At least one of the columns you want to bin is not numeric.")
+    }
+  }
+  
+  # check if equal-width is TRUE  
+  if (DO_EQUAL_WIDTH) {
+    
+    # loop over all columns and replace them in dataset
+    for(column in columns){
+      dataset[,column] <- cut(dataset[,column], NO_BINS, include.lowest = TRUE, labels = paste0("level",1:NO_BINS))
+    }
+  }  else {
+    #### Equal-frequency binning
+    # Argument breaks can also take specific break points, so
+    # we use function quantile() to find out where to cut the variable.
+    # The n quantile gives us the value below which n% of the data are located. Hence, equal-spaced quantiles give us bins with an equal percentage of 
+    # observations in each bin
+    # The difficulty lies in automatically adjusting the number of quantiles
+    for(column in columns){
+      breaks <- quantile(dataset[,column], 0:NO_BINS/NO_BINS)
+      # check if breaks are unique
+      while(any(duplicated(breaks))){
+        NO_BINS = NO_BINS - 1
+        breaks <- quantile(dataset[,column], 0:NO_BINS/NO_BINS)
+      }
+      dataset[,column] <- cut(dataset[,column], breaks, include.lowest = TRUE, right = FALSE, labels = paste0("level",1:NO_BINS)) 
+    }
+  } 
+  return(dataset)
+}
+
+## Converts weekdays from linear to sinusoidal
+make_weekdays_cyclic = function(column)
+{
+  column = sin(normalize(as.numeric(column), new_min = 0, new_max = 6*pi/7))
+  return(column)
+}
+
+## Truncates outliers in numerical variables
+truncate_outliers = function(column, multiple = 1.5, only_positive = FALSE)
+{
+  # Convert to numeric if it is not yet
+  if(!is.numeric(column)){column = as.numeric(column)}
+  # Find values at 1st and 3rd quartile
+  lower_quartile = as.numeric(summary(column))[2]
+  upper_quartile = as.numeric(summary(column))[5]
+  # Calculate the inter-quantile-range IQR
+  IQR = upper_quartile - lower_quartile
+  # Calculate lower and upper bound
+  lower_bound = lower_quartile - multiple*IQR
+  upper_bound = upper_quartile + multiple*IQR
+  # Identify ouliers and replace by bounds
+  if(!only_positive){column[column < lower_bound ] = lower_bound} # only if not onesided
+  column[column > upper_bound ] = upper_bound
+  
+  return(column)
+}
+
+## Function to truncate outliers in the entire dataset
+treat_outliers = function(dataset)
+{
+  data = dataset
+  
+  # get the columns that include time differences
+  time_diff_columns = c("deliverydate_estimated","deliverydate_actual")
+  data[,time_diff_columns] = sapply(data[,time_diff_columns], truncate_outliers)
+  data$account_creation_date[data$account_creation_date < 0] = truncate_outliers(data$account_creation_date[data$account_creation_date < 0])
+  
+  # get the columns that have only positive values (all item counts + weight)
+  include_pattern = c("_count|_items|weight")
+  exclude_pattern = c("weight_missing")
+  columns_with_only_positive = setdiff(grep(include_pattern, colnames(data)), grep(exclude_pattern, colnames(data)))
+  data[,columns_with_only_positive] = sapply(data[,columns_with_only_positive], truncate_outliers, only_positive = TRUE)
+  
+  return(data)
+}
