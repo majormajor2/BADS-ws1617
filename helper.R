@@ -335,4 +335,53 @@ build_cost_matrix <- function(CBTN = +3, CBFN = -10, CBFP = 0, CBTP = 0){
 
 
 
+###### --- UNSUPERVISED BINNING --- ######## 
+
+# this functions cuts a column into a pre-specified no of bins, either with equal width or equal frequency
+# input: datset, columns (default is set)
+# output: new dataset with columns replaced by factor levels = number of bins
+create_bins  <- function(dataset, columns = columns, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE){
+  
+  # define columns
+  columns <- c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
+  
+  # check which dataset is used
+  if(dataset == train_data){
+    dataset == train_data_woe
+  }
+  if(dataset == test_data){
+    dataset == test_data_woe
+  }
+  if(dataset == class){
+    dataset == class_woe
+  }
+  
+  # check again if columns are numeric
+  for(column in columns){
+    if(!is.numeric(dataset[,column]))
+      print("At least one of the columns you want to bin is not numeric.")
+    break
+  }
+  
+  # check if equal-width is TRUE  
+  if (DO_EQUAL_WIDTH==TRUE) {
+    
+    # loop over all columns and replace them in dataset
+    for(column in columns){
+      dataset[,column] <- cut(dataset[,column], NO_BINS, include.lowest = TRUE, labels = paste0("level",1:NO_BINS))
+    }
+  }  else {
+    #### Equal-frequency binning
+    # Argument breaks can also take specific break points, so
+    # we use function quantile() to find out where to cut the variable.
+    # The n quantile gives us the value below which n% of the data are located. Hence, equal-spaced quantiles give us bins with an equal percentage of 
+    # observations in each bin
+    # The difficulty lies in automatically adjusting the number of quantiles
+    for(column in columns){
+      breaks <- quantile(dataset[,column], 0:NO_BINS/NO_BINS)
+      dataset[,column] <- cut(dataset[,column], breaks, include.lowest = TRUE, right = FALSE, labels = paste0("level",1:NO_BINS)) 
+    }
+  } 
+  return(dataset)
+}
 
