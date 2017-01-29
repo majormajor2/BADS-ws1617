@@ -259,23 +259,31 @@ normalize_dataset = function(dataset, multilevel_factors = c("return_customer", 
 # input: train (or any dataset woe_object was trained on) and class dataset (or any dateset woe shall be applied to)
 check_new_levels = function(known_data, class_data, target = "return_customer")
 {
+  new_levels = list() # create an empty list that will hold the new levels
+  
   for(column in colnames(known_data)) # loops over all columns
   {
     if(is.factor(known_data[,column]) && !column == target) # checks if the column is a factor and if it is not the target variable
     {
       if(length(setdiff(levels(class_data[,column]),levels(known_data[,column]))) != 0) # checks if there are new factor levels
       {
+        # before the 2nd loop: create a temporary vector to hold new levels in the column
+        temp = vector()
         for(level in setdiff(levels(class_data[,column]),levels(known_data[,column]))) # loops through new factor levels
         {
           if(level %in% levels(class_data[,column]))
           {
-            print(column)
-            print(level) 
+            #print(column)
+            #print(level) 
+            temp = append(temp, level) # append the level to the temporary vector
           }
         }
+        # after the 2nd loop: add the filled temporary vector to the list of new levels
+        new_levels[column] = list(temp) 
       }
     }
   }
+  return(new_levels)
 }
 
 
