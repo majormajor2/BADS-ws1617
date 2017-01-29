@@ -133,9 +133,9 @@ treat_dates = function(dataset) {
   ## since these are not captured in the deltas that follow from the next steps
   ## (No weekday for account_creation_date because the correlation with order_date is high)
   ## Encode it with a sin-function because the variable is cyclic.
-  data$order_date_weekday = sin(normalize(as.numeric(factor(weekdays(data$order_date), levels = c("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"), ordered = TRUE)), new_min = 0, new_max = 6*pi/7))
-  data$deliverydate_estimated_weekday = sin(normalize(as.numeric(factor(weekdays(data$deliverydate_estimated), levels = c("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"), ordered = TRUE)), new_min = 0, new_max = 6*pi/7))
-  data$deliverydate_actual_weekday = sin(normalize(as.numeric(factor(weekdays(data$deliverydate_actual), levels = c("Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"), ordered = TRUE)), new_min = 0, new_max = 6*pi/7))
+  data$order_date_weekday = as.POSIXlt(data$order_date)$wday
+  data$deliverydate_estimated_weekday = as.POSIXlt(data$deliverydate_estimated)$wday
+  data$deliverydate_actual_weekday = as.POSIXlt(data$deliverydate_actual)$wday
   
   ## Replace date variables by deltas, since the dates are naturally strongly correlated
   ## and additional information is captured in their differences.
@@ -371,3 +371,9 @@ create_bins  <- function(dataset, columns = c("form_of_address", "email_domain",
   return(dataset)
 }
 
+## Converts weekdays from linear to sinusoidal
+make_weekdays_cyclic = function(column)
+{
+  column = sin(normalize(as.numeric(column), new_min = 0, new_max = 6*pi/7))
+  return(column)
+}
