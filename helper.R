@@ -340,31 +340,17 @@ build_cost_matrix <- function(CBTN = +3, CBFN = -10, CBFP = 0, CBTP = 0){
 # this functions cuts a column into a pre-specified no of bins, either with equal width or equal frequency
 # input: datset, columns (default is set)
 # output: new dataset with columns replaced by factor levels = number of bins
-create_bins  <- function(dataset, columns = columns, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE){
+create_bins  <- function(dataset, columns = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code"), NO_BINS = 5, DO_EQUAL_WIDTH = TRUE){
   
-  # define columns
-  columns <- c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
-  
-  # check which dataset is used
-  if(dataset == train_data){
-    dataset == train_data_woe
-  }
-  if(dataset == test_data){
-    dataset == test_data_woe
-  }
-  if(dataset == class){
-    dataset == class_woe
-  }
-  
-  # check again if columns are numeric
+  # check if dataset is numeric
   for(column in columns){
-    if(!is.numeric(dataset[,column]))
-      print("At least one of the columns you want to bin is not numeric.")
-    break
+    if(!is.numeric(dataset[,column])){
+      stop("Please use the woe-version of your dataset. At least one of the columns you want to bin is not numeric.")
+    }
   }
   
   # check if equal-width is TRUE  
-  if (DO_EQUAL_WIDTH==TRUE) {
+  if (DO_EQUAL_WIDTH) {
     
     # loop over all columns and replace them in dataset
     for(column in columns){
