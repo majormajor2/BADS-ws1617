@@ -34,7 +34,8 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   # print(class_counts$metrics, digits = 3)
   
   # Compute the H-measure and other scalar classification performance metrics
-  H = HMeasure(y, prediction, threshold = cutoff)
+  H = HMeasure(y, prediction, threshold = cutoff, severity.ratio = 3/10)
+  HMeasure = H$metrics$H
   gini = H$metrics$Gini
   precision = H$metrics$Precision
   TP = H$metrics$TP
