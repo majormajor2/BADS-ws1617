@@ -126,17 +126,27 @@ class_woe = apply_woe(dataset = class, woe_object = woe_object)
 # creates bins for columns "form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code"
 # applies woe to binned columns
 
+# 1 CALCULATE WOE-OBJECT 
+# 1.1 create bins for train-dataset
+# train_data_bins
+train_data_bins_ew <- create_bins(train_data_woe, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = FALSE)
+train_data_bins_ef <- create_bins(train_data_woe, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = FALSE)
+
+# 1.2 calculate woe form binned train-datasets
+woe_object_ew <- calculate_woe(train_data_bins_ew, columns = c("email_domain", "postcode_invoice", "postcode_delivery", "advertising_code"))
+woe_object_ef <- calculate_woe(train_data_bins_ef, columns = c("email_domain", "postcode_invoice", "postcode_delivery", "advertising_code"))
+
 # train_data_woe
-train_data_woe_ew <- create_bins(train_data_woe, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
-train_data_woe_ef <- create_bins(train_data_woe, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
+train_data_woe_ew <- create_bins(train_data_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
+train_data_woe_ef <- create_bins(train_data_woe, woe_object_ef, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
 
 # test_data_woe
-test_data_woe_ew <- create_bins(test_data_woe, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
-test_data_woe_ef <- create_bins(test_data_woe, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
+test_data_woe_ew <- create_bins(test_data_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
+test_data_woe_ef <- create_bins(test_data_woe, woe_object_ef, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
 
 # class_data_woe
-class_woe_ew <- create_bins(class_woe, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
-class_woe_ef <- create_bins(class_woe, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
+class_woe_ew <- create_bins(class_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
+class_woe_ef <- create_bins(class_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
 
 
 
