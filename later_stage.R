@@ -9,6 +9,8 @@
 ######## Normalize  ###############
 multilevel_factors = c("return_customer", "order_date_weekday", "deliverydate_estimated_weekday", "deliverydate_actual_weekday","form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
 
+known_normalized = sapply(known,truncate_outliers)
+class_normalized = sapply(class,truncate_outliers)
 known_normalized = normalize_dataset(known, multilevel_factors = multilevel_factors)
 class_normalized = normalize_dataset(class, multilevel_factors = multilevel_factors)
 
