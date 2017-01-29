@@ -313,3 +313,26 @@ save_prediction_to_master <- function(newprediction, predname, filename.csv, mas
 }
 
 
+###### -------- COST MATRIX -------- ######
+
+build_cost_matrix <- function(CBTN = +3, CBFN = -10, CBFP = 0, CBTP = 0){
+  # calculate costs with 0 on diagonals
+  CFN = CBFN - CBTP
+  CFP = CBFP - CBTN
+  
+  # build cost-matrix
+  cost.matrix <- matrix(c(
+    NA, CFN,
+    CFP, NA),
+    2, 2, byrow=TRUE)
+  
+  # name rows and columns
+  colnames(cost.matrix) <- list("noreturn", "return")
+  rownames(cost.matrix) <- list("noreturn", "return")
+  
+  return(cost.matrix)
+  }
+
+
+
+
