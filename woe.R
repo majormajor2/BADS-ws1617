@@ -15,7 +15,7 @@ apply_woe = function(dataset, woe_object, doReplace = TRUE)
   # Predict WoE in the new dataset with the WoE-object and replace factor levels with their WoE
   dataset_woe = predict(woe_object, newdata = dataset, replace = doReplace)
   # Change names (get rid of the woe.-prefix)
-  gsub(pattern = "woe.", replacement = "", x = colnames(dataset_woe))
+  colnames(dataset_woe) = gsub(pattern = "woe.", replacement = "", x = colnames(dataset_woe))
   # Return the dataset with replaced columns
   return(dataset_woe)
 }
