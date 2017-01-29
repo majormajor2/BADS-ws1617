@@ -365,6 +365,11 @@ create_bins  <- function(dataset, columns = c("form_of_address", "email_domain",
     # The difficulty lies in automatically adjusting the number of quantiles
     for(column in columns){
       breaks <- quantile(dataset[,column], 0:NO_BINS/NO_BINS)
+      # check if breaks are unique
+      while(any(duplicated(breaks))){
+        NO_BINS = NO_BINS - 1
+        breaks <- quantile(dataset[,column], 0:NO_BINS/NO_BINS)
+      }
       dataset[,column] <- cut(dataset[,column], breaks, include.lowest = TRUE, right = FALSE, labels = paste0("level",1:NO_BINS)) 
     }
   } 
