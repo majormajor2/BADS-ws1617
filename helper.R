@@ -43,7 +43,7 @@ get_dataset = function(name) {
   {
     data$return_customer = factor(data$return_customer,labels=c("no","yes"))
   }
-  ##########################################################################
+  ###########################################################################
   
   return(data)
 }
@@ -55,7 +55,7 @@ get_dataset = function(name) {
 treat_missing_values = function(dataset) {
   data = dataset
   
-  ## 1: NAs for advertising_code
+  ## 1.1: NAs for advertising_code
   # see Data_Cleaning_SF.R courtesy of Stephie
   data$advertising_code[data$advertising_code == ""] = NA
   # dummy variable is no longer needed as NAs are encoded as level "Missing"
@@ -64,11 +64,19 @@ treat_missing_values = function(dataset) {
   data$advertising_code = droplevels(data$advertising_code)
   data$advertising_code = fct_explicit_na(data$advertising_code, "Missing")
   
+  ## 1.2: New level for advertising_code in class dataset (level in question: "AA", 1 observation)
+  # replace AA in class by modal value of advertising_code in known dataset
+  if("AA" %in% data$advertising_code){
+    data[data$advertising_code == "AA", "advertising_code"] <- names((sort(-table(known$advertising))))[1]
+  }
+  
+  
   ## 2: NAs for form_of_address
   # see Data_Cleaning_SF.R courtesy of Stephie
   # dummy variable is no longer needed as NAs are encoded as level "Missing"
   #data$form_of_address_missing = factor(ifelse(is.na(data$form_of_address), 1, 0), labels=c("no","yes"))
   data$form_of_address = fct_explicit_na(data$form_of_address, "Missing")
+  
   
   return(data)
 }
