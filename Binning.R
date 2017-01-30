@@ -1,11 +1,10 @@
 ###### --- UNSUPERVISED BINNING --- ######## 
 
 source("woe.R")
-source("main.R")
 # this functions cuts a column into a pre-specified no of bins, either with equal width or equal frequency
 # input: datset, columns (default is set)
 # output: new dataset with columns replaced by factor levels = number of bins
-create_bins  <- function(dataset, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, calc_woe = TRUE, run_woe = TRUE){
+create_bins  <- function(dataset, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, calc_woe = TRUE, run_woe = TRUE, train_data_woe = NULL){
   
   ## --- PRELIMINARY --- ##
   
@@ -65,7 +64,9 @@ create_bins  <- function(dataset, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, calc_woe =
     
   # 1.2 train woe_object using train_data... datasets  
     } else{
-    # check binning method
+      # check if train_data_woe was supplied
+      if(is.null(train_data_woe)){stop("You have to supply train_data_woe if you want to use it.")}
+      # check binning method
       if(DO_EQUAL_WIDTH){
         # get train dataset with binned columns (ew) for woe-calculation
         for(column in columns){
@@ -84,13 +85,12 @@ create_bins  <- function(dataset, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, calc_woe =
   
   # 2. APPLY WOE  
 
-  if(run_woe){
-      # apply woe_object to current dataset
-      dataset_woe <- apply_woe(dataset = dataset, woe_object = woe_object, doReplace = TRUE)
-      return(dataset_woe)
-      
-      } else{
-        return(dataset)
-        }
+  if(run_woe) 
+    {
+      # apply woe_object to current dataset (if we have set run_woe to TRUE)
+      dataset <- apply_woe(dataset = dataset, woe_object = woe_object, doReplace = TRUE)
+    }
+        
+  return(dataset)
 } # end of function
 
