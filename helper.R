@@ -214,11 +214,30 @@ normalize_cardinal_variables = function(x) {
   return(normalized)
 }
 
-# min-max-scaling of variable to range [new_min;new_max]
+# Scaling of variable to range [new_min;new_max]
+# Defaults to min-max-scaling to range [0;1]
 # input: column
 # output: normalized column
-normalize = function(x, new_min=0, new_max=1)
+normalize = function(x, mode = "min-max", new_min=0, new_max=1)
 {
+  if(!is.numeric(x)){x = as.numeric(x)} # convert to numeric
+  
+  # Square-root-normalization
+  if(mode == "sqrt")
+  {
+    # Test for negative values
+    if(TRUE %in% (x<0)){stop("Vector has negative entries. Cannot use sqrt-normalization.")}
+    else{x = sqrt(x)}
+  }
+  # 
+  else if(mode == "log")
+  {
+    # Test for zeroes - maybe we should add 1 if there are only positives?
+    if(TRUE %in% (x==0)){stop("Vector has zeroes. Cannot use log-normalization.")}
+    else{x = log(x)}
+  }
+  # Perform a min-max normalization 
+  # (if a mode has been specified before this acts on the already normalized variable)
   normalized = (new_max-new_min) / (max(x)-min(x)) * (x - min(x)) + new_min
   return(normalized)
 }
