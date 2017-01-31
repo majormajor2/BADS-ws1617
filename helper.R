@@ -399,8 +399,8 @@ treat_outliers = function(dataset)
   # get the columns that include time differences
   time_diff_columns = c("deliverydate_estimated","deliverydate_actual")
   data[,time_diff_columns] = sapply(data[,time_diff_columns], truncate_outliers)
-  data$account_creation_date = normalize(data$account_creation_date, mode = "sqrt")
-  data$account_creation_date[data$account_creation_date < 0] = truncate_outliers(data$account_creation_date[data$account_creation_date < 0])
+  data$account_creation_date = normalize(-data$account_creation_date, mode = "sqrt")
+  data$account_creation_date[data$account_creation_date > 0] = truncate_outliers(data$account_creation_date[data$account_creation_date > 0])
   
   # get the columns that have only positive values (all item counts + weight)
   include_pattern = c("_count|_items|weight")
