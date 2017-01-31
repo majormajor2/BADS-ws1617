@@ -114,5 +114,5 @@ create_bins  <- function(dataset, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, calc_woe =
         
   return(dataset)
 } # end of function
->>>>>>> 2cbdcd1204b9a70ba3c0446845806d46767ff0f8
+
 
