@@ -7,6 +7,10 @@
 
 ##### Drop Correlated Variables #####
 
+dropped_correlated_variables = strongly_correlated(known)
+known[dropped_correlated_variables] = NULL
+class[dropped_correlated_variables] = NULL
+
 
 ######## Normalize  ###############
 columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
@@ -18,6 +22,7 @@ known_normalized = sapply(known,truncate_outliers)
 class_normalized = sapply(class,truncate_outliers)
 known_normalized = normalize_dataset(known, multilevel_factors = multilevel_factors)
 class_normalized = normalize_dataset(class, multilevel_factors = multilevel_factors)
+
 
 set.seed(666)
 idx_train  = createDataPartition(y = known_normalized$return_customer, p = 0.8, list = FALSE)

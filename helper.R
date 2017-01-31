@@ -399,13 +399,45 @@ treat_outliers = function(dataset)
   # get the columns that include time differences
   time_diff_columns = c("deliverydate_estimated","deliverydate_actual")
   data[,time_diff_columns] = sapply(data[,time_diff_columns], truncate_outliers)
+  data$account_creation_date = normalize(data$account_creation_date, mode = "sqrt")
   data$account_creation_date[data$account_creation_date < 0] = truncate_outliers(data$account_creation_date[data$account_creation_date < 0])
   
   # get the columns that have only positive values (all item counts + weight)
   include_pattern = c("_count|_items|weight")
   exclude_pattern = c("weight_missing")
   columns_with_only_positive = setdiff(grep(include_pattern, colnames(data)), grep(exclude_pattern, colnames(data)))
-  data[,columns_with_only_positive] = sapply(data[,columns_with_only_positive], truncate_outliers, only_positive = TRUE)
+  mode = "sqrt"
+  if(mode == "log"){data[,columns_with_only_positive] = data[,columns_with_only_positive]+1}
+  data[,columns_with_only_positive] = sapply(data[,columns_with_only_positive], normalize, mode = mode)
   
   return(data)
+}
+
+## Function to drop highly correlated variables
+## Input: dataset
+## Output: names of variables to drop
+strongly_correlated = function(dataset, threshold = 0.7)
+{
+  correlation_matrix = cor(dataset[, sapply(dataset, is.numeric)]) # calculate matrix only for numeric columns
+  listed_variables = vector() # vector of listed variables to prevent duplication
+  dropped_variables = vector()# vector of variables that will be dropped
+  
+  for(column in colnames(correlation_matrix))
+  {
+    listed_variables = append(listed_variables, column) # add column to listed variables
+    # loop only over variables for which we have not calculated the correlation yet
+    for(row in setdiff(row.names(correlation_matrix),listed_variables)) 
+    {
+      if(abs(correlation_matrix[row,column]) > threshold)
+      {
+        if(mean(abs(correlation_matrix[row,])) > mean(abs(correlation_matrix[,column])))
+        {
+          dropped_variables = append(dropped_variables, row)
+        }
+        else{dropped_variables = append(dropped_variables, column)}
+      }
+    }
+  }
+  # return unique variable names
+  return(unique(dropped_variables))
 }
