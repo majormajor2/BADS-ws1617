@@ -1,11 +1,14 @@
 ###### --- UNSUPERVISED BINNING --- #########
 
 source("woe.R")
-source("main.R")
 # this functions cuts a column into a pre-specified no of bins, either with equal width or equal frequency
 # input: datset, columns (default is set)
 # output: new dataset with columns replaced by factor levels = number of bins
+<<<<<<< HEAD
 create_bins  <- function(dataset, woe_object = woe_object, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE){
+=======
+create_bins  <- function(dataset, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, calc_woe = TRUE, run_woe = TRUE, train_data_woe = NULL){
+>>>>>>> 2cbdcd1204b9a70ba3c0446845806d46767ff0f8
   
   ## --- PRELIMINARY --- ##
 
@@ -55,6 +58,7 @@ create_bins  <- function(dataset, woe_object = woe_object, NO_BINS = 5, DO_EQUAL
       } 
     } # END: BIN WITH EQUAL FREQUENCY or WITH EQUAL FREQUENCY 
 
+<<<<<<< HEAD
   # 2. APPLY WOE  
 
   if(run_woe){
@@ -67,4 +71,48 @@ create_bins  <- function(dataset, woe_object = woe_object, NO_BINS = 5, DO_EQUAL
         } 
   
 } # END OF FUNCTION
+=======
+  
+  # WOE-TRANSFORMATION
+  
+  # 1. CALCULATE WOE-OBJECT
+  # check if woe needs to be calculated with current dataset (i.e. if we use train dataset)
+  
+  # 1.1 train woe_object using current dataset
+  if(calc_woe){
+    # calculate woe_object with current dataset
+    woe_object <- calculate_woe(train_dataset = dataset)
+    
+  # 1.2 train woe_object using train_data... datasets  
+    } else{
+      # check if train_data_woe was supplied
+      if(is.null(train_data_woe)){stop("You have to supply train_data_woe if you want to use it.")}
+      # check binning method
+      if(DO_EQUAL_WIDTH){
+        # get train dataset with binned columns (ew) for woe-calculation
+        for(column in columns){
+          train_data_bins_ew[,column] <- cut(train_data_woe[,column], NO_BINS, include.lowest = TRUE, labels = paste0("level",1:NO_BINS))
+        } 
+        # calculate woe_object with train_data_woe_ew
+        woe_object <- calculate_woe(train_dataset = train_data_bins_ew)
+        } else{
+          # get train dataset with binned columns (ef) for woe-calculation
+          train_data_bins_ef[,column] <- cut(train_data_woe[,column], breaks, include.lowest = TRUE, right = FALSE, labels = paste0("level",1:NO_BINS)) 
+          # calculate woe_object with train_data_woe_ef
+          woe_object <- calculate_woe(train_dataset = train_data_bins_ef)
+          }
+        }
+  
+  
+  # 2. APPLY WOE  
+
+  if(run_woe) 
+    {
+      # apply woe_object to current dataset (if we have set run_woe to TRUE)
+      dataset <- apply_woe(dataset = dataset, woe_object = woe_object, doReplace = TRUE)
+    }
+        
+  return(dataset)
+} # end of function
+>>>>>>> 2cbdcd1204b9a70ba3c0446845806d46767ff0f8
 

@@ -1,9 +1,6 @@
 ### REGRESSIONS - LOGISTIC REGRESSION
 
-source("helper.R")
 source("main.R")
-
-
 
 ### logistic regression
 lr <- glm(return_customer~., data = train_data, family = binomial(link = "logit")) # all variables go into regression (including categorical etc., but no missing values)

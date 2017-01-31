@@ -35,7 +35,7 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   
   # Compute the H-measure and other scalar classification performance metrics
   H = HMeasure(y, prediction, threshold = cutoff, severity.ratio = 3/10)
-  HMeasure = H$metrics$H
+  h_measure = H$metrics$H
   gini = H$metrics$Gini
   precision = H$metrics$Precision
   TP = H$metrics$TP
@@ -51,6 +51,7 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   
   return(list(brier_score = brier_score, 
               classification_error = classification_error, 
+              h_measure = h_measure,
               area_under_curve = auc,
               gini = gini,
               precision = precision,
