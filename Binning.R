@@ -1,4 +1,4 @@
-###### --- UNSUPERVISED BINNING --- ######## 
+###### --- UNSUPERVISED BINNING --- #########
 
 source("woe.R")
 source("main.R")
