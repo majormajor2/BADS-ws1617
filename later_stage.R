@@ -66,11 +66,40 @@ model_control = trainControl(
   returnData = FALSE # The training data will not be included in the output training object
 )
 
+
+#neuralnet package gives an output that is incompatible with predict
+#formula_ANN = as.formula(paste("return_customer", paste(setdiff(colnames(train_data),"return_customer"), collapse = " + "), sep = " ~ "))
+#ANN = neuralnet(formula_ANN,data=train_data_woe,stepmax = 100, hidden=c(5,3),linear.output=FALSE)
+
+# Deep Neural Network - needs to be tuned
+#DANN = dbn.dnn.train(train_data_woe, train_data_woe[,"return_customer"], 
+#              hidden = c(5,3), 
+#              learningrate_scale = 0.9)
+
+#Training single or mutiple hidden layers neural network by BP
+DANN = nn.train(train_data_woe, train_data_woe[,"return_customer"], 
+                initW = NULL, initB = NULL, 
+                hidden = c(24,16), 
+                activationfun = "sigm", output = "sigm",
+                learningrate = 0.8, learningrate_scale = 0.9, momentum = 0.5, 
+                numepochs = 3, batchsize = 100, 
+                hidden_dropout = 0, visible_dropout = 0)
+# Training a Deep neural network with weights initialized by Stacked AutoEncoder
+DANNII = sae.dnn.train(train_data_woe[,setdiff(colnames(train_data_woe),"return_customer")], train_data_woe[,"return_customer"], 
+                       hidden = c(24,16), 
+                       activationfun = "sigm", output = "sigm", sae_output = "sigm",
+                       learningrate = 0.8, learningrate_scale = 0.9, momentum = 0.5, 
+                       numepochs = 5, batchsize = 100, 
+                       hidden_dropout = 0.1, visible_dropout = 0.1)
+
+prediction_DANN = nn.predict(DANN, test_data_woe)
+prediction_DANNII = nn.predict(DANNII, test_data_woe)
+
 # Define a search grid of values to test
 ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 0, 1)), size = seq(3,30,3))
 
 # Train neural network ANN with 5-fold cross validation
-ANN = train(return_customer~., data = train_data,  
+ANNII = train(return_customer~., data = train_data,  
             method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
             tuneGrid = nn_parms, # parameters to be tested
             metric = "ROC", trControl = model_control)

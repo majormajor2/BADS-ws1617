@@ -33,6 +33,8 @@ if(!require("adabag")) install.packages("adabag"); library("adabag")
 # nnet or neuralnet for Artificial Neural Networks
 if(!require("nnet")) install.packages("nnet"); library("nnet")
 if(!require("neuralnet")) install.packages("neuralnet"); library("neuralnet")
+# deepnet for Deep Artificial Neural Networks
+if(!require("deepnet")) install.packages("deepnet"); library("deepnet")
 # darch for Deep Architectures and Restricted Boltzmann Machines
 if(!require("darch")) install.packages("darch"); library("darch")
 
