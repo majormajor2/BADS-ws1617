@@ -18,7 +18,7 @@ create_bins  <- function(dataset, woe_object = woe_object, NO_BINS = 5, DO_EQUAL
     if(!is.numeric(dataset[,column])){
       stop("Please use the woe-version of your dataset. At least one of the columns you want to bin is not numeric.")
       }
-  }
+    }
   
   ## --- BINNING CODE STARTS HERE --- ##
   
@@ -58,15 +58,13 @@ create_bins  <- function(dataset, woe_object = woe_object, NO_BINS = 5, DO_EQUAL
   
   # 2. APPLY WOE  
 
-  if(run_woe){
-      # apply woe_object to current dataset
-      dataset_woe <- apply_woe(dataset = dataset, woe_object = woe_object, doReplace = TRUE)
-      return(dataset_woe) # RETURNS BINNED COLUMNS AS WOE-TRANSFORMED NUMERICS 
-      
-      } else{
-        return(dataset) # RETURNS COLUMNS AS BINNED FACTORS
-        } 
-  
+  if(run_woe){ # apply woe_object to current dataset
+    dataset <- apply_woe(dataset = dataset, woe_object = woe_object, doReplace = TRUE)
+  }
+   
+  # RETURN BINNED COLUMNS AS WOE-TRANSFORMED NUMERICS if run_woe is TRUE     
+  # otherwise RETURNS COLUMNS AS BINNED FACTORS 
+  return(dataset) 
 } # END OF FUNCTION
 
 
