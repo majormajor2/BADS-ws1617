@@ -28,100 +28,11 @@ confusionMatrix(predict(model_xgb_pca, test))
 summary(predict(model_xgb_pca, test))
 summary(test$return_customer)
 
-############################ END OF CODE TO BE DISREGARDED
---------------------------------------------------------------------------------
-
-
-####### CODE STARTS HERE  #########
-
-
-### Load packages and set up the basic cleaned dataset
-if(!require("klaR")) install.packages("klaR")
-library(klaR)
-if(!require("pROC")) install.packages("pROC"); library("pROC") # load the package
-if(!require("randomForest")) install.packages("randomForest")
-source("main.R")
-
-
-### 1. SETUP
-## the options for model selection
-model.control<- trainControl(
-  method = "cv", # 'cv' for cross validation
-  number = 5, # number of folds in cross validation
-  classProbs = TRUE,
-  summaryFunction = twoClassSummary,
-  allowParallel = TRUE, # Enable parallelization if available
-  returnData = TRUE # We will use this to plot partial dependence
-)
-
-
-## Define a search grid for model selection
-## TUNES
-xgb.parms.default <- expand.grid(nrounds = c(20, 40, 60, 80), 
-                         max_depth = c(2, 4), 
-                         eta = c(0.01, 0.05, 0.1, 0.15), 
-                         gamma = 0,
-                         colsample_bytree = c(0.8, 1),
-                         min_child_weight = 1,
-                         subsample = 0.8)
-
-
-xgb.parms.1 <- expand.grid(nrounds = c(20, 40, 60, 80, 200), 
-                         max_depth = c(2, 4, 6), 
-                         eta = c(0.01, 0.05, 0.1, 0.15, 0.2), 
-                         gamma = 0,
-                         colsample_bytree = c(0.5, 0.8, 1),
-                         min_child_weight = 1,
-                         subsample = 0.8)
-
-
-
-xgb.parms.2 <- expand.grid(nrounds = c(200, 800, 1000), 
-                         max_depth = c(2, 4, 6), 
-                         eta = c(0.01, 0.05, 0.1, 0.15, 0.2), 
-                         gamma = 0,
-                         colsample_bytree = c(0.5, 0.8, 1),
-                         min_child_weight = 1,
-                         subsample = 0.8)
-
-
 ### 1.2 PREPROCESSING [Optional step]
 # Replace factors (more than 2) with WOE
 woe_object <- calculate_woe(train_data)
 train_data_woe <- apply_woe(train_data, woe_object)
 test_data_woe <- apply_woe(test_data, woe_object)
-
-
-### 2. MODELS
-## 2.1 xgb without preprocessing
-xgb <- train(return_customer~., data = train_data,  
-                 method = "xgbTree",
-                 tuneGrid = xgb.parms,
-                 metric = "ROC", 
-                 trControl = model.control)
-## 2.1.2 xgb with woe
-xgb_woe <- train(return_customer~., 
-                  data = train_data_woe,  
-                  method = "xgbTree",
-                  tuneGrid = xgb.parms1,
-                  metric = "ROC", 
-                  trControl = model.control)
-
-## 2.2 xgb with woe + PCA
-
-xgb_PCA <- train(return_customer~., data = train_data_woe,  
-                method = "xgbTree",
-                preProcess = "pca",
-                tuneGrid = xgb.parms,
-                metric = "ROC", 
-                trControl = model.control)
-
-
-### 3. PREDICTION
-xgb.pred <- predict(xgb, newdata = test_data, type = "prob")[,2]
-xgb.pred.woe <- predict(xgb_woe, newdata = test_data_woe, type = "prob")[,2]
-xgb.pca.pred <- predict(xgb_PCA, newdata = test_data_woe, type = "prob")[,2]
-
 
 ### 4. MODEL EVALUATION: 
 ## 4.1 Estimate performance on unseen data based on test set
@@ -146,15 +57,6 @@ tau <- 0.05  #confused about how we pick the tau, decreasing it imrpoves the acc
 #convert probability prediction to discrete class predictions
 yhat.xgb.class <- factor(xgb.pred> tau, labels = c("yes", "no"))
 confusionMatrix(data = yhat.xgb.class, reference = test_data$return_customer, positive = "yes")
-
-
-### 5. SCORE
-predictive_performance(test_data$return_customer, xgb.pred, cutoff = 0.19)
-#  maxmizes the score for xgb + woe i.e. 
-predictive_performance(test_data_woe$return_customer, xgb.pred.woe, cutoff = 0.212)
-# 0.231 maxmizes the score for xgb + woe i.e. 0.846
-predictive_performance(test_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
-# 0.19 maxmizes the score for xgb + woe i.e. 0.835
 
 
 
@@ -192,11 +94,199 @@ logregobj <- function(preds, train_data_woe) {
   hess <- preds * (1 - preds)
   return(list(grad = grad, hess = hess))
 }
+############################ END OF CODE TO BE DISREGARDED
+--------------------------------------------------------------------------------
+
+
+####### CODE STARTS HERE  #########
+
+
+### Load packages and set up the basic cleaned dataset
+if(!require("klaR")) install.packages("klaR")
+library(klaR)
+if(!require("pROC")) install.packages("pROC"); library("pROC") # load the package
+if(!require("randomForest")) install.packages("randomForest")
+source("main.R")
+source("masterload.R")
+
+### 1. SETUP
+## the options for model selection
+model.control<- trainControl(
+  method = "cv", # 'cv' for cross validation
+  number = 5, # number of folds in cross validation
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary,
+  allowParallel = TRUE, # Enable parallelization if available
+  returnData = TRUE # We will use this to plot partial dependence
+)
+
+
+## Define a search grid for model selection
+## TUNES
+xgb.parms.default <- expand.grid(nrounds = c(20, 40, 60, 80), 
+                         max_depth = c(2, 4), 
+                         eta = c(0.01, 0.05, 0.1, 0.15), 
+                         gamma = 0,
+                         colsample_bytree = c(0.8, 1),
+                         min_child_weight = 1,
+                         subsample = 0.8)
+
+
+xgb.parms.1 <- expand.grid(nrounds = c(20, 40, 60, 80, 200), 
+                         max_depth = c(2, 4, 6), 
+                         eta = c(0.01, 0.05, 0.1, 0.15, 0.2), 
+                         gamma = 0,
+                         colsample_bytree = c(0.5, 0.8, 1),
+                         min_child_weight = 1,
+                         subsample = 0.8)
 
 
 
+xgb.parms.2 <- expand.grid(nrounds = c(200, 800, 1000), 
+                         max_depth = c(2, 4, 6), 
+                         eta = c(0.001, 0.01, 0.05, 0.1, 0.15, 0.2), 
+                         gamma = 0,
+                         colsample_bytree = c(0.5, 0.8, 1),
+                         min_child_weight = 1,
+                         subsample = 0.8)
 
 
+### 2. MODELS
+## 2.1 xgb without preprocessing
+xgb.default <- train(return_customer~., data = train60_data,  
+                 method = "xgbTree",
+                 tuneGrid = xgb.parms.default,
+                 metric = "ROC", 
+                 trControl = model.control)
+
+xgb.param1 <- train(return_customer~., data = train60_data,  
+                method = "xgbTree",
+                tuneGrid = xgb.parms.1,
+                metric = "ROC", 
+                trControl = model.control)
+
+xgb.param2 <- train(return_customer~., data = train60_data,  
+                method = "xgbTree",
+                tuneGrid = xgb.parms.2,
+                metric = "ROC", 
+                trControl = model.control)
+
+
+## 2.1.2 xgb with woe
+xgb_woe.default <- train(return_customer~., 
+                  data = train60_data_woe,  
+                  method = "xgbTree",
+                  tuneGrid = xgb.default,
+                  metric = "ROC", 
+                  trControl = model.control)
+
+xgb_woe.param1 <- train(return_customer~., 
+                 data = train60_data_woe,  
+                 method = "xgbTree",
+                 tuneGrid = xgb.parms1,
+                 metric = "ROC", 
+                 trControl = model.control)
+
+xgb_woe.param2 <- train(return_customer~., 
+                 data = train60_data_woe,  
+                 method = "xgbTree",
+                 tuneGrid = xgb.parms2,
+                 metric = "ROC", 
+                 trControl = model.control)
+
+
+## 2.1.2 xgb with woe + binning
+
+xgb_woe_ef.default <- train(return_customer~., 
+                         data = train60_data_woe_ef,  
+                         method = "xgbTree",
+                         tuneGrid = xgb.default,
+                         metric = "ROC", 
+                         trControl = model.control)
+
+
+xgb_woe_ew.default <- train(return_customer~., 
+                         data = train60_data_woe_ew,  
+                         method = "xgbTree",
+                         tuneGrid = xgb.default,
+                         metric = "ROC", 
+                         trControl = model.control)
+
+
+
+## 2.2 xgb with woe + PCA
+
+xgb_PCA <- train(return_customer~., data = train60_data_woe,  
+                method = "xgbTree",
+                preProcess = "pca",
+                tuneGrid = xgb.default,
+                metric = "ROC", 
+                trControl = model.control)
+
+
+### 3. PREDICTION
+##Baseline Model
+xgb.default.pred <- predict(xgb.default, newdata = validation_data, type = "prob")[,2]
+xgb.param1.pred <- predict(xgb.param1, newdata = validation_data, type = "prob")[,2]
+xgb.param2.pred <- predict(xgb.param2, newdata = validation_data, type = "prob")[,2]
+
+## WOE 
+xgb_woe.default.pred <- predict(xgb_woe.default, newdata = validation_data_woe, type = "prob")[,2]
+xgb_woe.param1.pred <- predict(xgb_woe.param1, newdata = validation_data_woe, type = "prob")[,2]
+xgb_woe.param2.pred <- predict(xgb_woe.param2, newdata = validation_data_woe, type = "prob")[,2]
+
+## WOE + Binning
+xgb_woe_ef.default <- predict(xgb_woe_ef.default, newdata = validation_data_woe_ef, type = "prob")[,2]
+xgb_woe_ew.default <- predict(xgb_woe_ew.default, newdata = validation_data_woe_ew, type = "prob")[,2]
+
+## WOE + PCA
+xgb.pca.pred <- predict(xgb_PCA, newdata = validation_data_woe, type = "prob")[,2]
+
+
+### 4. SCORE
+
+#Base model score
+xgb_base_default_score <- predictive_performance(validation_data$return_customer, xgb.default.pred, cutoff = 0.24)
+xgb_base_param1_score <-predictive_performance(test_data$return_customer, xgb.param1.pred, cutoff = 0.19)
+xgb_base_param2_score <-predictive_performance(test_data$return_customer, xgb.param2.pred, cutoff = 0.19)
+#  need to find optimal cutpoints
+
+#WOE
+xgb_woe_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.default.pred, cutoff = 0.212)
+xgb_woe_param1_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.param1.pred, cutoff = 0.212)
+xgb_woe_param2_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.param2.pred, cutoff = 0.212)
+#  need to find optimal cutpoints
+
+
+#WOE  + Binning
+xgb_ef_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe_ef.default, cutoff = 0.212)
+xgb_ew_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe_ew.default, cutoff = 0.212)
+#  need to find optimal cutpoints
+
+#WOE + PCA
+xgb_pca_default_score <-predictive_performance(test_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
+#  need to find optimal cutpoints
+
+
+### 5. SAVE PREDICTIONS IN DF
+
+#Call validation file to save predictions
+df_predictions_validation = call_master("predictions_validation.csv")
+
+#Add predictions
+df_predictions_validation$xgb.default.pred = xgb.default.pred #hamayun
+df_predictions_validation$xgb.param1.pred = xgb.param1.pred #oren
+df_predictions_validation$xgb.param2.pred = xgb.param2.pred #oren
+df_predictions_validation$xgb_woe.default.pred = xgb_woe.default.pred #hamayun
+df_predictions_validation$xgb_woe.param1.pred = xgb_woe.param1.pred #oren
+df_predictions_validation$xgb_woe.param2.pred = xgb_woe.param2.pred #oren
+df_predictions_validation$xgb_woe_ef.default = xgb_woe_ef.default #hamayun
+df_predictions_validation$xgb_woe_ew.default = xgb_woe_ew.default #hamayun
+df_predictions_validation$xgb.pca.pred = xgb.pca.pred #hamayun
+  
+#Save validation file
+df_predictions_validation = save_prediction_to_master("predictions_validation.csv", df_predictions_validation)
+#Remember to push afterwards
 
 ------------------------------------------------------------------------------------------------
 ############# RANDOM FOREST STARTS HERE
