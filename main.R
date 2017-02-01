@@ -149,6 +149,8 @@ class_woe_ew <- create_bins(class_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDT
 class_woe_ef <- create_bins(class_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
 
 
+######## Cost matrix
+cost.matrix <- build_cost_matrix(CBTN = 3, CBFP = -10)
 
 
 ### Plotting
