@@ -176,31 +176,31 @@ xgb.param2 <- train(return_customer~., data = train60_data,
 xgb_woe.default <- train(return_customer~., 
                   data = train60_data_woe,  
                   method = "xgbTree",
-                  tuneGrid = xgb.default,
+                  tuneGrid = xgb.parms.default,
                   metric = "ROC", 
                   trControl = model.control)
 
 xgb_woe.param1 <- train(return_customer~., 
                  data = train60_data_woe,  
                  method = "xgbTree",
-                 tuneGrid = xgb.parms1,
+                 tuneGrid = xgb.parms.1,
                  metric = "ROC", 
                  trControl = model.control)
 
 xgb_woe.param2 <- train(return_customer~., 
                  data = train60_data_woe,  
                  method = "xgbTree",
-                 tuneGrid = xgb.parms2,
+                 tuneGrid = xgb.parms.2,
                  metric = "ROC", 
                  trControl = model.control)
 
 
-## 2.1.2 xgb with woe + binning
+## 2.1.3 xgb with woe + binning
 
 xgb_woe_ef.default <- train(return_customer~., 
                          data = train60_data_woe_ef,  
                          method = "xgbTree",
-                         tuneGrid = xgb.default,
+                         tuneGrid = xgb.parms.default,
                          metric = "ROC", 
                          trControl = model.control)
 
@@ -208,7 +208,7 @@ xgb_woe_ef.default <- train(return_customer~.,
 xgb_woe_ew.default <- train(return_customer~., 
                          data = train60_data_woe_ew,  
                          method = "xgbTree",
-                         tuneGrid = xgb.default,
+                         tuneGrid = xgb.parms.default,
                          metric = "ROC", 
                          trControl = model.control)
 
@@ -219,7 +219,7 @@ xgb_woe_ew.default <- train(return_customer~.,
 xgb_PCA <- train(return_customer~., data = train60_data_woe,  
                 method = "xgbTree",
                 preProcess = "pca",
-                tuneGrid = xgb.default,
+                tuneGrid = xgb.parms.default,
                 metric = "ROC", 
                 trControl = model.control)
 
@@ -246,25 +246,25 @@ xgb.pca.pred <- predict(xgb_PCA, newdata = validation_data_woe, type = "prob")[,
 ### 4. SCORE
 
 #Base model score
-xgb_base_default_score <- predictive_performance(validation_data$return_customer, xgb.default.pred, cutoff = 0.24)
-xgb_base_param1_score <-predictive_performance(test_data$return_customer, xgb.param1.pred, cutoff = 0.19)
-xgb_base_param2_score <-predictive_performance(test_data$return_customer, xgb.param2.pred, cutoff = 0.19)
+xgb_base_default_score <- predictive_performance(validation_data$return_customer, xgb.default.pred, cutoff = 0.238)
+xgb_base_param1_score <-predictive_performance(validation_data$return_customer, xgb.param1.pred, cutoff = 0.19)
+xgb_base_param2_score <-predictive_performance(validation_data$return_customer, xgb.param2.pred, cutoff = 0.19)
 #  need to find optimal cutpoints
 
 #WOE
-xgb_woe_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.default.pred, cutoff = 0.212)
-xgb_woe_param1_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.param1.pred, cutoff = 0.212)
-xgb_woe_param2_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.param2.pred, cutoff = 0.212)
+xgb_woe_default_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe.default.pred, cutoff = 0.212)
+xgb_woe_param1_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe.param1.pred, cutoff = 0.212)
+xgb_woe_param2_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe.param2.pred, cutoff = 0.212)
 #  need to find optimal cutpoints
 
 
 #WOE  + Binning
-xgb_ef_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe_ef.default, cutoff = 0.212)
-xgb_ew_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe_ew.default, cutoff = 0.212)
+xgb_ef_default_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe_ef.default, cutoff = 0.212)
+xgb_ew_default_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe_ew.default, cutoff = 0.212)
 #  need to find optimal cutpoints
 
 #WOE + PCA
-xgb_pca_default_score <-predictive_performance(test_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
+xgb_pca_default_score <-predictive_performance(validation_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
 #  need to find optimal cutpoints
 
 
@@ -321,7 +321,7 @@ rf.parms <- expand.grid(mtry = 1:10)
 
 # 2.1 Train random forest rf with a 5-fold cross validation 
 rf.caret <- train(return_customer~., 
-                  data = train_data,  
+                  data = train60_data,  
                   method = "rf", 
                   ntree = 500, 
                   tuneGrid = rf.parms, 
@@ -329,7 +329,7 @@ rf.caret <- train(return_customer~.,
                   trControl = model.control)
 # 2.2 RF with woe
 rf.caret.woe <- train(return_customer~., 
-                  data = train_data_woe,  
+                  data = train60_data_woe,  
                   method = "rf", 
                   ntree = 500, 
                   tuneGrid = rf.parms, 
