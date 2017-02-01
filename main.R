@@ -14,6 +14,8 @@ if(!require("tree")) install.packages("tree"); library("tree")
 if(!require("rpart")) install.packages("rpart"); library("rpart")
 # rpart.plot to visualize your decision trees
 if(!require("rpart.plot")) install.packages("rpart.plot"); library("rpart.plot")
+# e1071 for Naive Bayes, etc.
+if(!require("e1071")) install.packages("e1071"); library("e1071")
 
 ### from Oren's file ###
 if(!require("matrixStats")) install.packages("matrixStats"); library("matrixStats")
@@ -28,8 +30,11 @@ if(!require("klaR")) install.packages("klaR"); library("klaR")
 # adabag for adaptive boosting and bagging
 if(!require("adabag")) install.packages("adabag"); library("adabag") 
 
-# nnet for Artificial Neural Networks
+# nnet or neuralnet for Artificial Neural Networks
 if(!require("nnet")) install.packages("nnet"); library("nnet")
+if(!require("neuralnet")) install.packages("neuralnet"); library("neuralnet")
+# deepnet for Deep Artificial Neural Networks
+if(!require("deepnet")) install.packages("deepnet"); library("deepnet")
 # darch for Deep Architectures and Restricted Boltzmann Machines
 if(!require("darch")) install.packages("darch"); library("darch")
 
