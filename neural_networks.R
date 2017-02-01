@@ -27,8 +27,6 @@ corrplot(correlation_matrix, title = "Correlation Matrix", type = "full", order 
 
 
 
-
-
 ##### Neural Networks #####
 # Set up parallel computing - look at Exercise 7 for more details
 if(!require("doParallel")) install.packages("doParallel"); library("doParallel") # load the package
@@ -37,20 +35,23 @@ if(!require("microbenchmark")) install.packages("microbenchmark"); library("micr
 # Setup up parallel backend
 # Detect number of available clusters, which gives you the maximum number of "workers" your computer has
 no_of_cores = detectCores()
-message(no_of_cores)
 cl = makeCluster(max(1,no_of_cores))
 registerDoParallel(cl)
 message(paste("\n Registered number of cores:\n",getDoParWorkers(),"\n"))
 
 # Initialise model control
 model_control = trainControl(
-  method = "cv", # 'cv' for cross validation
+  method = "adaptive_cv", # 'cv' for cross validation
   number = 5, # number of folds in cross validation
   repeats = 1, # number for repeated cross validation
   classProbs = TRUE,
   summaryFunction = twoClassSummary,
+  timingSamps = 10000, # number of samples to predict the time taken
+  sampling = "smote", # This resolves class imbalances. 
+  # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
   allowParallel = TRUE, # Enable parallelization if available
   savePredictions = TRUE, # Save the hold-out predictions
+  verboseIter = TRUE, # Print training log
   returnData = FALSE # The training data will not be included in the output training object
 )
 
