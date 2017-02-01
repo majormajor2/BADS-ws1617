@@ -10,16 +10,17 @@ source("performance_measures.R")
 
 get_optimal_cutpoint <- function(dataframe_pred, dataframe_perf){
   
+  # CHECK FOR NEW PREDICTIONS
+  idx <- which(!colnames(dataframe_pred)[-1] %in% colnames(dataframe_perf))
+  predictions <- colnames(dataframe_pred)[idx]
+  
   # GET COST MATRIX
   cost.matrix <- build_cost_matrix()
  
   # MODEL.CONTROL
   # method: maxKappa
   model.control.optc = control.cutpoints(CFP = -cost.matrix[2,1], CFN = -cost.matrix[1,2], costs.ratio = -cost.matrix[2,1]/-cost.matrix[1,2], weighted.Kappa = TRUE)
-    
-  # GET NAMES OF PREDICTIONS
-  predictions <- colnames(dataframe_pred)[-1]
-  
+
   # loop over all predictions
   for(pred in predictions){
     
