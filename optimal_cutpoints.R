@@ -53,7 +53,11 @@ get_optimal_cutpoint <- function(dataframe_pred, dataframe_perf){
     dataframe_perf[dataframe_perf[,"metrics"] == "avg_return", pred] <- predictive.performance$avg_return
 
     # PRINT
-    print(paste("model: ", pred, "; cutoff: ",(dataframe_perf[3, pred]), "; avg_return: ", dataframe_perf[4, pred], sep = ""))
+    print(paste("model: ", pred, 
+                "; AUC: ", dataframe_perf[dataframe_perf[,"metrics"] == "AUC", pred], 
+                "; cutoff: ",(dataframe_perf[3, pred]), 
+                "; avg_return: ", dataframe_perf[dataframe_perf[,"metrics"] == "avg_return", pred],
+                sep = ""))
     }
   
   # OUTPUT
