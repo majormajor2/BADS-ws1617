@@ -91,11 +91,6 @@ predictions_all = data.frame(return_customer = known$return_customer)
 ######### Partition the data ##############
 
 # Split data set into 80% training and 20% test data
-# (only needed for different method of partitioning)
-# sample_size = size of the training set 
-# sample_size = ceiling(nrow(known)*0.8) 
-
-
 # Draw a random stratified sample in which both train and test set have roughly the same ratio of the target classes.
 # The function creatDataPartition returns the indices of a stratified training set with size p * size of data.
 
@@ -104,12 +99,10 @@ set.seed(666)
 idx_train  = createDataPartition(y = known$return_customer, p = 0.8, list = FALSE) 
 train_data = known[idx_train, ] # training set
 test_data  =  known[-idx_train, ] # test set (drop all observations with train indices)
-
-
-# idx_validation = createDataPartition(y = train_data$return_customer, p = 0.25, list = FALSE)
-# validation_data = train_data[idx_validation, ]
-# train_data = train_data[-idx_validation, ]
-
+set.seed(999) # just making sure ;)
+idx_validation = createDataPartition(y = train_data$return_customer, p = 0.25, list = FALSE)
+validation_data = train_data[idx_validation, ] # Validation is for testing the models before the meta model is run
+train_data = train_data[-idx_validation, ]
 
 
 ###### Weight of Evidence ######
@@ -120,6 +113,8 @@ columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "p
 woe_object = calculate_woe(train_data, target = "return_customer", columns_to_replace = columns_to_replace)
 # Replace multilevel factor columns in train_data by their woe
 train_data_woe = apply_woe(dataset = train_data, woe_object = woe_object)
+# Apply woe to validation (input any dataset where levels are identical to trained woe_object)
+validation_data_woe = apply_woe(dataset = validation_data, woe_object = woe_object)
 # Apply woe to test (input any dataset where levels are identical to trained woe_object)
 test_data_woe = apply_woe(dataset = test_data, woe_object = woe_object)
 # Apply woe to class (input any dataset where new levels emerge compared to training datset)
@@ -134,29 +129,33 @@ class_woe = apply_woe(dataset = class, woe_object = woe_object)
 # 1 CALCULATE WOE-OBJECT 
 # 1.1 create bins for train-dataset
 # train_data_bins
-train_data_bins_ew <- create_bins(train_data_woe, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = FALSE)
-train_data_bins_ef <- create_bins(train_data_woe, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = FALSE)
+train_data_bins_ew = create_bins(train_data_woe, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = FALSE)
+train_data_bins_ef = create_bins(train_data_woe, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = FALSE)
 
 # 1.2 calculate woe form binned train-datasets
-woe_object_ew <- calculate_woe(train_data_bins_ew, columns = c("email_domain", "postcode_invoice", "postcode_delivery", "advertising_code"))
-woe_object_ef <- calculate_woe(train_data_bins_ef, columns = c("email_domain", "postcode_invoice", "postcode_delivery", "advertising_code"))
+woe_object_ew = calculate_woe(train_data_bins_ew, columns = c("email_domain", "postcode_invoice", "postcode_delivery", "advertising_code"))
+woe_object_ef = calculate_woe(train_data_bins_ef, columns = c("email_domain", "postcode_invoice", "postcode_delivery", "advertising_code"))
 
 # train_data_woe
-train_data_woe_ew <- create_bins(train_data_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
-train_data_woe_ef <- create_bins(train_data_woe, woe_object_ef, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
+train_data_woe_ew = create_bins(train_data_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
+train_data_woe_ef = create_bins(train_data_woe, woe_object_ef, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
+
+# validation_data_woe
+validation_data_woe_ew = create_bins(validation_data_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
+validation_data_woe_ef = create_bins(validation_data_woe, woe_object_ef, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
 
 # test_data_woe
-test_data_woe_ew <- create_bins(test_data_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
-test_data_woe_ef <- create_bins(test_data_woe, woe_object_ef, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
+test_data_woe_ew = create_bins(test_data_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
+test_data_woe_ef = create_bins(test_data_woe, woe_object_ef, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
 
 # class_data_woe
-class_woe_ew <- create_bins(class_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
-class_woe_ef <- create_bins(class_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
+class_woe_ew = create_bins(class_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = TRUE, run_woe = TRUE)
+class_woe_ef = create_bins(class_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH = FALSE, run_woe = TRUE)
 
 
-######## Cost matrix
-cost.matrix <- build_cost_matrix(CBTN = 3, CBFP = -10)
+######## Cost matrix ##########
+cost.matrix = build_cost_matrix(CBTN = 3, CBFP = -10)
 
 
-### Plotting
+##### Plotting ######
 par(mar=c(1,1,1,1)) # to make sure the plot works on a small screen
