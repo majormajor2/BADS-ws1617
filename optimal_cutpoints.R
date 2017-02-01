@@ -28,7 +28,11 @@ get_optimal_cutpoint <- function(dataframe = df_predictions_test){
       methods = "MCT", 
       data = dataframe, 
       control = model.control.optc)
-  return(oc)
+    
+    optimal_cutoff <-  oc$MCT$Global$optimal.cutoff$cutoff
+  return(optimal_cutoff)
 }
+
+
 
 
