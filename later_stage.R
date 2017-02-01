@@ -1,4 +1,4 @@
-# source("main.R")
+source("main.R")
 
 ############ TEST ################
 # Matrix of histograms

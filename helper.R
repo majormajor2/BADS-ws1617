@@ -392,21 +392,21 @@ truncate_outliers = function(column, multiple = 1.5, only_positive = FALSE)
 }
 
 ## Function to truncate outliers in the entire dataset
-treat_outliers = function(dataset)
+treat_outliers = function(dataset, mode = "sqrt")
 {
   data = dataset
   
   # get the columns that include time differences
   time_diff_columns = c("deliverydate_estimated","deliverydate_actual")
   data[,time_diff_columns] = sapply(data[,time_diff_columns], truncate_outliers)
-  data$account_creation_date = normalize(-data$account_creation_date, mode = "sqrt")
+  data$account_creation_date = normalize(abs(data$account_creation_date), mode = "sqrt")
   data$account_creation_date[data$account_creation_date > 0] = truncate_outliers(data$account_creation_date[data$account_creation_date > 0])
   
   # get the columns that have only positive values (all item counts + weight)
   include_pattern = c("_count|_items|weight")
   exclude_pattern = c("weight_missing")
   columns_with_only_positive = setdiff(grep(include_pattern, colnames(data)), grep(exclude_pattern, colnames(data)))
-  mode = "sqrt"
+  
   if(mode == "log"){data[,columns_with_only_positive] = data[,columns_with_only_positive]+1}
   data[,columns_with_only_positive] = sapply(data[,columns_with_only_positive], normalize, mode = mode)
   
