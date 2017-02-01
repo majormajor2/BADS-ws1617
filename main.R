@@ -54,6 +54,7 @@ source("helper.R")
 source("weight.R")
 source("woe.R")
 source("performance_measures.R")
+source("Binning.R")
 
 ####### Set seed ################
 
