@@ -441,3 +441,21 @@ strongly_correlated = function(dataset, threshold = 0.7)
   # return unique variable names
   return(unique(dropped_variables))
 }
+
+
+#### MASTER DATASET 
+# save predictions to one data frame & export it as csv file
+
+# call the master file
+call_master <- function(filename.csv = "predictions_test.csv"){
+  # download current version of masterfile
+  master = read.csv(filename.csv, header=T, sep=",", row.names = 1)
+  return(master)
+}
+
+# save prediction to master file
+save_prediction_to_master <- function(filename.csv = "predictions_test.csv", master = df_predictions_test){
+  # save as csv
+  write.csv(x = master, file = filename.csv)
+  return(master)
+}
