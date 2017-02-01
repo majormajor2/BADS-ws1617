@@ -18,9 +18,14 @@ df_predictions_test <- save_prediction_to_master(filename.csv = "predictions_tes
 
 # predictive performance on validation (model selection for meta model)
 df_performance_validation <- data.frame(metrics = c("AUC", "hmeasure", "cutoff", "avg_return"))
+# save it to csv file
+df_performance_validation <- save_prediction_to_master(filename.csv = "performance_validation.csv", master = df_performance_validation)
 
 # predictive performance on test (final model selection)
 df_performance_test <- data.frame(metrics = c("AUC", "hmeasure", "cutoff", "avg_return"))
+# save it to csv file
+df_performance_test <- save_prediction_to_master(filename.csv = "performance_test.csv", master = df_performance_test)
+
 
 
 
