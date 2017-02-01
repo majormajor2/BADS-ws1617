@@ -10,6 +10,7 @@ known <- treat_postcodes(known)
 known <- standardize_weight(known)
 
 
+
 ## Partition data, excluding columns with NA
 
 # which columns have NAs
