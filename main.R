@@ -158,14 +158,10 @@ class_woe_ef = create_bins(class_woe, woe_object_ew, NO_BINS = 5, DO_EQUAL_WIDTH
 cost.matrix = build_cost_matrix(CBTN = 3, CBFP = -10)
 
 
-<<<<<<< HEAD
 ####### Call Master File
 df_predictions_test <- call_master(filename.csv = "predictions_test.csv")
 
 
 
 ### Plotting
-=======
-##### Plotting ######
->>>>>>> 5388ca2b6a048a77e3c8e201755e86f4e4ec70a8
 par(mar=c(1,1,1,1)) # to make sure the plot works on a small screen
