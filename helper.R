@@ -453,7 +453,7 @@ call_master <- function(filename.csv = "predictions_test.csv"){
   return(master)
 }
 
-# save prediction to master file
+# save prediction to master
 save_prediction_to_master <- function(filename.csv = "predictions_test.csv", master = df_predictions_test){
   # save as csv
   write.csv(x = master, file = filename.csv)
