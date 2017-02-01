@@ -30,6 +30,17 @@ corrplot(correlation_matrix, title = "Correlation Matrix", type = "full", order 
 
 
 ##### Neural Networks #####
+# Set up parallel computing - look at Exercise 7 for more details
+if(!require("doParallel")) install.packages("doParallel"); library("doParallel") # load the package
+if(!require("microbenchmark")) install.packages("microbenchmark"); library("microbenchmark") # load the package
+
+# Setup up parallel backend
+# Detect number of available clusters, which gives you the maximum number of "workers" your computer has
+no_of_cores = detectCores()
+message(no_of_cores)
+cl = makeCluster(max(1,no_of_cores))
+registerDoParallel(cl)
+message(paste("\n Registered number of cores:\n",getDoParWorkers(),"\n"))
 
 # Initialise model control
 model_control = trainControl(
@@ -39,6 +50,7 @@ model_control = trainControl(
   classProbs = TRUE,
   summaryFunction = twoClassSummary,
   allowParallel = TRUE, # Enable parallelization if available
+  savePredictions = TRUE, # Save the hold-out predictions
   returnData = FALSE # The training data will not be included in the output training object
 )
 
@@ -49,7 +61,11 @@ ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 0, 1)), size = seq(3,30,3))
 # Train neural network ANN with 5-fold cross validation
 ANN = train(return_customer~., data = train60_normalized,  
               method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
-              tuneGrid = nn_parms, # parameters to be tested
+              tuneGrid = ANN_parms, # parameters to be tested
               metric = "ROC", trControl = model_control)
 
-prediction_ANN = predict(ANN, newdata = test_data, type = "prob")[,2]
+prediction_ANN = predict(ANN, newdata = validation_normalized, type = "prob")[,2]
+
+
+# Don't forget to stop the parallel computing cluster when you don't need it anymore!
+stopCluster(cl)
