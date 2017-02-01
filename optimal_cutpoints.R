@@ -32,17 +32,22 @@ get_optimal_cutpoint <- function(dataframe_pred, dataframe_perf){
       data = dataframe_pred, 
       control = model.control.optc)
     
-    # SELECT OPTIMAL CUTPOINT 
+    # SELECT OPTIMAL CUTPOINT & store hmeasure and AUC in dataframe
     df <- data.frame(cutoff = oc$MCT$Global$optimal.cutoff$cutoff)
     for(index in 1:length(oc$MCT$Global$optimal.cutoff$cutoff)){
-        df[index,"avg_return"] <- predictive_performance(dataframe_pred$return_customer, prediction = dataframe_pred[,pred], cutoff = df[index,"cutoff"])$avg_return
-        }
+      # optimal cutpoint
+      predictive.performance <- predictive_performance(dataframe_pred$return_customer, prediction = dataframe_pred[,pred], cutoff = df[index,"cutoff"])
+      df[index,"avg_return"] <- predictive.performance$avg_return 
+      # AUC & hmeasure
+      dataframe_perf[dataframe_perf[,"metrics"] == "AUC", pred] <- predictive.performance$area_under_curve
+      dataframe_perf[dataframe_perf[,"metrics"] == "hmeasure", pred] <- predictive.performance$h_measure
+    }
     optimalcutpoint <- df[df$avg_return == max(df$avg_return), "cutoff"]
       
     # STORE RESULTS IN DATAFRAME 
     # store optimal cupoint
-    dataframe_perf[3, pred] <- optimalcutpoint
-    dataframe_perf[4, pred] <- df[df$cutoff == optimalcutpoint, "avg_return"]
+    dataframe_perf[dataframe_perf[,"metrics"] == "cutoff", pred] <- optimalcutpoint
+    dataframe_perf[dataframe_perf[,"metrics"] == "avg_return", pred] <- df[df$cutoff == optimalcutpoint, "avg_return"]
     
     # PRINT
     print(paste("model: ", pred, "; cutoff: ",(dataframe_perf[3, pred]), "; avg_return: ", dataframe_perf[4, pred], sep = ""))
