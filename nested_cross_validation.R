@@ -44,7 +44,7 @@ model_control = trainControl(
 
 
 timing_parallel = system.time( 
-  results <- foreach(i = 1:k, .combine = c, .packages = c("caret","nnet", "pROC")) %dopar%
+  results <- foreach(i = 1:k, .combine = c, .packages = c("caret","nnet", "pROC"), .verbose = TRUE) %dopar%
   {
     # Split data into training and validation folds
     idx_test = which(fold_membership == i)
@@ -61,9 +61,20 @@ timing_parallel = system.time(
                 tuneLength = 15,
                 metric = "Kappa", trControl = model_control)
     
-    prediction_ANN = predict(decision_tree, newdata = test_fold, type = "prob")[,2]
+    prediction_ANN = predict(ANN, newdata = validation_fold, type = "raw")
     
-    auc(test_fold$return_customer, prediction_dt)
+    metaANN = train(return_customer~., data = cbind.data.frame(return_customer = validation_fold$return_customer, prediction_ANN),  
+                     method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
+                     bag = TRUE,
+                     #tuneGrid = ANN_parms, # parameters to be tested
+                     tuneLength = 10,
+                     metric = "Kappa", trControl = model_control)
+    
+    prediction_metaANN = predict(metaANN, newdata = test_fold, type = "raw")
+    
+    list(ANN = ANN, prediction_ANN = prediction_ANN, 
+         metaANN = metaANN, prediction_metaANN = prediction_metaANN, 
+         auc = auc(test_fold$return_customer, prediction_metaANN))
   } 
 )[3]   # End timing
 
