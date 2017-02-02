@@ -2,7 +2,7 @@
 
 
 # Helper function to compute measures of predictive accuracy
-predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5) 
+predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5, returnH = TRUE) 
 {
   # Assumptions:
   # y is a vector of factors
@@ -49,16 +49,22 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5)
   # Calculate ROC
   plotROC(results = H)
   
-  return(list(brier_score = brier_score, 
-              classification_error = classification_error, 
-              h_measure = h_measure,
-              area_under_curve = auc,
-              gini = gini,
-              precision = precision,
-              true_positives = TP,
-              false_positives = FP,
-              true_negatives = TN,
-              false_negatives = FN,
-              avg_return = score,
-              H = HMeasure))
+  # create a list of the performance measures
+  output = list(brier_score = brier_score, 
+                classification_error = classification_error, 
+                h_measure = h_measure,
+                area_under_curve = auc,
+                gini = gini,
+                precision = precision,
+                true_positives = TP,
+                false_positives = FP,
+                true_negatives = TN,
+                false_negatives = FN,
+                avg_return = score,
+                H = H)
+  
+  # if returnH is FALSE, drop H object from output
+  if(!returnH){output$H = NULL}
+  
+  return(output)
 }
