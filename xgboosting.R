@@ -152,7 +152,7 @@ xgb.parms.2 <- expand.grid(nrounds = c(200, 800, 1000),
 
 
 ### 2. MODELS
-## 2.1 xgb without preprocessing
+## 2.1 xgb without preprocessing - TRAIN60
 xgb.default <- train(return_customer~., data = train60_data,  
                  method = "xgbTree",
                  tuneGrid = xgb.parms.default,
@@ -246,25 +246,25 @@ xgb.pca.pred <- predict(xgb_PCA, newdata = validation_data_woe, type = "prob")[,
 ### 4. SCORE
 
 #Base model score
-xgb_base_default_score <- predictive_performance(validation_data$return_customer, xgb.default.pred, cutoff = 0.238)
+xgb_base_default_score <- predictive_performance(test_data$return_customer, xgb.default.pred, cutoff = 0.238)
 xgb_base_param1_score <-predictive_performance(validation_data$return_customer, xgb.param1.pred, cutoff = 0.19)
-xgb_base_param2_score <-predictive_performance(validation_data$return_customer, xgb.param2.pred, cutoff = 0.19)
+xgb_base_param2_score <-predictive_performance(test_data$return_customer, xgb.param2.pred, cutoff = 0.19)
 #  need to find optimal cutpoints
 
 #WOE
-xgb_woe_default_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe.default.pred, cutoff = 0.212)
-xgb_woe_param1_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe.param1.pred, cutoff = 0.212)
+xgb_woe_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.default.pred, cutoff = 0.212)
+xgb_woe_param1_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.param1.pred, cutoff = 0.212)
 xgb_woe_param2_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe.param2.pred, cutoff = 0.212)
 #  need to find optimal cutpoints
 
 
 #WOE  + Binning
-xgb_ef_default_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe_ef.default, cutoff = 0.212)
-xgb_ew_default_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe_ew.default, cutoff = 0.212)
+xgb_ef_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe_ef.default, cutoff = 0.212)
+xgb_ew_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe_ew.default, cutoff = 0.212)
 #  need to find optimal cutpoints
 
 #WOE + PCA
-xgb_pca_default_score <-predictive_performance(validation_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
+xgb_pca_default_score <-predictive_performance(test_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
 #  need to find optimal cutpoints
 
 
@@ -294,7 +294,7 @@ df_predictions_validation = save_prediction_to_master("predictions_validation.cs
 ### 1. Setup  
 ## Specify the number of folds
 # Remember that each candidate model will be constructed on each fold
-k <- 3
+k <- 5
 # Set a seed for the pseudo-random number generator
 set.seed(123)
 
@@ -320,7 +320,7 @@ model.control <- trainControl(
 rf.parms <- expand.grid(mtry = 1:10)
 
 # 2.1 Train random forest rf with a 5-fold cross validation 
-rf.caret <- train(return_customer~., 
+rf.default <- train(return_customer~., 
                   data = train60_data,  
                   method = "rf", 
                   ntree = 500, 
@@ -328,8 +328,8 @@ rf.caret <- train(return_customer~.,
                   metric = "ROC", 
                   trControl = model.control)
 # 2.2 RF with woe
-rf.caret.woe <- train(return_customer~., 
-                  data = train60_data_woe,  
+rf.woe.80 <- train(return_customer~., 
+                  data = train_data_woe,  
                   method = "rf", 
                   ntree = 500, 
                   tuneGrid = rf.parms, 
@@ -350,7 +350,7 @@ plot(rf.caret)
 # i.e. the probability of someone being a bad risk
 yhat.rf.caret   <- predict(rf.caret, newdata = test_data, type = "prob")[,2]
 
-yhat.rf.caret.woe   <- predict(rf.caret.woe, newdata = test_data_woe, type = "prob")[,2]
+pred.rf.woe.80   <- predict(rf.woe.80, newdata = test_data_woe, type = "prob")[,2]
 
 
 ### 4. MODEL EVALUATION
@@ -362,13 +362,14 @@ auc.caret.woe <- auc(test_data_woe$return_customer, yhat.rf.caret.woe)
 # Area under the curve: 0.6503
 
 ### 5. SCORE
-predictive_performance(test_data_woe$return_customer, yhat.rf.caret.woe, cutoff = 0.227)
+predictive_performance(test_data_woe$return_customer, pred.rf.woe.80, cutoff = 0.227)
 # 0.227 maxmizes the score for xgb + woe i.e. 0.7803
 
 
 
 
-
-
+df_predictions_validation = call_master("predictions_test.csv")
+df_predictions_validation$rf.woe = xgb.default.pred #hamayun
+df_predictions_validation = save_prediction_to_master("predictions_test.csv", df_predictions_validation)
 
 
