@@ -3,6 +3,10 @@
 ######## Load packages ###############
 # Try to load the package, if it doesn't exist, then install and load it
 
+# Set up parallel computing - look at Exercise 7 for more details
+if(!require("doParallel")) install.packages("doParallel"); library("doParallel") # load the package
+if(!require("microbenchmark")) install.packages("microbenchmark"); library("microbenchmark") # load the package
+
 # lubridate for dates
 if(!require("lubridate")) install.packages("lubridate"); library("lubridate") 
 
@@ -105,8 +109,47 @@ idx_validation = createDataPartition(y = train_data$return_customer, p = 0.25, l
 train60_data = train_data[-idx_validation, ] # this is the smaller 60% dataset for training before validation
 validation_data = train_data[idx_validation, ] # Validation is for testing the models before the meta model is run
 
+###### Nested Cross Validation ######
+# Setup up parallel backend
+# Detect number of available clusters, which gives you the maximum number of "workers" your computer has
+no_of_cores = detectCores()
+cl = makeCluster(max(1,no_of_cores))
+registerDoParallel(cl)
+message(paste("\n Registered number of cores:\n",getDoParWorkers(),"\n"))
 
+# Set number of folds
+k = 4
+# Set seed for reproducability
+set.seed(123)
+fold_membership = createFolds(train_data$return_customer, k = k, list = FALSE)
+set.seed(123)
+outer_folds = createFolds(train_data$return_customer, k = k, list = TRUE, returnTrain = TRUE)
+set.seed(123)
+small_folds = createFolds(train_data$return_customer, k = k, list = TRUE)
 
+for(fold in outer_folds)
+{
+  dataset = train_data[fold,]
+}
+results = foreach(i = outer_folds, .combine = c, .packages = c("caret","nnet", "pROC")) %dopar%
+  {
+  # Split data into training and validation
+    train_fold = train_data[i,]
+    test_fold  = train_data[-i,]
+    decision_tree = rpart(return_customer ~ ., data = train_fold, method = "class", cp = 0.001, minbucket = 8)
+    prediction_dt = predict(decision_tree, newdata = test_fold, type = "prob")[,2]
+    auc(test_fold$return_customer, prediction_dt)
+  }
+  idx_val <- which(fold_membership == i)
+  cv.train <- train.rnd[-idx.val,]
+  cv.val <- train.rnd[idx.val,]
+  # Train the neural network model with a number of nodes n
+  neuralnet <- nnet(BAD~., data = cv.train, trace = FALSE, maxit = 1000, size = nnet.sizes[n])
+  # Build and evaluate models using these partitions
+  yhat <- predict(neuralnet, newdata = cv.val, type = "raw")
+  # We use our above function to calculate the classification error
+  auc(cv.val$BAD, as.vector(yhat))
+}
 ###### Weight of Evidence ######
 # Will create a new dataframe consisting of all the variables of known but replaces the factor
 # variables into numerical variables according to the weight of evidence
