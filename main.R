@@ -47,6 +47,9 @@ if(!require("darch")) install.packages("darch"); library("darch")
 #drat:::addRepo("dmlc")
 #if(!require("mxnet")) install.packages("mxnet"); library("mxnet")
 
+# DMwR for additional sampling conducted after resampling to resolve class imbalances
+if(!require("DMwR")) install.packages("DMwR"); library("DMwR")
+
 # hmeasure for Area Under the Curve (alternatives are pROC and ROCR)
 # hmeasure package requires all predictions to be available in one data frame
 if(!require("hmeasure")) install.packages("hmeasure"); library("hmeasure")
@@ -110,7 +113,7 @@ train60_data = train_data[-idx_validation, ] # this is the smaller 60% dataset f
 validation_data = train_data[idx_validation, ] # Validation is for testing the models before the meta model is run
 
 ###### Nested Cross Validation ######
-# Setup up parallel backend
+# Setup of parallel backend
 # Detect number of available clusters, which gives you the maximum number of "workers" your computer has
 no_of_cores = detectCores()
 cl = makeCluster(max(1,no_of_cores))
@@ -121,35 +124,73 @@ message(paste("\n Registered number of cores:\n",getDoParWorkers(),"\n"))
 k = 4
 # Set seed for reproducability
 set.seed(123)
-fold_membership = createFolds(train_data$return_customer, k = k, list = FALSE)
-set.seed(123)
+# Create folds for cross validation
 outer_folds = createFolds(train_data$return_customer, k = k, list = TRUE, returnTrain = TRUE)
-set.seed(123)
-small_folds = createFolds(train_data$return_customer, k = k, list = TRUE)
 
-for(fold in outer_folds)
-{
-  dataset = train_data[fold,]
-}
-results = foreach(i = outer_folds, .combine = c, .packages = c("caret","nnet", "pROC")) %dopar%
+# Define a search grid of tuning parameters to test
+dt_parms = expand.grid(cp = c(0, 10^seq(-5, 0, 1)), minbucket = seq(5,20,1))
+
+# Initialise model control
+model_control = trainControl(
+  method = "cv", # 'cv' for cross validation, 'adaptive_cv' drops unpromising models
+  number = 5, # number of folds in cross validation (or number of resampling iterations)
+  #repeats = 5, # number of repeats for repeated cross validation
+  search = "random", # or grid for a grid search
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary,
+  #timingSamps = length(fold), # number of samples to predict the time taken
+  #sampling = "smote", # This resolves class imbalances. 
+  # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
+  allowParallel = TRUE, # Enable parallelization if available
+  savePredictions = TRUE, # Save the hold-out predictions
+  verboseIter = TRUE, # Print training log
+  returnData = FALSE) # The training data will not be included in the output training object
+
+results_sequential = vector()
+# Start timing
+timing_sequential = system.time( 
+  for(fold in outer_folds)
   {
-  # Split data into training and validation
-    train_fold = train_data[i,]
-    test_fold  = train_data[-i,]
-    decision_tree = rpart(return_customer ~ ., data = train_fold, method = "class", cp = 0.001, minbucket = 8)
+    # Split data into training and validation folds
+    train_fold = train_data[fold,]
+    test_fold  = train_data[-fold,]
+    
+    decision_tree = train(return_customer~., data = train_fold,  
+                          method = "rpart", 
+                          #maxit = 1000, trace = FALSE, # options for nnet function
+                          #tuneGrid = dt_parms, # parameters to be tested
+                          tuneLength = 15,
+                          metric = "ROC", trControl = model_control)
+    
+    prediction_dt = predict(decision_tree, newdata = test_fold, type = "prob")[,2]
+    results_sequential = append(results_sequential, auc(test_fold$return_customer, prediction_dt))
+  }
+)[3] # End timing
+
+
+
+timing_parallel = system.time( 
+  results <- foreach(fold = outer_folds, .combine = c, .packages = c("caret","rpart", "pROC")) %dopar%
+  {
+    # Split data into training and validation folds
+    train_fold = train_data[fold,]
+    test_fold  = train_data[-fold,]
+    
+    
+    decision_tree = train(return_customer~., data = train_fold,  
+          method = "rpart", 
+          #maxit = 1000, trace = FALSE, # options for nnet function
+          #tuneGrid = dt_parms, # parameters to be tested
+          tuneLength = 15,
+          metric = "Kappa", trControl = model_control)
+    
     prediction_dt = predict(decision_tree, newdata = test_fold, type = "prob")[,2]
     auc(test_fold$return_customer, prediction_dt)
-  }
-  idx_val <- which(fold_membership == i)
-  cv.train <- train.rnd[-idx.val,]
-  cv.val <- train.rnd[idx.val,]
-  # Train the neural network model with a number of nodes n
-  neuralnet <- nnet(BAD~., data = cv.train, trace = FALSE, maxit = 1000, size = nnet.sizes[n])
-  # Build and evaluate models using these partitions
-  yhat <- predict(neuralnet, newdata = cv.val, type = "raw")
-  # We use our above function to calculate the classification error
-  auc(cv.val$BAD, as.vector(yhat))
-}
+  } 
+)[3]   # End timing
+
+
+
 ###### Weight of Evidence ######
 # Will create a new dataframe consisting of all the variables of known but replaces the factor
 # variables into numerical variables according to the weight of evidence

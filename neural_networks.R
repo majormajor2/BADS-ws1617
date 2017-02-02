@@ -43,8 +43,9 @@ message(paste("\n Registered number of cores:\n",getDoParWorkers(),"\n"))
 # Initialise model control
 model_control = trainControl(
   method = "adaptive_cv", # 'cv' for cross validation
-  number = 5, # number of folds in cross validation
+  number = 4, # number of folds in cross validation
   repeats = 1, # number for repeated cross validation
+  search = "random",
   classProbs = TRUE,
   summaryFunction = twoClassSummary,
   timingSamps = 10000, # number of samples to predict the time taken
