@@ -12,7 +12,7 @@ get_optimal_cutpoint <- function(dataframe_pred, dataframe_perf){
   
   # CHECK FOR NEW PREDICTIONS
   idx <- which(!colnames(dataframe_pred)[-1] %in% colnames(dataframe_perf))
-  predictions <- colnames(dataframe_pred)[idx]
+  predictions <- colnames(dataframe_pred)[-1][idx]
   
   # GET COST MATRIX
   cost.matrix <- build_cost_matrix()
@@ -39,13 +39,13 @@ get_optimal_cutpoint <- function(dataframe_pred, dataframe_perf){
     # check if cutpoint unique                  
     for(index in 1:length(oc$MCT$Global$optimal.cutoff$cutoff)){
       # optimal cutpoint
-      df[index,"avg_return"] <- predictive_performance(dataframe_pred$return_customer, prediction = dataframe_pred[,pred], cutoff = df[index,"cutoff"])$avg_return
+      df[index,"avg_return"] <- predictive_performance(dataframe_pred$return_customer, prediction = dataframe_pred[,pred], cutoff = df[index,"cutoff"], returnH = FALSE)$avg_return
       }
     optimalcutpoint <- df[df$avg_return == max(df$avg_return), "cutoff"]
       
     # STORE RESULTS IN DATAFRAME 
     # calculate predictive_performance again
-    predictive.performance <- predictive_performance(dataframe_pred$return_customer, prediction = dataframe_pred[,pred], cutoff = optimalcutpoint)
+    predictive.performance <- predictive_performance(dataframe_pred$return_customer, prediction = dataframe_pred[,pred], cutoff = optimalcutpoint, returnH = FALSE)
     # store performance measures
     dataframe_perf[dataframe_perf[,"metrics"] == "AUC", pred] <- predictive.performance$area_under_curve
     dataframe_perf[dataframe_perf[,"metrics"] == "hmeasure", pred] <- predictive.performance$h_measure
