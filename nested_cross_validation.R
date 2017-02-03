@@ -41,6 +41,70 @@ model_control = trainControl(
   verboseIter = TRUE, # Print training log
   returnData = FALSE) # The training data will not be included in the output training object
 
+run_neural_network = function(dataset, fold_membership, model_control, k = 4, name = "neural_network", run_meta = TRUE)
+{
+
+  # Initialise output lists
+models = list()
+predictions = list()
+results = list()
+output = list()
+
+timing = system.time( 
+  
+  for(i in 1:k)
+  {
+    # Split data into training and validation folds
+    idx_test = which(fold_membership == i)
+    idx_validation = which(fold_membership == ifelse(i == k, 1, i+1))
+    
+    test_fold = dataset[idx_test,]
+    validation_fold = dataset[idx_validation,]
+    train_fold = dataset[-c(idx_test,idx_validation)]
+    
+    ANN = train(return_customer~., data = train_fold,  
+                method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
+                #tuneGrid = ANN_parms, # parameters to be tested
+                tuneLength = 10,
+                metric = "ROC", trControl = model_control)
+    
+    print("Training of primary model completed.")
+    
+    prediction_ANN = predict(ANN, newdata = validation_fold, type = "raw")
+    
+    print("Prediction by primary model completed.")
+    
+    if(run_meta)
+    {
+    metaANN = train(return_customer~., data = cbind.data.frame(return_customer = validation_fold$return_customer, prediction_ANN),  
+                    method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
+                    #tuneGrid = ANN_parms, # parameters to be tested
+                    tuneLength = 10,
+                    metric = "Kappa", trControl = model_control)
+    
+    print("Training of meta model completed.")
+    
+    prediction_metaANN = predict(metaANN, newdata = test_fold, type = "raw")
+    
+    print("Prediction by meta model completed.")
+    }
+    
+    models[i] = ANN
+    predictions[i] = prediction_ANN
+    results[i] = predictive_performance(validation_fold$return_customer, prediction_ANN, returnH = FALSE)
+    all[i] = list(ANN = ANN, prediction_ANN = prediction_ANN)
+  } 
+)[3]   # End timing
+
+
+
+# Stop the parallel computing cluster
+stopCluster(cl)
+
+return(list(models = models, predictions = predictions, results = results, all = all, timing = timing))
+}
+
+
 
 
 timing_parallel = system.time( 
@@ -55,17 +119,15 @@ timing_parallel = system.time(
     train_fold = train_data[-c(idx_test,idx_validation)]
     
     ANN = train(return_customer~., data = train_fold,  
-                method = "avNNet", maxit = 1000, trace = FALSE, # options for nnet function
-                bag = TRUE,
+                method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
                 #tuneGrid = ANN_parms, # parameters to be tested
-                tuneLength = 15,
+                tuneLength = 10,
                 metric = "Kappa", trControl = model_control)
     
     prediction_ANN = predict(ANN, newdata = validation_fold, type = "raw")
     
     metaANN = train(return_customer~., data = cbind.data.frame(return_customer = validation_fold$return_customer, prediction_ANN),  
                      method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
-                     bag = TRUE,
                      #tuneGrid = ANN_parms, # parameters to be tested
                      tuneLength = 10,
                      metric = "Kappa", trControl = model_control)
