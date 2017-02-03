@@ -75,28 +75,6 @@ prediction_ANN_norm = normalize(prediction_ANN)
 predictions_validation = data.frame(return_customer = validation_normalized$return_customer, ANN = prediction_ANN, ANN_norm = prediction_ANN_norm)
 
 
-# Function to return the optimal cutoff 
-# given a target vector of factors and a vector of predictions as probabilities.
-# Returns a number.
-optimal_cutoff = function(target, prediction, cost_matrix = build_cost_matrix(), tag_false = "no")
-{
-  # create dataframe for later use
-  df = data.frame(target = target, prediction = prediction)
-  # MODEL CONTROL
-  # method: maxKappa
-  model_control_cutpoints = control.cutpoints(CFP = -cost_matrix[2,1], CFN = -cost_matrix[1,2], costs.ratio = -cost_matrix[2,1]/-cost_matrix[1,2], weighted.Kappa = TRUE)
-  
-  # get the OC object
-  oc = optimal.cutpoints(X = "prediction", 
-                         status = "target",
-                         tag.healthy = tag_false,
-                         methods = "MCT", 
-                         data = df, 
-                         control = model_control_cutpoints)
-  
-  # extract optimal cutoff
-  optimal_cutoff = oc$MCT$Global$optimal.cutoff$cutoff
-  return(optimal_cutoff)
-}
+
 
 predictive_performance(validation_normalized$return_customer, prediction_ANN_norm, optimal_cutoff(validation_normalized$return_customer, prediction_ANN_norm))

@@ -4,16 +4,22 @@
 # Try to load the package, if it doesn't exist, then install and load it
 
 # Set up parallel computing - look at Exercise 7 for more details
-# Use doMC rather than doParallel because it works with caret
-if(!require("doMC")) install.packages("doMC"); library("doMC") 
 if(!require("doParallel")) install.packages("doParallel"); library("doParallel")
 if(!require("microbenchmark")) install.packages("microbenchmark"); library("microbenchmark")
 
+# forcats to handle NAs as factor levels
+if(!require("forcats")) install.packages("forcats"); library("forcats")
 # lubridate for dates
 if(!require("lubridate")) install.packages("lubridate"); library("lubridate") 
+# matrixStats for Oren's file
+if(!require("matrixStats")) install.packages("matrixStats"); library("matrixStats")
+# corrplot to make correlation plots
+if(!require("corrplot")) install.packages("corrplot"); library("corrplot")
+# klaR to find weights of evidence (WoE)
+if(!require("klaR")) install.packages("klaR"); library("klaR")
 
-# caret for classification and regression training
-if(!require("caret")) install.packages("caret"); library("caret") 
+
+
 # tree for classification and regression trees
 if(!require("tree")) install.packages("tree"); library("tree") 
 # rpart for recursive partitioning and regression trees
@@ -23,16 +29,8 @@ if(!require("rpart.plot")) install.packages("rpart.plot"); library("rpart.plot")
 # e1071 for Naive Bayes, etc.
 if(!require("e1071")) install.packages("e1071"); library("e1071")
 
-### from Oren's file ###
-if(!require("matrixStats")) install.packages("matrixStats"); library("matrixStats")
-if(!require("corrplot")) install.packages("corrplot"); library("corrplot")
-
-# forcats to handle NAs as factor levels
-if(!require("forcats")) install.packages("forcats"); library("forcats")
-
-# klaR to find weights of evidence (WoE)
-if(!require("klaR")) install.packages("klaR"); library("klaR")
-
+# caret for classification and regression training
+if(!require("caret")) install.packages("caret"); library("caret") 
 # adabag for adaptive boosting and bagging
 if(!require("adabag")) install.packages("adabag"); library("adabag") 
 
