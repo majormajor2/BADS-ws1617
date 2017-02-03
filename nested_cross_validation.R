@@ -23,7 +23,7 @@ fold_membership = createFolds(train_data$return_customer, list = FALSE, k = k)
 # Define a search grid of tuning parameters to test
 dt_parms = expand.grid(cp = c(0, 10^seq(-5, 0, 1)), minbucket = seq(5,20,1))
 #ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 0, 1)), size = seq(3,30,3))
-ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 0, 1)), size = seq(3,30,3))
+ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 1, 1)), size = seq(3,45,3))
 
 # Initialise model control
 model_control = trainControl(
@@ -54,6 +54,8 @@ timing = system.time(
   
   for(i in 1:k)
   {
+    print(paste("Begin inner cross validation in fold", i))
+    
     # Split data into training and validation folds
     idx_test = which(fold_membership == i)
     idx_validation = which(fold_membership == ifelse(i == k, 1, i+1))
@@ -61,6 +63,8 @@ timing = system.time(
     test_fold = dataset[idx_test,]
     validation_fold = dataset[idx_validation,]
     train_fold = dataset[-c(idx_test,idx_validation)]
+    
+    print("Begin training of primary model.")
     
     ANN = train(return_customer~., data = train_fold,  
                 method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
@@ -89,13 +93,15 @@ timing = system.time(
     print("Prediction by meta model completed.")
     }
     
+    print(paste("Completed all tasks in fold", i))
+    
     models[i] = ANN
     predictions[i] = prediction_ANN
     results[i] = predictive_performance(validation_fold$return_customer, prediction_ANN, returnH = FALSE)
     all[i] = list(ANN = ANN, prediction_ANN = prediction_ANN)
   } 
 )[3]   # End timing
-
+print(paste("Ended cross validation after", timing))
 
 
 # Stop the parallel computing cluster
