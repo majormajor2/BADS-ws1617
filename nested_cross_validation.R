@@ -3,16 +3,17 @@
 # Setup of parallel backend
 # Detect number of available clusters, which gives you the maximum number of "workers" your computer has
 no_of_cores = detectCores()
+#cl = makeCluster(max(1,no_of_cores-1)) - use on bigger computers, to leave one core for system
 cl = makeCluster(max(1,no_of_cores))
 registerDoParallel(cl)
-message(paste("\n Registered number of cores:\n",getDoParWorkers(),"\n"))
+message(paste("Registered number of cores:",getDoParWorkers()))
 
 
 # Set number of folds
-k = 4
+k = 5
 # Set seed for reproducability
 set.seed(123)
-# Create folds for cross validation
+# Create folds for cross validation (these are the big folds 3/4 of total) - not used in function at the moment
 training_folds = createFolds(train_data$return_customer, k = k, list = TRUE, returnTrain = TRUE)
 # Set seed for reproducability
 set.seed(123)
@@ -20,10 +21,14 @@ set.seed(123)
 fold_membership = createFolds(train_data$return_customer, list = FALSE, k = k)
 
 
-# Define a search grid of tuning parameters to test
+# Define a search grid of tuning parameters to test for decision tree
 dt_parms = expand.grid(cp = c(0, 10^seq(-5, 0, 1)), minbucket = seq(5,20,1))
 #ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 0, 1)), size = seq(3,30,3))
-ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 0, 1)), size = seq(3,30,3))
+ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 1, 1)), size = seq(3,45,3))
+pcANN_parms = expand.grid(decay = c(0, 10^seq(-5, 1, 1)), size = seq(3,45,3))
+avANN_parms = expand.grid(bag = c(FALSE, TRUE), decay = c(0, 10^seq(-5, 1, 1)), size = seq(3,45,3))
+DANN_parms = expand.grid(layer1 = seq(5, 50, 3), layer2 = seq(0, 30, 3), layer3 = seq(0, 10, 1))
+DANNII_parms = expand.grid(layer1 = seq(5, 50, 3), layer2 = seq(3, 30, 3), layer3 = seq(1, 10, 1), hidden_dropout = c(0, 10^seq(-5, 1, 1)), visible_dropout = c(0, 10^seq(-5, 1, 1)))
 
 # Initialise model control
 model_control = trainControl(
@@ -34,26 +39,108 @@ model_control = trainControl(
   classProbs = TRUE,
   summaryFunction = twoClassSummary,
   #timingSamps = length(fold), # number of samples to predict the time taken
-  #sampling = "smote", # This resolves class imbalances. 
+  sampling = "smote", # This resolves class imbalances. 
   # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
   allowParallel = TRUE, # Enable parallelization if available
   savePredictions = TRUE, # Save the hold-out predictions
   verboseIter = TRUE, # Print training log
   returnData = FALSE) # The training data will not be included in the output training object
 
-run_neural_network = function(dataset, fold_membership, model_control, k = 4, name = "neural_network", run_meta = TRUE)
+
+train_network = function(method, dataset, model_control)
+{
+  if(method %in% c("nnet", "pca", "avNNet"))
+  {
+    preprocessing = NULL
+    if(method == "pcaNNet"){method = "nnet" ; preprocessing = "pca"}
+    # Normal Artificial Neural Network
+    output = train(return_customer~., data = dataset,  
+              method = method, maxit = 1000, trace = FALSE, # options for nnet function
+              preProc = preprocessing,
+              tuneLength = 100,
+              metric = "ROC", trControl = model_control)
+  }
+  else
+  {
+    output = train(return_customer~., data = dataset,  
+                method = method, 
+                tuneLength = 150,
+                metric = "ROC", trControl = model_control)
+  }
+  
+  return(output)
+}
+
+
+run_neural_network_parallel = function(dataset, fold_membership, model_control, number_of_folds = 5)
+{
+  
+  # Initialise output lists
+  models = list()
+  predictions = list()
+  results = list()
+  output = list()
+  packages_neuralnet = c("caret","nnet", "deepnet", "neuralnet", "FCNN4R", "plyr", "pROC")
+  nets = c("nnet", "pcaNNet", "avNNet", "neuralnet", "dnn", "mlpSGD")
+  
+  # Start timing
+  timing = system.time( 
+    
+  fold_output <- foreach(i = 1:number_of_folds, .combine = list, .packages = packages_neuralnet, .verbose = TRUE) %:% foreach(net = nets, .combine = list, .packages = packages_neuralnet, .verbose = TRUE) %dopar%
+  {
+      print(paste("Begin inner cross validation in fold", i))
+      
+      # Split data into training and validation folds
+      idx_test = which(fold_membership == i)
+      idx_validation = which(fold_membership == ifelse(i == k, 1, i+1))
+      
+      test_fold = dataset[idx_test,]
+      validation_fold = dataset[idx_validation,]
+      train_fold = dataset[-c(idx_test,idx_validation)]
+      
+      print("Begin training of primary model.")
+
+      output = list(model = train_network(net, train_fold, model_control), prediction = predict(model, newdata = validation_fold, type = "raw"))
+
+      print("Training of primary model completed.")
+      print("Prediction by primary model completed.")
+      print(paste("Completed all tasks in fold", i))
+      
+      output
+    } 
+  )[3]   # End timing
+  print(paste("Ended cross validation after", timing))
+  
+  # Stop the parallel computing cluster
+  stopCluster(cl)
+  
+  return(list(folds = fold_output, timing = timing))
+}
+
+
+
+
+
+
+
+
+
+run_neural_network = function(dataset, fold_membership, model_control, number_of_folds = 5)
 {
 
   # Initialise output lists
-models = list()
-predictions = list()
-results = list()
-output = list()
-
-timing = system.time( 
-  
-  for(i in 1:k)
+  models = list()
+  predictions = list()
+  results = list()
+  output = list()
+   
+  # Start timing
+  timing = system.time( 
+  for(i in 1:number_of_folds)
   {
+
+    print(paste("Begin inner cross validation in fold", i))
+    
     # Split data into training and validation folds
     idx_test = which(fold_membership == i)
     idx_validation = which(fold_membership == ifelse(i == k, 1, i+1))
@@ -62,47 +149,105 @@ timing = system.time(
     validation_fold = dataset[idx_validation,]
     train_fold = dataset[-c(idx_test,idx_validation)]
     
+    print("Begin training of primary model.")
+    
+    # Normal Artificial Neural Network
     ANN = train(return_customer~., data = train_fold,  
-                method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
-                #tuneGrid = ANN_parms, # parameters to be tested
-                tuneLength = 10,
+                  method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
+                  #tuneGrid = ANN_parms, # parameters to be tested
+                  tuneLength = 100,
+                  metric = "ROC", trControl = model_control)
+    
+    # Artificial Neural Network with Principal Component Analysis
+    pcANN = train(return_customer~., data = train_fold,  
+                method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
+                preProc = "pca", # using principal component analysis
+                #tuneGrid = pcANN_parms, # parameters to be tested
+                tuneLength = 100,
+                metric = "ROC", trControl = model_control)
+    
+    # Model Averaged Neural Network
+    avANN = train(return_customer~., data = train_fold,  
+                method = "avNNet", maxit = 1000, trace = FALSE, # options for nnet function
+                #tuneGrid = avANN_parms, # parameters to be tested
+                tuneLength = 100,
+                metric = "ROC", trControl = model_control)
+    
+    # Deep Artificial Neural Network (using package neuralnet)
+    DANN = train(return_customer~., data = train_fold,  
+                method = "neuralnet", 
+                #tuneGrid = DANN_parms, # parameters to be tested
+                tuneLength = 150,
+                metric = "ROC", trControl = model_control)
+    
+    # Deep Artificial Neural Network (using package deepnet)
+    DANNII = train(return_customer~., data = train_fold,  
+                 method = "dnn", 
+                 #tuneGrid = DANNII_parms, # parameters to be tested
+                 tuneLength = 150,
+                 metric = "ROC", trControl = model_control)
+    
+    # Multilayer Perceptron Network by Stochastic Gradient Descent
+    # parameters: size, l2reg, lambda, learn_rate, momentum, gamma, minibatchsz, repeats
+    MLP = train(return_customer~., data = train_fold,  
+                method = "mlpSGD", 
+                #tuneGrid = MLP_parms, # parameters to be tested
+                tuneLength = 150,
                 metric = "ROC", trControl = model_control)
     
     print("Training of primary model completed.")
     
     prediction_ANN = predict(ANN, newdata = validation_fold, type = "raw")
+    prediction_avANN = predict(avANN, newdata = validation_fold, type = "raw")
+    prediction_pcANN = predict(pcANN, newdata = validation_fold, type = "raw")
+    prediction_DANN = predict(DANN, newdata = validation_fold, type = "raw")
+    prediction_DANNII = predict(DANNII, newdata = validation_fold, type = "raw")
+    prediction_MLP = predict(MLP, newdata = validation_fold, type = "raw")
     
     print("Prediction by primary model completed.")
     
-    if(run_meta)
-    {
-    metaANN = train(return_customer~., data = cbind.data.frame(return_customer = validation_fold$return_customer, prediction_ANN),  
-                    method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
-                    #tuneGrid = ANN_parms, # parameters to be tested
-                    tuneLength = 10,
-                    metric = "Kappa", trControl = model_control)
-    
-    print("Training of meta model completed.")
-    
-    prediction_metaANN = predict(metaANN, newdata = test_fold, type = "raw")
-    
-    print("Prediction by meta model completed.")
-    }
+    print(paste("Completed all tasks in fold", i))
     
     models[i] = ANN
     predictions[i] = prediction_ANN
     results[i] = predictive_performance(validation_fold$return_customer, prediction_ANN, returnH = FALSE)
-    all[i] = list(ANN = ANN, prediction_ANN = prediction_ANN)
+    output[i] = list(ANN = ANN, prediction_ANN = prediction_ANN)
   } 
 )[3]   # End timing
-
+print(paste("Ended cross validation after", timing))
 
 
 # Stop the parallel computing cluster
 stopCluster(cl)
 
-return(list(models = models, predictions = predictions, results = results, all = all, timing = timing))
+return(list(models = models, predictions = predictions, results = results, all = output, timing = timing))
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -122,7 +267,7 @@ timing_parallel = system.time(
                 method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
                 #tuneGrid = ANN_parms, # parameters to be tested
                 tuneLength = 10,
-                metric = "Kappa", trControl = model_control)
+                metric = "ROC", trControl = model_control)
     
     prediction_ANN = predict(ANN, newdata = validation_fold, type = "raw")
     
@@ -130,7 +275,7 @@ timing_parallel = system.time(
                      method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
                      #tuneGrid = ANN_parms, # parameters to be tested
                      tuneLength = 10,
-                     metric = "Kappa", trControl = model_control)
+                     metric = "ROC", trControl = model_control)
     
     prediction_metaANN = predict(metaANN, newdata = test_fold, type = "raw")
     
@@ -143,9 +288,22 @@ timing_parallel = system.time(
 
 
 
+# Option to run_meta
 
-
-
+if(run_meta)
+{
+  metaANN = train(return_customer~., data = cbind.data.frame(return_customer = validation_fold$return_customer, prediction_ANN),  
+                  method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
+                  #tuneGrid = ANN_parms, # parameters to be tested
+                  tuneLength = 10,
+                  metric = "ROC", trControl = model_control)
+  
+  print("Training of meta model completed.")
+  
+  prediction_metaANN = predict(metaANN, newdata = test_fold, type = "raw")
+  
+  print("Prediction by meta model completed.")
+}
 
 
 
@@ -208,7 +366,7 @@ timing_parallel = system.time(
                           #maxit = 1000, trace = FALSE, # options for nnet function
                           #tuneGrid = dt_parms, # parameters to be tested
                           tuneLength = 15,
-                          metric = "Kappa", trControl = model_control)
+                          metric = "ROC", trControl = model_control)
     
     prediction_dt = predict(decision_tree, newdata = test_fold, type = "prob")[,2]
     auc(test_fold$return_customer, prediction_dt)

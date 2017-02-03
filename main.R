@@ -4,8 +4,10 @@
 # Try to load the package, if it doesn't exist, then install and load it
 
 # Set up parallel computing - look at Exercise 7 for more details
-if(!require("doParallel")) install.packages("doParallel"); library("doParallel") # load the package
-if(!require("microbenchmark")) install.packages("microbenchmark"); library("microbenchmark") # load the package
+# Use doMC rather than doParallel because it works with caret
+if(!require("doMC")) install.packages("doMC"); library("doMC") 
+if(!require("doParallel")) install.packages("doParallel"); library("doParallel")
+if(!require("microbenchmark")) install.packages("microbenchmark"); library("microbenchmark")
 
 # lubridate for dates
 if(!require("lubridate")) install.packages("lubridate"); library("lubridate") 
@@ -41,12 +43,8 @@ if(!require("neuralnet")) install.packages("neuralnet"); library("neuralnet")
 if(!require("deepnet")) install.packages("deepnet"); library("deepnet")
 # darch for Deep Architectures and Restricted Boltzmann Machines
 if(!require("darch")) install.packages("darch"); library("darch")
-
-# Deep Networks with mxnet - do not work at the moment due to broken dependency (27Jan17)
-#if(!require("drat")) install.packages("drat", repos="https://cran.rstudio.com")
-#drat:::addRepo("dmlc")
-#if(!require("mxnet")) install.packages("mxnet"); library("mxnet")
-
+# FCNN4R for deep neural nets
+if(!require("FCNN4R")) install.packages("FCNN4R"); library("FCNN4R")
 # DMwR for additional sampling conducted after resampling to resolve class imbalances
 if(!require("DMwR")) install.packages("DMwR"); library("DMwR")
 
