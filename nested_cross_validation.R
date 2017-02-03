@@ -262,7 +262,7 @@ prepare = function(dataset, dropped_correlated_variables, target = "return_custo
 }
 
 # Run a normal neural network
-run_neural_network = function(dataset, fold_membership, model_control, number_of_folds = 5, runWoE = TRUE)
+run_neural_network = function(dataset, fold_membership, model_control, number_of_folds = 5, runWoE = TRUE, perform_normalization = TRUE)
 {
   
   # Initialise output lists
