@@ -3,8 +3,8 @@
 # Setup of parallel backend
 # Detect number of available clusters, which gives you the maximum number of "workers" your computer has
 no_of_cores = detectCores()
-#cl = makeCluster(max(1,no_of_cores-1)) - use on bigger computers, to leave one core for system
-cl = makeCluster(max(1,no_of_cores))
+cl = makeCluster(max(1,no_of_cores-1)) #- use on bigger computers, to leave one core for system
+#cl = makeCluster(max(1,no_of_cores))
 registerDoParallel(cl)
 message(paste("Registered number of cores:",getDoParWorkers()))
 
@@ -86,13 +86,13 @@ run_neural_network_parallel = function(dataset, fold_membership, model_control, 
   # Start timing
   timing = system.time( 
     
-  fold_output <- foreach(i = 1:number_of_folds, .combine = list, .packages = packages_neuralnet, .verbose = TRUE) %:% foreach(net = nets, .combine = list, .packages = packages_neuralnet, .verbose = TRUE) %dopar%
+  fold_output <- foreach(i = 1:number_of_folds, .combine = list, .packages = packages_neuralnet, .verbose = TRUE, .export = "train_network") %:% foreach(net = nets, .combine = list, .packages = packages_neuralnet, .verbose = TRUE, .export = "train_network") %dopar%
   {
       print(paste("Begin inner cross validation in fold", i))
       
       # Split data into training and validation folds
       idx_test = which(fold_membership == i)
-      idx_validation = which(fold_membership == ifelse(i == k, 1, i+1))
+      idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
       
       test_fold = dataset[idx_test,]
       validation_fold = dataset[idx_validation,]
