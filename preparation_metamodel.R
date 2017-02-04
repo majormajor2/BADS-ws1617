@@ -110,6 +110,22 @@ meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, 
   test_fold = known_predictions[idx_test,]
   train_fold = known_predictions[-idx_test,]
 
+  ###### Initialise model control ######
+  model_control = trainControl(
+    method = "cv", # 'cv' for cross validation, 'adaptive_cv' drops unpromising models
+    number = 5, # number of folds in cross validation (or number of resampling iterations)
+    #repeats = 5, # number of repeats for repeated cross validation
+    search = "grid", # or grid for a grid search
+    classProbs = TRUE,
+    summaryFunction = twoClassSummary,
+    #timingSamps = length(fold), # number of samples to predict the time taken
+    sampling = "smote", # This resolves class imbalances. 
+    # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
+    allowParallel = TRUE, # Enable parallelization if available
+    #savePredictions = TRUE, # Save the hold-out predictions
+    verboseIter = TRUE, # Print training log
+    returnData = FALSE) # The training data will not be included in the output training object
+  
   # Set hyperparameters (only a single set - so we can use the train function, others are defined in their function)
   parameters = expand.grid(nrounds = 800, max_depth = 4, eta = 0.01, gamma = 0, colsample_bytree = 1, min_child_weight = 1, subsample = 0.8)
 
