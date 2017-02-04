@@ -61,12 +61,13 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
   cl = makeCluster(max(1,cores))
   registerDoParallel(cl)
   message(paste("Registered number of cores:",getDoParWorkers()))
+  on.exit(stopCluster(cl))
   packages_neuralnet = c("caret","nnet", "pROC")
   
   #### Initialise output lists ####
   
   # Start timing
-  print(paste("Started timing at",date()))
+  print(paste("Started timing at",Sys.time()))
   timing = system.time( 
     #### Start loops ####
     #for(i in 1:number_of_folds)
@@ -77,7 +78,7 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       
       #### Split data into training and validation folds ####
       idx_test = which(fold_membership == i)
-      idx_validation = which(fold_membership == ifelse(i == k, 1, i+1))
+      idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
       
       test_fold = dataset[idx_test,]
       validation_fold = dataset[idx_validation,]
@@ -135,7 +136,7 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
   
   
   #### Stop parallel computing cluster ####
-  stopCluster(cl)
+  # This is taken care of by the on.exit at the beginning
   
   #### End function ####
   return(list(all = object, timing = timing))
@@ -189,7 +190,7 @@ run_neural_network_old = function(dataset, fold_membership, model_control, numbe
       
       #### Split data into training and validation folds ####
       idx_test = which(fold_membership == i)
-      idx_validation = which(fold_membership == ifelse(i == k, 1, i+1))
+      idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
       
       test_fold = dataset[idx_test,]
       validation_fold = dataset[idx_validation,]
@@ -247,7 +248,7 @@ run_neural_network_old = function(dataset, fold_membership, model_control, numbe
   
   
   #### Stop parallel computing cluster ####
-  stopCluster(cl)
+  on.exit(stopCluster(cl))
   
   #### End function ####
   return(list(all = object, timing = timing))
@@ -305,7 +306,7 @@ run_neural_network_old = function(dataset, fold_membership, model_control, numbe
       
       # Split data into training and validation folds
       idx_test = which(fold_membership == i)
-      idx_validation = which(fold_membership == ifelse(i == k, 1, i+1))
+      idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
       
       test_fold = dataset[idx_test,]
       validation_fold = dataset[idx_validation,]
@@ -502,7 +503,7 @@ run_neural_networks_parallel_parallel = function(dataset, fold_membership, model
   print(paste("Ended cross validation after", timing))
   
   # Stop the parallel computing cluster
-  stopCluster(cl)
+  on.exit(stopCluster(cl))
   
   return(list(folds = fold_output, timing = timing))
 }
