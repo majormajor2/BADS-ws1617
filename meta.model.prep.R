@@ -1,6 +1,6 @@
 ## TRAINING ON 80% AND PREDICTING TEST - TO CREATE META-MODEL
 
-
+##################### PART I : SET-UP AND TRAIN PRIMARY MODELS TO PREDICT TEST DATASET
 
 ### 1. SETUP
 ## the options for model selection
@@ -12,7 +12,6 @@ model.control<- trainControl(
   allowParallel = TRUE, # Enable parallelization if available
   returnData = TRUE # We will use this to plot partial dependence
 )
-
 
 ## Define a search grid for model selection
 ## TUNES
@@ -115,6 +114,12 @@ xgb_PCA <- train(return_customer~., data = train_data_woe,
                  metric = "ROC", 
                  trControl = model.control)
 
+
+## 2.3 LOGISTIC REGRESSION
+library(klaR)
+lr <- glm(return_customer ~., data = train_data_woe, family = binomial(link="logit"))
+
+
 ### 3. PREDICTION
 ##Baseline Model
 xgb.default.pred <- predict(xgb.default, newdata = test_data, type = "prob")[,2]
@@ -133,6 +138,8 @@ xgb_woe_ew.default <- predict(xgb_woe_ew.default, newdata = test_data_woe_ew, ty
 ## WOE + PCA
 xgb.pca.pred <- predict(xgb_PCA, newdata = test_data_woe, type = "prob")[,2]
 
+## LOGISTIC REGRESSION
+pred.lr.woe <- predict(lr, newdata = test_data_woe, type = "response")
 
 ### 4. SCORE
 
@@ -158,6 +165,10 @@ xgb_ew_default_score <-predictive_performance(test_data_woe$return_customer, xgb
 xgb_pca_default_score <-predictive_performance(test_data_woe$return_customer, xgb.pca.pred, cutoff = 0.19)
 #  need to find optimal cutpoints
 
+# LOGISTIC REGRESSION
+optimal_cutoff(test_data_woe$return_customer, pred.lr.woe)
+predictive_performance(test_data_woe$return_customer, pred.lr.woe, cutoff = 0.2279837, returnH = FALSE)
+
 
 ### 5. SAVE PREDICTIONS IN DF
 
@@ -176,6 +187,8 @@ df_predictions_test$xgb_woe.param2.pred = xgb_woe.param2.pred #oren
 df_predictions_test$xgb_woe_ef.default = xgb_woe_ef.default #hamayun
 df_predictions_test$xgb_woe_ew.default = xgb_woe_ew.default #hamayun
 df_predictions_test$xgb.pca.pred = xgb.pca.pred #hamayun
+df_predictions_test$lr.woe = pred.lr.woe #hamayun
+
 
 #Save validation file
 df_predictions_test = save_prediction_to_master("predictions_test.csv", df_predictions_test)
@@ -184,13 +197,33 @@ df_predictions_test = save_prediction_to_master("predictions_test.csv", df_predi
 View(df_predictions_test)
 
 
-### 6. META META
-# 6.1 Logistic regression
-lr <- glm(return_customer ~., data = df_predictions_validation_1, family = binomial(link="logit"))
-meta.lr <- predict(lr, newdata = df_predictions_test, type = "response")
-predictive_performance(test_data$return_customer, pred.lr, cutoff = 0.201)
+##################### PART2 - TRAIN META-MODELS
 
-# 6.2 Random forest
+### 1. META META
+
+# BEST 4 [5 if we get meta-model running] #
+
+# CALL FILES WITH RESULTS
+df_predictions_validation = call_master("predictions_validation.csv")
+performance_validation = call_master("performance_validation.csv")
+df_predictions_test = call_master("predictions_test.csv")
+performance_test = call_master("performance_test.csv")
+
+
+# CREATE DATAFRAME OF VALIDATION/TEST WITH 4 BEST COLUMNS
+df_predictions_validation_meta4 = df_predictions_validation[,c(1,3,9, 10, 13)]
+df_predictions_test_meta4 = df_predictions_test[,c(1,3,10, 12, 13)]
+View(df_predictions_test)
+View(performance_validation)
+
+# 1.1 Logistic regression
+lr <- glm(return_customer ~., data = df_predictions_validation_meta4, family = binomial(link="logit"))
+meta4.lr <- predict(lr, newdata = df_predictions_test_meta4, type = "response")
+optimal_cutoff(df_predictions_test_meta4$return_customer, meta4.lr)
+predictive_performance(df_predictions_test_meta4$return_customer, meta4.lr, cutoff = 0.1987296, returnH = FALSE)
+
+
+# 1.2 Random forest
 
 k <- 5
 # Set a seed for the pseudo-random number generator
@@ -206,16 +239,20 @@ model.control <- trainControl(
 rf.parms <- expand.grid(mtry = 1:10)
 
 rf.meta <- train(return_customer~., 
-                 data = df_predictions_validation_1,  
+                 data = df_predictions_validation_meta4,  
                  method = "rf", 
                  ntree = 500, 
                  tuneGrid = rf.parms, 
                  metric = "ROC", 
                  trControl = model.control)
 #Predict
-meta.rf   <- predict(rf.meta, newdata = df_predictions_test, type = "prob")[,2]
+meta4.rf   <- predict(rf.meta, newdata = df_predictions_test_meta4, type = "prob")[,2]
+optimal_cutoff(df_predictions_test_meta4$return_customer, meta4.rf)
+predictive_performance(df_predictions_test_meta4$return_customer, meta4.rf, cutoff = 0.246, returnH = FALSE)
 
-#xgb meta
+
+
+# 1.3 XGB meta
 ## the options for model selection
 model.control<- trainControl(
   method = "cv", # 'cv' for cross validation
@@ -236,21 +273,37 @@ xgb.parms.default <- expand.grid(nrounds = c(20, 40, 60, 80),
                                  min_child_weight = 1,
                                  subsample = 0.8)
 # Model
-xgb.default <- train(return_customer~., data = df_predictions_validation_1,  
+xgb.def <- train(return_customer~., data = df_predictions_validation_meta4,  
                      method = "xgbTree",
-                     tuneGrid = xgb.parms.default,
+                     tuneGrid = xgb.parms.2,
                      metric = "ROC", 
                      trControl = model.control)
 
-meta.xgb = xgb.default
+
 
 #Predict using XGB
-xgb.meta <- predict(xgb.default, newdata = df_predictions_test_1, type = "prob")[,2]
-predictive_performance(test_data$return_customer, xgb.meta, cutoff = 0.342)
+xgb.meta4 <- predict(xgb.def, newdata = df_predictions_test_meta4, type = "prob")[,2]
+xgb.params2.meta4 <- predict(xgb.def, newdata = df_predictions_test_meta4, type = "prob")[,2]
+predictive_performance(df_predictions_test_meta4$return_customer, xgb.meta4, cutoff =  0.3455043, returnH = FALSE)
+optimal_cutoff(df_predictions_test_meta4$return_customer, xgb.meta4)
+
+## 2. SAVE PREDICTIONS TO RESULTS 
 
 ## Saving to a csv
-df_predictions_test = call_master("df_predictions_test.csv")
-df_predictions_test$meta.rf = meta.xgb #getting an error, need to fix it#
-df_predictions_test = save_prediction_to_master("df_predictions_test.csv", df_predictions_test)
+df_predictions_test = call_master("predictions_test.csv")
+View(df_predictions_test)
 
+
+df_predictions_test$meta4.lr = meta4.lr
+df_predictions_test$meta4.xgb = xgb.meta4
+df_predictions_test$meta4.rf = meta4.rf
+
+
+df_predictions_test = save_prediction_to_master("predictions_test.csv", df_predictions_test)
+
+
+## 2.2 SAVE PERFORMANCE MEASURES
+df_performance_test = call_master("performance_test.csv")
+df_performance_test = get_optimal_cutpoint(df_predictions_test, df_performance_test)
+View(df_performance_test)
 
