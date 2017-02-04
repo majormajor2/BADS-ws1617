@@ -442,6 +442,22 @@ strongly_correlated = function(dataset, threshold = 0.7)
   return(unique(dropped_variables))
 }
 
+# A normalization function wrapper
+# Input should be a WoE-dataset and a vector of column names that should be dropped
+# Output is a normalized dataset
+prepare = function(dataset, dropped_correlated_variables, target = "return_customer")
+{
+  for(column in colnames(dataset)){ # loop over all columns
+    if(column != target){
+      dataset[,column] = sapply(dataset[,column],as.numeric)}} # convert to numeric
+  
+  dataset = treat_outliers(dataset)
+  dataset = normalize_dataset(dataset, c(target))
+  dataset[dropped_correlated_variables] = NULL
+  
+  return(dataset)
+}
+
 # Function to return the optimal cutoff 
 # given a target vector of factors and a vector of predictions as probabilities.
 # Returns a number.

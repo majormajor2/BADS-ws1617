@@ -103,6 +103,30 @@ set.seed(666)
 idx_train  = createDataPartition(y = known$return_customer, p = 0.8, list = FALSE) 
 train_data = known[idx_train, ] # training set
 test_data  =  known[-idx_train, ] # test set (drop all observations with train indices)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 set.seed(999) # just making sure ;)
 idx_validation = createDataPartition(y = train_data$return_customer, p = 0.25, list = FALSE)
 train60_data = train_data[-idx_validation, ] # this is the smaller 60% dataset for training before validation
