@@ -43,15 +43,14 @@ rf_woe_mdl_cphsv = randomForest(return_customer~., data = known_woe, mtry = 8)
 
 # predictions
 xgb_pred_cphsv = predict(xgb_mdl_cphsv, newdata = class, type = "prob")[,2]
-xgb_woe_pred_cphsv = predict(xgb_woe_mdl_cphsv, newdata = class, type = "prob")[,2]
-lr_woe_pred_cphsv = predict(lr_woe_mdl_cphsv, newdata = class, type = "response")
-rf_woe_pred_cphsv = predict(rf_woe_mdl_cphsv, newdata = class, type = "prob")[,2]
+xgb_woe_pred_cphsv = predict(xgb_woe_mdl_cphsv, newdata = class_woe, type = "prob")[,2]
+lr_woe_pred_cphsv = predict(lr_woe_mdl_cphsv, newdata = class_woe, type = "response")
+rf_woe_pred_cphsv = predict(rf_woe_mdl_cphsv, newdata = class_woe, type = "prob")[,2]
 
 
 # create data frame with all the predictions
 df_predictions_class <- data.frame(return_customer = known$return_customer, xgb_pred_cphsv, xgb_woe_pred_cphsv, lr_woe_pred_cphsv, rf_woe_pred_cphsv)
 
 # save it to csv file
-df_predictions_validation <- save_prediction_to_master(filename.csv = "predictions.csv", master = df_predictions_validation)
-write.csv(x = master, file = filename.csv)
+write.csv(x = df_predictions_class, file = "predictions_class.csv")
 
