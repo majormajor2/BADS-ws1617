@@ -1,58 +1,5 @@
 # This is the main script that runs all the other modules
 
-######## Load packages ###############
-# Try to load the package, if it doesn't exist, then install and load it
-
-# Set up parallel computing - look at Exercise 7 for more details
-# Use doMC rather than doParallel because it works with caret
-if(!require("doMC")) install.packages("doMC"); library("doMC") 
-if(!require("doParallel")) install.packages("doParallel"); library("doParallel")
-if(!require("microbenchmark")) install.packages("microbenchmark"); library("microbenchmark")
-
-# lubridate for dates
-if(!require("lubridate")) install.packages("lubridate"); library("lubridate") 
-
-# caret for classification and regression training
-if(!require("caret")) install.packages("caret"); library("caret") 
-# tree for classification and regression trees
-if(!require("tree")) install.packages("tree"); library("tree") 
-# rpart for recursive partitioning and regression trees
-if(!require("rpart")) install.packages("rpart"); library("rpart")
-# rpart.plot to visualize your decision trees
-if(!require("rpart.plot")) install.packages("rpart.plot"); library("rpart.plot")
-# e1071 for Naive Bayes, etc.
-if(!require("e1071")) install.packages("e1071"); library("e1071")
-
-### from Oren's file ###
-if(!require("matrixStats")) install.packages("matrixStats"); library("matrixStats")
-if(!require("corrplot")) install.packages("corrplot"); library("corrplot")
-
-# forcats to handle NAs as factor levels
-if(!require("forcats")) install.packages("forcats"); library("forcats")
-
-# klaR to find weights of evidence (WoE)
-if(!require("klaR")) install.packages("klaR"); library("klaR")
-
-# adabag for adaptive boosting and bagging
-if(!require("adabag")) install.packages("adabag"); library("adabag") 
-
-# nnet or neuralnet for Artificial Neural Networks
-if(!require("nnet")) install.packages("nnet"); library("nnet")
-if(!require("neuralnet")) install.packages("neuralnet"); library("neuralnet")
-# deepnet for Deep Artificial Neural Networks
-if(!require("deepnet")) install.packages("deepnet"); library("deepnet")
-# darch for Deep Architectures and Restricted Boltzmann Machines
-if(!require("darch")) install.packages("darch"); library("darch")
-# FCNN4R for deep neural nets
-if(!require("FCNN4R")) install.packages("FCNN4R"); library("FCNN4R")
-# DMwR for additional sampling conducted after resampling to resolve class imbalances
-if(!require("DMwR")) install.packages("DMwR"); library("DMwR")
-
-# hmeasure for Area Under the Curve (alternatives are pROC and ROCR)
-# hmeasure package requires all predictions to be available in one data frame
-if(!require("hmeasure")) install.packages("hmeasure"); library("hmeasure")
-if(!require("pROC")) install.packages("pROC"); library("pROC")
-
 ####### Load modules ################
 
 source("helper.R")
@@ -105,6 +52,30 @@ set.seed(666)
 idx_train  = createDataPartition(y = known$return_customer, p = 0.8, list = FALSE) 
 train_data = known[idx_train, ] # training set
 test_data  =  known[-idx_train, ] # test set (drop all observations with train indices)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 set.seed(999) # just making sure ;)
 idx_validation = createDataPartition(y = train_data$return_customer, p = 0.25, list = FALSE)
 train60_data = train_data[-idx_validation, ] # this is the smaller 60% dataset for training before validation

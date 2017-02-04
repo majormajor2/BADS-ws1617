@@ -1,4 +1,55 @@
+######## Load packages ###############
+# Try to load the package, if it doesn't exist, then install and load it
 
+# Set up parallel computing - look at Exercise 7 for more details
+if(!require("doParallel")) install.packages("doParallel"); library("doParallel")
+if(!require("microbenchmark")) install.packages("microbenchmark"); library("microbenchmark")
+
+# forcats to handle NAs as factor levels
+if(!require("forcats")) install.packages("forcats"); library("forcats")
+# lubridate for dates
+if(!require("lubridate")) install.packages("lubridate"); library("lubridate") 
+# matrixStats for Oren's file
+if(!require("matrixStats")) install.packages("matrixStats"); library("matrixStats")
+# corrplot to make correlation plots
+if(!require("corrplot")) install.packages("corrplot"); library("corrplot")
+# klaR to find weights of evidence (WoE)
+if(!require("klaR")) install.packages("klaR"); library("klaR")
+
+
+
+# tree for classification and regression trees
+if(!require("tree")) install.packages("tree"); library("tree") 
+# rpart for recursive partitioning and regression trees
+if(!require("rpart")) install.packages("rpart"); library("rpart")
+# rpart.plot to visualize your decision trees
+if(!require("rpart.plot")) install.packages("rpart.plot"); library("rpart.plot")
+# e1071 for Naive Bayes, etc.
+if(!require("e1071")) install.packages("e1071"); library("e1071")
+
+# caret for classification and regression training
+if(!require("caret")) install.packages("caret"); library("caret") 
+# adabag for adaptive boosting and bagging
+if(!require("adabag")) install.packages("adabag"); library("adabag") 
+
+# nnet or neuralnet for Artificial Neural Networks
+if(!require("nnet")) install.packages("nnet"); library("nnet")
+if(!require("neuralnet")) install.packages("neuralnet"); library("neuralnet")
+# deepnet for Deep Artificial Neural Networks
+if(!require("deepnet")) install.packages("deepnet"); library("deepnet")
+# darch for Deep Architectures and Restricted Boltzmann Machines
+if(!require("darch")) install.packages("darch"); library("darch")
+# FCNN4R for deep neural nets
+if(!require("FCNN4R")) install.packages("FCNN4R"); library("FCNN4R")
+# DMwR for additional sampling conducted after resampling to resolve class imbalances
+if(!require("DMwR")) install.packages("DMwR"); library("DMwR")
+
+# hmeasure for Area Under the Curve (alternatives are pROC and ROCR)
+# hmeasure package requires all predictions to be available in one data frame
+if(!require("hmeasure")) install.packages("hmeasure"); library("hmeasure")
+if(!require("pROC")) install.packages("pROC"); library("pROC")
+
+###### Define functions #########
 
 # getting the dataset, creating a data.frame and 
 # converting variables to correct data types
@@ -440,6 +491,46 @@ strongly_correlated = function(dataset, threshold = 0.7)
   }
   # return unique variable names
   return(unique(dropped_variables))
+}
+
+# A normalization function wrapper
+# Input should be a WoE-dataset and a vector of column names that should be dropped
+# Output is a normalized dataset
+prepare = function(dataset, dropped_correlated_variables, target = "return_customer")
+{
+  for(column in colnames(dataset)){ # loop over all columns
+    if(column != target){
+      dataset[,column] = sapply(dataset[,column],as.numeric)}} # convert to numeric
+  
+  dataset = treat_outliers(dataset)
+  dataset = normalize_dataset(dataset, c(target))
+  dataset[dropped_correlated_variables] = NULL
+  
+  return(dataset)
+}
+
+# Function to return the optimal cutoff 
+# given a target vector of factors and a vector of predictions as probabilities.
+# Returns a number.
+optimal_cutoff = function(target, prediction, cost_matrix = build_cost_matrix(), tag_false = "no")
+{
+  # create dataframe for later use
+  df = data.frame(target = target, prediction = prediction)
+  # MODEL CONTROL
+  # method: maxKappa
+  model_control_cutpoints = control.cutpoints(CFP = -cost_matrix[2,1], CFN = -cost_matrix[1,2], costs.ratio = -cost_matrix[2,1]/-cost_matrix[1,2], weighted.Kappa = TRUE)
+  
+  # get the OC object
+  oc = optimal.cutpoints(X = "prediction", 
+                         status = "target",
+                         tag.healthy = tag_false,
+                         methods = "MCT", 
+                         data = df, 
+                         control = model_control_cutpoints)
+  
+  # extract optimal cutoff
+  optimal_cutoff = oc$MCT$Global$optimal.cutoff$cutoff
+  return(optimal_cutoff)
 }
 
 
