@@ -62,17 +62,22 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
   registerDoParallel(cl)
   message(paste("Registered number of cores:",getDoParWorkers()))
   on.exit(stopCluster(cl))
-  packages_neuralnet = c("caret","nnet", "pROC")
+  packages_neuralnet = c("caret","nnet", "pROC", "klaR")
   
   #### Initialise output lists ####
   
   # Start timing
   print(paste("Started timing at",Sys.time()))
-  timing = system.time( 
+  timing = Sys.time()
+  #timing = system.time( 
     #### Start loops ####
     #for(i in 1:number_of_folds)
-    object <- foreach(i = 1:number_of_folds, .combine = list, .packages = packages_neuralnet, .verbose = TRUE) %dopar%
+    object <- foreach(i = 1:number_of_folds, .packages = packages_neuralnet, .verbose = TRUE) %dopar% # .combine = list, .export=c("calculate_woe","apply_woe", "prepare", "strongly_correlated", "predictive_performance")
     {
+      # Sourcing function files
+      source("helper.R")
+      source("woe.R")
+      source("performance_measures.R")
       
       print(paste("Begin inner cross validation in fold", i))
       
@@ -131,8 +136,10 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       #### Return output of the loop ####
       list(model = ANN, prediction = prediction_ANN, result = result_ANN) 
     } 
-  )[3]   # End timing
-  print(paste("Ended cross validation after", timing))
+  #)[3]   # End timing
+  print(paste("Ended timing at",Sys.time()))
+  timing = as.numeric(Sys.time() - timing)
+  print(paste("Ended cross validation after", timing, "seconds."))
   
   
   #### Stop parallel computing cluster ####
