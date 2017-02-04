@@ -1,7 +1,3 @@
-if(!require("Information")) install.packages("Information"); library("Information")
-library(klaR)
-if(!require("pROC")) install.packages("pROC"); library("pROC") # load the package
-if(!require("randomForest")) install.packages("randomForest")
 source("main.R")
 source("helper.R")
 
