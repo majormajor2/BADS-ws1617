@@ -62,17 +62,24 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
   registerDoParallel(cl)
   message(paste("Registered number of cores:",getDoParWorkers()))
   on.exit(stopCluster(cl))
-  packages_neuralnet = c("caret","nnet", "pROC")
+  required_packages = c("caret","nnet", "pROC", "klaR")
+  required_functions = c("calculate_woe","apply_woe", "prepare", "strongly_correlated", "predictive_performance", "treat_outliers", "truncate_outliers", "standardize", "normalize", "normalize_dataset")
   
   #### Initialise output lists ####
+  #object = list()
   
   # Start timing
   print(paste("Started timing at",Sys.time()))
-  timing = system.time( 
+  timing = Sys.time()
+  #timing = system.time( 
     #### Start loops ####
     #for(i in 1:number_of_folds)
-    object <- foreach(i = 1:number_of_folds, .combine = list, .packages = packages_neuralnet, .verbose = TRUE) %dopar%
+    object <- foreach(i = 1:number_of_folds, .verbose = TRUE) %dopar% # .packages = required_packages, .export = required_functions, .combine = list
     {
+      # Sourcing function files - potentially required for foreach loop
+      source("helper.R")
+      source("woe.R")
+      source("performance_measures.R")
       
       print(paste("Begin inner cross validation in fold", i))
       
@@ -102,9 +109,9 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       dropped_correlated_variables = strongly_correlated(train_fold_woe, threshold = 0.6)
       
       print("Perform normalization operations.")
-      train_fold_woe = prepare(train_fold_woe)
-      validation_fold_woe = prepare(validation_fold_woe)
-      test_fold_woe = prepare(test_fold_woe)
+      train_fold_woe = prepare(train_fold_woe, dropped_correlated_variables)
+      validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
+      test_fold_woe = prepare(test_fold_woe, dropped_correlated_variables)
       
       #### Create hyperparameter grid ####
       ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 1, 1)), size = seq(3,45,3))
@@ -129,10 +136,12 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       print(paste("Completed all tasks in fold", i, "- Saving now."))
       
       #### Return output of the loop ####
-      list(model = ANN, prediction = prediction_ANN, result = result_ANN) 
+      object[i] = list(model = ANN, prediction = prediction_ANN, result = result_ANN) 
     } 
-  )[3]   # End timing
-  print(paste("Ended cross validation after", timing))
+  #)[3]   # End timing
+  print(paste("Ended timing at",Sys.time()))
+  timing = as.numeric(Sys.time() - timing)
+  print(paste("Ended cross validation after", timing, "seconds."))
   
   
   #### Stop parallel computing cluster ####
