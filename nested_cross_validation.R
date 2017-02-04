@@ -176,6 +176,118 @@ run_neural_network_old = function(dataset, fold_membership, model_control, numbe
   packages_neuralnet = c("caret","nnet", "pROC")
   
   #### Initialise output lists ####
+  
+  # Start timing
+  print(paste("Started timing at",date()))
+  timing = system.time( 
+    #### Start loops ####
+    #for(i in 1:number_of_folds)
+    object <- foreach(i = 1:number_of_folds, .combine = list, .packages = packages_neuralnet, .verbose = TRUE) %dopar%
+    {
+      
+      print(paste("Begin inner cross validation in fold", i))
+      
+      #### Split data into training and validation folds ####
+      idx_test = which(fold_membership == i)
+      idx_validation = which(fold_membership == ifelse(i == k, 1, i+1))
+      
+      test_fold = dataset[idx_test,]
+      validation_fold = dataset[idx_validation,]
+      train_fold = dataset[-c(idx_test,idx_validation),]
+      
+      #### Calculate Weight of Evidence ####
+      print("Replacing multilevel factors with weight of evidence.")
+      # Will create a new dataframe consisting of all the variables of known but replaces the factor
+      # variables into numerical variables according to the weight of evidence
+      columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
+      # Calculate WoE from train_fold and return woe object
+      woe_object = calculate_woe(train_fold, target = "return_customer", columns_to_replace = columns_to_replace)
+      # Replace multilevel factor columns in train_fold by their WoE
+      train_fold_woe = apply_woe(dataset = train_fold, woe_object = woe_object)
+      # Apply WoE to all the other folds 
+      validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
+      test_fold_woe = apply_woe(dataset = test_fold, woe_object = woe_object)
+      
+      #### Normalize folds ####
+      
+      dropped_correlated_variables = strongly_correlated(train_fold_woe, threshold = 0.6)
+      
+      print("Perform normalization operations.")
+      train_fold_woe = prepare(train_fold_woe)
+      validation_fold_woe = prepare(validation_fold_woe)
+      test_fold_woe = prepare(test_fold_woe)
+      
+      #### Create hyperparameter grid ####
+      ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 1, 1)), size = seq(3,45,3))
+      
+      print("Begin training of primary model.")
+      
+      #### Train Normal Artificial Neural Network ####
+      ANN = train(return_customer~., data = train_fold_woe,  
+                  method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
+                  tuneGrid = ANN_parms, # parameters to be tested
+                  #tuneLength = 100,
+                  metric = "ROC", trControl = model_control)
+      
+      print("Training of primary model completed.")
+      
+      #### Predict on validation fold ####
+      prediction_ANN = predict(ANN, newdata = validation_fold_woe, type = "prob")[,2]
+      result_ANN = predictive_performance(validation_fold_woe$return_customer, prediction_ANN, returnH = FALSE)
+      
+      print("Prediction by primary model completed.")
+
+      print(paste("Completed all tasks in fold", i, "- Saving now."))
+      
+      #### Return output of the loop ####
+      list(model = ANN, prediction = prediction_ANN, result = result_ANN) 
+    } 
+  )[3]   # End timing
+  print(paste("Ended cross validation after", timing))
+  
+  
+  #### Stop parallel computing cluster ####
+  stopCluster(cl)
+  
+  #### End function ####
+  return(list(all = object, timing = timing))
+}
+
+
+
+
+
+
+
+
+
+#################### After this there be dragons! ##########################
+# What follows is just a testing ground and will be deleted at some point. #
+
+
+
+
+
+
+
+
+
+
+
+
+# Run a normal neural network
+run_neural_network_old = function(dataset, fold_membership, model_control, number_of_folds = 5, runWoE = TRUE, perform_normalization = TRUE, big_server = FALSE)
+{
+  #### Setup of parallel backend ####
+  # Detect number of available clusters, which gives you the maximum number of "workers" your computer has
+  cores = detectCores()
+  if(big_server){cores = cores - 1} # use on bigger computers, to leave one core for system
+  cl = makeCluster(max(1,cores))
+  registerDoParallel(cl)
+  message(paste("Registered number of cores:",getDoParWorkers()))
+  packages_neuralnet = c("caret","nnet", "pROC")
+  
+  #### Initialise output lists ####
   models = list()
   predictions = list()
   results = list()
