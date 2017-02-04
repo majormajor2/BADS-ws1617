@@ -26,11 +26,15 @@ if(!require("rpart")) install.packages("rpart"); library("rpart")
 if(!require("rpart.plot")) install.packages("rpart.plot"); library("rpart.plot")
 # e1071 for Naive Bayes, etc.
 if(!require("e1071")) install.packages("e1071"); library("e1071")
+# randomForest for Random Forests
+if(!require("randomForest")) install.packages("randomForest"); library("randomForest")
 
 # caret for classification and regression training
 if(!require("caret")) install.packages("caret"); library("caret") 
 # adabag for adaptive boosting and bagging
 if(!require("adabag")) install.packages("adabag"); library("adabag") 
+# xgboost for eXtreme Gradient Boosting
+if(!require("xgboost")) install.packages("xgboost"); library("xgboost") 
 
 # nnet or neuralnet for Artificial Neural Networks
 if(!require("nnet")) install.packages("nnet"); library("nnet")
