@@ -139,7 +139,7 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       print(paste("Completed all tasks in fold", i, "- Saving now."))
       
       #### Return output of the loop ####
-      object[i] = list(model = ANN, prediction = prediction_ANN) #, result = result_ANN
+      object[[i]] = list(model = ANN, prediction = prediction_ANN) #, result = result_ANN
   } 
 
   print(paste("Ended timing at",Sys.time()))
