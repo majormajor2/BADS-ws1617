@@ -14,7 +14,7 @@
 k = 5
 # Set seed for reproducability
 set.seed(123)
-# Create folds for cross validation (these are the big folds 3/4 of total) - not used in function at the moment
+# Create folds for cross validation (these are the big folds 4/5 of total) - not used in function at the moment
 training_folds = createFolds(train_data$return_customer, k = k, list = TRUE, returnTrain = TRUE)
 # Set seed for reproducability
 set.seed(123)
@@ -66,7 +66,7 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
   required_functions = c("calculate_woe","apply_woe", "prepare", "strongly_correlated", "predictive_performance", "treat_outliers", "truncate_outliers", "standardize", "normalize", "normalize_dataset")
   
   #### Initialise output lists ####
-  #object = list()
+  object = list()
   
   # Start timing
   print(paste("Started timing at",Sys.time()))
