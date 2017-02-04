@@ -71,15 +71,17 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
   # Start timing
   print(paste("Started timing at",Sys.time()))
   timing = Sys.time()
-  #timing = system.time( 
-    #### Start loops ####
-    #for(i in 1:number_of_folds)
-    object <- foreach(i = 1:number_of_folds, .verbose = TRUE) %dopar% # .packages = required_packages, .export = required_functions, .combine = list
-    {
+
+  #### Start loops ####
+  # Use anormal loop here because otherwise the inner 
+  # cross validation with train is not parallelized.
+  for(i in 1:number_of_folds) 
+  #object <- foreach(i = 1:number_of_folds, .verbose = TRUE) %dopar% # .packages = required_packages, .export = required_functions, .combine = list
+  {
       # Sourcing function files - potentially required for foreach loop
-      source("helper.R")
-      source("woe.R")
-      source("performance_measures.R")
+      #source("helper.R")
+      #source("woe.R")
+      #source("performance_measures.R")
       
       print(paste("Begin inner cross validation in fold", i))
       
@@ -137,8 +139,8 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       
       #### Return output of the loop ####
       object[i] = list(model = ANN, prediction = prediction_ANN, result = result_ANN) 
-    } 
-  #)[3]   # End timing
+  } 
+
   print(paste("Ended timing at",Sys.time()))
   timing = as.numeric(Sys.time() - timing)
   print(paste("Ended cross validation after", timing, "seconds."))
