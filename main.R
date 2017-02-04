@@ -82,83 +82,6 @@ train60_data = train_data[-idx_validation, ] # this is the smaller 60% dataset f
 validation_data = train_data[idx_validation, ] # Validation is for testing the models before the meta model is run
 
 ###### Nested Cross Validation ######
-# Setup of parallel backend
-# Detect number of available clusters, which gives you the maximum number of "workers" your computer has
-no_of_cores = detectCores()
-cl = makeCluster(max(1,no_of_cores))
-registerDoParallel(cl)
-message(paste("\n Registered number of cores:\n",getDoParWorkers(),"\n"))
-
-# Set number of folds
-k = 4
-# Set seed for reproducability
-set.seed(123)
-# Create folds for cross validation
-outer_folds = createFolds(train_data$return_customer, k = k, list = TRUE, returnTrain = TRUE)
-
-# Define a search grid of tuning parameters to test
-dt_parms = expand.grid(cp = c(0, 10^seq(-5, 0, 1)), minbucket = seq(5,20,1))
-
-# Initialise model control
-model_control = trainControl(
-  method = "cv", # 'cv' for cross validation, 'adaptive_cv' drops unpromising models
-  number = 5, # number of folds in cross validation (or number of resampling iterations)
-  #repeats = 5, # number of repeats for repeated cross validation
-  search = "random", # or grid for a grid search
-  classProbs = TRUE,
-  summaryFunction = twoClassSummary,
-  #timingSamps = length(fold), # number of samples to predict the time taken
-  #sampling = "smote", # This resolves class imbalances. 
-  # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
-  allowParallel = TRUE, # Enable parallelization if available
-  savePredictions = TRUE, # Save the hold-out predictions
-  verboseIter = TRUE, # Print training log
-  returnData = FALSE) # The training data will not be included in the output training object
-
-results_sequential = vector()
-# Start timing
-timing_sequential = system.time( 
-  for(fold in outer_folds)
-  {
-    # Split data into training and validation folds
-    train_fold = train_data[fold,]
-    test_fold  = train_data[-fold,]
-    
-    decision_tree = train(return_customer~., data = train_fold,  
-                          method = "rpart", 
-                          #maxit = 1000, trace = FALSE, # options for nnet function
-                          #tuneGrid = dt_parms, # parameters to be tested
-                          tuneLength = 15,
-                          metric = "ROC", trControl = model_control)
-    
-    prediction_dt = predict(decision_tree, newdata = test_fold, type = "prob")[,2]
-    results_sequential = append(results_sequential, auc(test_fold$return_customer, prediction_dt))
-  }
-)[3] # End timing
-
-
-
-timing_parallel = system.time( 
-  results <- foreach(fold = outer_folds, .combine = c, .packages = c("caret","rpart", "pROC")) %dopar%
-  {
-    # Split data into training and validation folds
-    train_fold = train_data[fold,]
-    test_fold  = train_data[-fold,]
-    
-    
-    decision_tree = train(return_customer~., data = train_fold,  
-          method = "rpart", 
-          #maxit = 1000, trace = FALSE, # options for nnet function
-          #tuneGrid = dt_parms, # parameters to be tested
-          tuneLength = 15,
-          metric = "Kappa", trControl = model_control)
-    
-    prediction_dt = predict(decision_tree, newdata = test_fold, type = "prob")[,2]
-    auc(test_fold$return_customer, prediction_dt)
-  } 
-)[3]   # End timing
-
-
 
 ###### Weight of Evidence ######
 # Will create a new dataframe consisting of all the variables of known but replaces the factor
@@ -225,7 +148,6 @@ cost.matrix = build_cost_matrix(CBTN = 3, CBFP = -10)
 
 ####### Call Master File
 df_predictions_test <- call_master(filename.csv = "predictions_test.csv")
-
 
 
 ### Plotting
