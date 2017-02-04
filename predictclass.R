@@ -49,8 +49,11 @@ rf_woe_pred_cphsv = predict(rf_woe_mdl_cphsv, newdata = class_woe, type = "prob"
 
 
 # create data frame with all the predictions
-df_predictions_class <- data.frame(return_customer = known$return_customer, xgb_pred_cphsv, xgb_woe_pred_cphsv, lr_woe_pred_cphsv, rf_woe_pred_cphsv)
+df_predictions_class <- data.frame(xgb_pred_cphsv, xgb_woe_pred_cphsv, lr_woe_pred_cphsv, rf_woe_pred_cphsv)
 
 # save it to csv file
 write.csv(x = df_predictions_class, file = "predictions_class.csv")
 
+# check correlations between the models
+cor(df_predictions_class)
+corrplot(cor(df_predictions_class))
