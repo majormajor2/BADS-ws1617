@@ -62,8 +62,8 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
   registerDoParallel(cl)
   message(paste("Registered number of cores:",getDoParWorkers()))
   on.exit(stopCluster(cl))
-  required_packages = c("caret","nnet", "pROC", "klaR")
-  required_functions = c("calculate_woe","apply_woe", "prepare", "strongly_correlated", "predictive_performance", "treat_outliers", "truncate_outliers", "standardize", "normalize", "normalize_dataset")
+  #required_packages = c("caret","nnet", "pROC", "klaR")
+  #required_functions = c("calculate_woe","apply_woe", "prepare", "strongly_correlated", "predictive_performance", "treat_outliers", "truncate_outliers", "standardize", "normalize", "normalize_dataset")
   
   #### Initialise output lists ####
   object = list()
@@ -87,11 +87,12 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       
       #### Split data into training and validation folds ####
       idx_test = which(fold_membership == i)
-      idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
+      #idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
       
       test_fold = dataset[idx_test,]
-      validation_fold = dataset[idx_validation,]
-      train_fold = dataset[-c(idx_test,idx_validation),]
+      #validation_fold = dataset[idx_validation,]
+      #train_fold = dataset[-c(idx_test,idx_validation),]
+      train_fold = dataset[-idx_test,]
       
       #### Calculate Weight of Evidence ####
       print("Replacing multilevel factors with weight of evidence.")
@@ -103,7 +104,7 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       # Replace multilevel factor columns in train_fold by their WoE
       train_fold_woe = apply_woe(dataset = train_fold, woe_object = woe_object)
       # Apply WoE to all the other folds 
-      validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
+      #validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
       test_fold_woe = apply_woe(dataset = test_fold, woe_object = woe_object)
       
       #### Normalize folds ####
@@ -112,11 +113,11 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       
       print("Perform normalization operations.")
       train_fold_woe = prepare(train_fold_woe, dropped_correlated_variables)
-      validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
+      #validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
       test_fold_woe = prepare(test_fold_woe, dropped_correlated_variables)
       
       #### Create hyperparameter grid ####
-      ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 1, 1)), size = seq(3,45,3))
+      ANN_parms = expand.grid(decay = c(0, 10^seq(-3, 1, 1),25), size = seq(3,45,3))
       
       print("Begin training of primary model.")
       
@@ -130,15 +131,15 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       print("Training of primary model completed.")
       
       #### Predict on validation fold ####
-      prediction_ANN = predict(ANN, newdata = validation_fold_woe, type = "prob")[,2]
-      result_ANN = predictive_performance(validation_fold_woe$return_customer, prediction_ANN, returnH = FALSE)
+      prediction_ANN = predict(ANN, newdata = test_fold_woe, type = "prob")[,2]
+      #result_ANN = predictive_performance(validation_fold_woe$return_customer, prediction_ANN, returnH = FALSE)
       
       print("Prediction by primary model completed.")
 
       print(paste("Completed all tasks in fold", i, "- Saving now."))
       
       #### Return output of the loop ####
-      object[i] = list(model = ANN, prediction = prediction_ANN, result = result_ANN) 
+      object[i] = list(model = ANN, prediction = prediction_ANN) #, result = result_ANN
   } 
 
   print(paste("Ended timing at",Sys.time()))
