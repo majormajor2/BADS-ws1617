@@ -39,7 +39,7 @@ set.seed(123)
 fold_membership = createFolds(train_data$return_customer, list = FALSE, k = k)
 
 
-predictions_known = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRUE) %dopar% # fold = training_folds, .packages = required_packages, .export = required_functions, .combine = list
+known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRUE) %dopar% # fold = training_folds, .packages = required_packages, .export = required_functions, .combine = list
 {
   # Sourcing function files - potentially required for foreach loop
   source("helper.R")
@@ -81,13 +81,61 @@ predictions_known = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
                                  logistic = prediction_logistic, 
                                  random_forest = prediction_random_forest #,neuralnet =
                                  )
+
   # Return the list of predictions
   predictions
-
 }
 
 # Order the data frame by row.name
-predictions_known = predictions_known[order(as.numeric(row.names(predictions_known))),]
+known_predictions = known_predictions[order(as.numeric(row.names(known_predictions))),]
 
 # Stop the parallel computing cluster
 stopCluster(cl)
+
+
+registerDoParallel(cl)
+message(paste("Registered number of cores:",getDoParWorkers()))
+on.exit(stopCluster(cl))
+
+
+meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, .packages = required_packages, .export = required_functions, .combine = rbind.data.frame, 
+{
+  # Sourcing function files - potentially required for foreach loop
+  source("helper.R")
+  source("woe.R")
+  source("performance_measures.R")
+  
+  # Split data into training and prediction folds
+  idx_test = which(fold_membership == i)
+  test_fold = known_predictions[idx_test,]
+  train_fold = known_predictions[-idx_test,]
+
+  # Set hyperparameters (only a single set - so we can use the train function, others are defined in their function)
+  parameters = expand.grid(nrounds = 800, max_depth = 4, eta = 0.01, gamma = 0, colsample_bytree = 1, min_child_weight = 1, subsample = 0.8)
+
+  # Train models
+  model = train(return_customer~., data = train_fold, method = "xgbTree", tuneGrid = xgb_parms, metric = "ROC", trControl = model_control)
+  
+  # Predict return_customer on remainder
+  prediction = predict(xgb, newdata = test_fold, type = "prob")[,2]
+  cutoff = optimal_cutoff(test_fold$return_customer, prediction)
+  avg_return = predictive_performance(test_fold$return_customer, prediction, cutoff, returnH = FALSE)
+  output = list(model = model, cutoff = cutoff, avg_return = avg_return)
+
+  # Return
+  output
+}
+
+
+# Initialise to 0
+optimal_cutoff_for_class = 0
+avg_return = 0
+# Add for all folds
+for(i in 1:k)
+{
+  optimal_cutoff_for_class = optimal_cutoff_for_class + meta_model[[i]]$cutoff
+  avg_return = avg_return + meta_model[[i]]$avg_return
+}
+# Take averages
+optimal_cutoff_for_class = optimal_cutoff_for_class / k
+avg_return = avg_return / k
