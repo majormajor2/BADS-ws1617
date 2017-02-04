@@ -99,9 +99,13 @@ train_data_woe = apply_woe(dataset = train_data, woe_object = woe_object_train)
 validation_data_woe = apply_woe(dataset = validation_data, woe_object = woe_object)
 # Apply woe to test (input any dataset where levels are identical to trained woe_object)
 test_data_woe = apply_woe(dataset = test_data, woe_object = woe_object_train)
-# Apply woe to class (input any dataset where new levels emerge compared to training datset)
-class_woe = apply_woe(dataset = class, woe_object = woe_object_train)
 
+# Calculate WoE for known data set
+woe_object_known = calculate_woe(known, target = "return_customer", columns_to_replace = columns_to_replace)
+known_woe = apply_woe(dataset = known, woe_object = woe_object_known)
+
+# Apply woe to class (input any dataset where new levels emerge compared to training datset)
+class_woe = apply_woe(dataset = class, woe_object = woe_object_known)
 
 ##### BINNING #######
 
