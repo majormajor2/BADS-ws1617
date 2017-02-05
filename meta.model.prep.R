@@ -216,11 +216,24 @@ df_predictions_test_meta4 = df_predictions_test[,c(1,3,10, 12, 13)]
 View(df_predictions_test)
 View(performance_validation)
 
+
+# CREATE DATAFRAME FOR TEST - TO TEST META-MODEL TRAINED ON TRAIN 
+df_predictions_test_metaprep = df_predictions_test[,c(1,7,10,12,13)]
+df_predictions_test_meta_FINAL4 = df_predictions_test_metaprep[,1:2]
+df_predictions_test_meta_FINAL4$xgb = df_predictions_test_metaprep[,4]
+df_predictions_test_meta_FINAL4$xgb_woe = df_predictions_test_metaprep[,2]
+df_predictions_test_meta_FINAL4$logistic = df_predictions_test_metaprep[,5]
+df_predictions_test_meta_FINAL4$random_forest = df_predictions_test_metaprep[,3]
+df_predictions_test_meta_FINAL4$xgb_woe.param1.pred = NULL
+
+# dataframe with 4 chosen models
+df_predictions_test_meta_FINAL4
+
 # 1.1 Logistic regression
-lr <- glm(return_customer ~., data = df_predictions_validation_meta4, family = binomial(link="logit"))
-meta4.lr <- predict(lr, newdata = df_predictions_test_meta4, type = "response")
-optimal_cutoff(df_predictions_test_meta4$return_customer, meta4.lr)
-predictive_performance(df_predictions_test_meta4$return_customer, meta4.lr, cutoff = 0.1987296, returnH = FALSE)
+lr <- glm(return_customer ~., data = df_train_predictions, family = binomial(link="logit"))
+meta4.lr.train <- predict(lr, newdata = df_predictions_test_meta_FINAL4, type = "response")
+optimal_cutoff(df_predictions_test_meta_FINAL4$return_customer, meta4.lr.train)
+predictive_performance(df_predictions_test_meta_FINAL4$return_customer, meta4.lr.train, cutoff =  0.1748927, returnH = FALSE)
 
 
 # 1.2 Random forest
@@ -238,17 +251,17 @@ model.control <- trainControl(
 
 rf.parms <- expand.grid(mtry = 1:10)
 
-rf.meta <- train(return_customer~., 
-                 data = df_predictions_validation_meta4,  
+rf.meta.train <- train(return_customer~., 
+                 data = df_train_predictions,  
                  method = "rf", 
                  ntree = 500, 
                  tuneGrid = rf.parms, 
                  metric = "ROC", 
                  trControl = model.control)
 #Predict
-meta4.rf   <- predict(rf.meta, newdata = df_predictions_test_meta4, type = "prob")[,2]
-optimal_cutoff(df_predictions_test_meta4$return_customer, meta4.rf)
-predictive_performance(df_predictions_test_meta4$return_customer, meta4.rf, cutoff = 0.246, returnH = FALSE)
+meta4.rf.train   <- predict(rf.meta.train, newdata = df_predictions_test_meta_FINAL4, type = "prob")[,2]
+optimal_cutoff(df_predictions_test_meta_FINAL4$return_customer, meta4.rf.train)
+predictive_performance(df_predictions_test_meta_FINAL4$return_customer, meta4.rf.train, cutoff = 0.246, returnH = FALSE)
 
 
 
@@ -273,19 +286,48 @@ xgb.parms.default <- expand.grid(nrounds = c(20, 40, 60, 80),
                                  min_child_weight = 1,
                                  subsample = 0.8)
 # Model
-xgb.def <- train(return_customer~., data = df_predictions_validation_meta4,  
+xgb.def.train <- train(return_customer~., data = df_train_predictions,  
                      method = "xgbTree",
-                     tuneGrid = xgb.parms.2,
+                     tuneGrid = xgb.parms.default,
                      metric = "ROC", 
                      trControl = model.control)
 
 
 
 #Predict using XGB
-xgb.meta4 <- predict(xgb.def, newdata = df_predictions_test_meta4, type = "prob")[,2]
+xgb.meta4.train <- predict(xgb.def.train, newdata = df_predictions_test_meta_FINAL4, type = "prob")[,2]
 xgb.params2.meta4 <- predict(xgb.def, newdata = df_predictions_test_meta4, type = "prob")[,2]
-predictive_performance(df_predictions_test_meta4$return_customer, xgb.meta4, cutoff =  0.3455043, returnH = FALSE)
-optimal_cutoff(df_predictions_test_meta4$return_customer, xgb.meta4)
+optimal_cutoff(df_predictions_test_meta_FINAL4$return_customer, xgb.meta4.train)
+predictive_performance(df_predictions_test_meta_FINAL4$return_customer, xgb.meta4.train, cutoff =  0.3455043, returnH = FALSE)
+
+
+# 1.4 REGULARIZED REGRESSION  # not using it due to unsatisfactory results
+if(!require("rrlda")) install.packages("rrlda"); library("rrlda")
+if(!require("glmnet")) install.packages("glmnet"); library("glmnet")
+
+
+cctrl1 <- trainControl(method = "cv", number = 3, 
+                       classProbs = TRUE,
+                       summaryFunction = twoClassSummary)
+x = df_predictions_validation_meta4[,-1]
+y = df_predictions_validation_meta4[,1]
+x_test = df_predictions_test_meta4[,-1]
+y_test = df_predictions_meta4[,-1]
+
+
+rega.meta <- train(x = x,
+                   y = y,
+                    method = "rrlda",
+                    trControl = cctrl1,
+                    metric = "ROC")
+
+rega2.meta <- glmnet(x = x, y = y, alpha = 1, family = "binomial")
+
+
+meta4.rega <- predict(rega.meta, x_test, type = "response")
+optimal_cutoff(df_predictions_test_meta4$return_customer, meta4.rega)
+predictive_performance(y_test, meta4.rega, cutoff =  0.5204702, returnH = FALSE)
+
 
 ## 2. SAVE PREDICTIONS TO RESULTS 
 
@@ -306,4 +348,8 @@ df_predictions_test = save_prediction_to_master("predictions_test.csv", df_predi
 df_performance_test = call_master("performance_test.csv")
 df_performance_test = get_optimal_cutpoint(df_predictions_test, df_performance_test)
 View(df_performance_test)
+
+
+
+
 
