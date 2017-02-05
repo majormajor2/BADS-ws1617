@@ -15,6 +15,8 @@ if(!require("matrixStats")) install.packages("matrixStats"); library("matrixStat
 if(!require("corrplot")) install.packages("corrplot"); library("corrplot")
 # klaR to find weights of evidence (WoE)
 if(!require("klaR")) install.packages("klaR"); library("klaR")
+# OptimalCutpoints to calculate optimal cutpoints
+if(!require("OptimalCutpoints")) install.packages("OptimalCutpoints"); library("OptimalCutpoints")
 
 
 

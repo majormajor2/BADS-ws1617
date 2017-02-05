@@ -5,7 +5,8 @@
 
 ### Optimal Cutpoints
 
-if(!require("OptimalCutpoints")) install.packages("OptimalCutpoints"); library("OptimalCutpoints")intsource("performance_measures.R")
+if(!require("OptimalCutpoints")) install.packages("OptimalCutpoints"); library("OptimalCutpoints")
+source("performance_measures.R")
 
 
 ###### --------- control.cutpoints ---------  ######
@@ -36,7 +37,7 @@ optimalCutpoint <- function(data, lev = NULL, model = NULL){
     # check if cutpoint unique                  
     for(index in 1:length(oc$MCT$Global$optimal.cutoff$cutoff)){
       # optimal cutpoint
-      df[index,"avg_return"] <- predictive_performance(dataframe_pred$return_customer, prediction = dataframe_pred[,pred], cutoff = df[index,"cutoff"], returnH = FALSE)$avg_return
+      df[index,"avg_return"] <- predictive_performance(data[,"obs"], prediction = data[,"yes"], cutoff = df[index,"cutoff"], returnH = FALSE)$avg_return
     }
     opt.cutoff <- df[df$avg_return == max(df$avg_return), "cutoff"]
     avg_return <- predictive_performance(y = data$obs, prediction = data$yes, cutoff = opt.cutoff, returnH = FALSE)$avg_return

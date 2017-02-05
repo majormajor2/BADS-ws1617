@@ -36,8 +36,10 @@ k = 5
 # Set seed for reproducability
 set.seed(123)
 # Define fold membership for cross validation
-fold_membership = createFolds(train_data$return_customer, list = FALSE, k = k)
+fold_membership = createFolds(known$return_customer, list = FALSE, k = k)
 
+# Create a data frame of predictions
+print("Starting creation of prediction data frame at", Sys.time())
 
 known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRUE) %dopar% # fold = training_folds, .packages = required_packages, .export = required_functions, .combine = list
 {
@@ -48,8 +50,8 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   
   # Split data into training and prediction folds
   idx_test = which(fold_membership == i)
-  test_fold = train_data[idx_test,]
-  train_fold = train_data[-idx_test,]
+  test_fold = known[idx_test,]
+  train_fold = known[-idx_test,]
   
   # Replace multilevel factors by WoE
   columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
@@ -57,6 +59,11 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   train_fold_woe = apply_woe(dataset = train_fold, woe_object = woe_object)
   test_fold_woe = apply_woe(dataset = test_fold, woe_object = woe_object)
 
+  # Perform normalization
+  dropped_correlated_variables = strongly_correlated(train_fold_woe, threshold = 0.6)
+  train_fold_norm = prepare(train_fold_woe, dropped_correlated_variables)
+  test_fold_norm = prepare(test_fold_woe, dropped_correlated_variables)
+  
   # Set hyperparameters (only a single set - so we can use the train function, others are defined in their function)
   xgb_parms = expand.grid(nrounds = 800, max_depth = 4, eta = 0.01, gamma = 0, colsample_bytree = 1, min_child_weight = 1, subsample = 0.8)
   xgb_woe_parms = expand.grid(nrounds = 200, max_depth = 4, eta = 0.05, gamma = 0, colsample_bytree = 1,min_child_weight = 1, subsample = 0.8)
@@ -66,14 +73,14 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   xgb_woe = train(return_customer~., data = train_fold_woe, method = "xgbTree", tuneGrid = xgb_woe_parms, metric = "ROC", trControl = model_control)
   logistic      = glm(return_customer ~ ., data = train_fold_woe, family = binomial(link = "logit"))
   random_forest = randomForest(return_customer ~ ., data = train_fold_woe, mtry = 8)
-  #neuralnet     =
+  neuralnet     = nnet(return_customer ~ ., data = train_fold_norm, size = 3, decay = 1, maxit = 1000)
   
   # Predict return_customer on remainder
   prediction_xgb = predict(xgb, newdata = test_fold, type = "prob")[,2]
   prediction_xgb_woe = predict(xgb_woe, newdata = test_fold_woe, type = "prob")[,2]
   prediction_logistic = predict(logistic, newdata = test_fold_woe, type = "response")
   prediction_random_forest = predict(random_forest, newdata = test_fold_woe, type = "prob")[,2]
-  #prediction_neuralnet = predict(neuralnet, newdata = test_fold_woe, type = "prob")[,2]
+  prediction_neuralnet = predict(neuralnet, newdata = test_fold_norm, type = "prob")[,2]
   
 
   predictions = cbind.data.frame(return_customer = test_fold$return_customer,
@@ -85,6 +92,7 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   # Return the list of predictions
   predictions
 }
+print("Completed creation of prediction data frame at", Sys.time())
 
 # Order the data frame by row.name
 known_predictions = known_predictions[order(as.numeric(row.names(known_predictions))),]
@@ -92,12 +100,12 @@ known_predictions = known_predictions[order(as.numeric(row.names(known_predictio
 # Stop the parallel computing cluster
 stopCluster(cl)
 
-
+# Start a new cluster
 registerDoParallel(cl)
 message(paste("Registered number of cores:",getDoParWorkers()))
 on.exit(stopCluster(cl))
 
-
+# Train the meta model on the predictions dataframe
 meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, .packages = required_packages, .export = required_functions, .combine = rbind.data.frame, 
 {
   # Sourcing function files - potentially required for foreach loop
