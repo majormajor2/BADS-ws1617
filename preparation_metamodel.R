@@ -34,7 +34,7 @@ fold_membership = createFolds(known$return_customer, list = FALSE, k = k)
 #### Setup of parallel backend ####
 # Detect number of available clusters, which gives you the maximum number of "workers" your computer has
 cores = detectCores()
-cl = makeCluster(max(1,cores)) # only use k cores, as there are only k folds
+cl = makeCluster(min(k,cores)) # only use k cores, as there are only k folds
 registerDoParallel(cl)
 message(paste("Registered number of cores:",getDoParWorkers()))
 on.exit(stopCluster(cl))
@@ -48,7 +48,7 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   source("helper.R")
   source("woe.R")
   source("performance_measures.R")
-  source("controlcutoff_fortraincontrol.R")
+  source("controlcutoffs_fortraincontrol.R")
   
   # Split data into training and prediction folds
   idx_test = which(fold_membership == i)
@@ -117,7 +117,7 @@ meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, 
   source("helper.R")
   source("woe.R")
   source("performance_measures.R")
-  source("controlcutoff_fortraincontrol.R")
+  source("controlcutoffs_fortraincontrol.R")
   
   # Split data into training and prediction folds
   idx_test = which(fold_membership == i)
