@@ -89,10 +89,12 @@ View(meta_performance_test)
 
 # First pull the known_predictions file and save as known_predictions
 
-set.seed(200)
+known_predictions = call_master("known_predictions.csv")
+
+set.seed(666)
 idx_train_meta  = createDataPartition(y = known_predictions$return_customer, p = 0.8, list = FALSE) 
-train_data_meta = known_predictions[idx_train, ] # training set
-test_data_meta  =  known_predictions[-idx_train, ] # test set (drop all observations with train indices)
+train_data_meta = known_predictions[idx_train_meta, ] # training set
+test_data_meta  =  known_predictions[-idx_train_meta, ] # test set (drop all observations with train indices)
 
 
 
@@ -105,50 +107,99 @@ model.control<- trainControl(
   returnData = TRUE # We will use this to plot partial dependence
 )
 
-parameters = expand.grid(nrounds = 200, max_depth = 4, eta = 0.05, gamma = 0, colsample_bytree = 1,min_child_weight = 1, subsample = 0.8)
+parameters = expand.grid(nrounds = 800, max_depth = 4, eta = 0.01, gamma = 0, colsample_bytree = 1, min_child_weight = 1, subsample = 0.8)
+
+xgb.parms.default <- expand.grid(nrounds = c(20, 40, 60, 80), 
+                                 max_depth = c(2, 4), 
+                                 eta = c(0.01, 0.05, 0.1, 0.15), 
+                                 gamma = 0,
+                                 colsample_bytree = c(0.8, 1),
+                                 min_child_weight = 1,
+                                 subsample = 0.8)
 
 xgb.def.train <- train(return_customer~., data = train_data_meta,  
                        method = "xgbTree",
-                       tuneGrid = parameters,
+                       tuneGrid = xgb.parms.default,
                        metric = "avg_return", 
                        trControl = model.control)
 
 xgb.params2.meta4 <- predict(xgb.def.train, newdata = test_data_meta, type = "prob")[,2]
 optimal_cutoff(test_data_meta$return_customer, xgb.params2.meta4)
-predictive_performance(test_data_meta$return_customer, xgb.params2.meta4, cutoff =  0.2265623, returnH = FALSE)
+predictive_performance(test_data_meta$return_customer, xgb.params2.meta4, cutoff =0.246046, returnH = FALSE)
 
 
 #test1 - setseed 666
-cutoff: 0.2268287
-avg_return: 0.8783732
-auc: 0.6705555
+#cutoff: 0.2117774
+#avg_return: 0.8393408
+#auc: 0.6572061
+# train.cutoff: 0.2236857
+# train.avg_return: 0.8245952
+
 
 # test2 - setseed  100
-# optimal.cutoff: 0.2357525
-# avg_return: 0.8774094
-# auc: 0.6701099
-# train.cutoff:0.2265623
+# optimal.cutoff: 0.2201024
+# avg_return: 0.8537008
+# auc: 0.6592809
+# train.cutoff:0.2261933
+# train.avg_return: 0.8361604
 
 
 #test3 - setseed  200
-#optimal.cutoff: 0.2256526
-#avg_return: 0.8835775
-#auc: 0.6711113
-# train.cutoff: 0.2360672
-# train.avg_return:0.8781804
+#optimal.cutoff: 0.2349651
+#avg_return: 0.8277756
+#auc: 0.6552513
+# train.cutoff: 0.2274853
+# train.avg_return: 0.815054
 
 
 #test4 - setseed  300
-#optimal.cutoff: 
-#avg_return: 
-#auc: 
-# train.cutoff: 
-# train.avg_return:
+#optimal.cutoff:0.2425775
+#avg_return:0.8443524 
+#auc: 0.6610999
+# train.cutoff:  0.2326611
+# train.avg_return:0.8369314
 
 
 #test5 - setseed  400
-#optimal.cutoff: 
-#avg_return: 
-#auc: 
-# train.cutoff: 
-# train.avg_return:
+#optimal.cutoff: 0.2419465
+#avg_return: 0.8529298
+#auc: 0.6598767
+# train.cutoff: 0.2303491
+# train.avg_return: 0.8306669
+
+
+optimized_cutoff = (0.21177744 + 0.2268287 + 0.2349651 + 0.2425775 + 0.2419465)/5
+optimized_cutoff_final = (optimized_cutoff + xgb.def.train$results$optimal.cutoff)/2
+
+
+
+# PREDICT CLASS
+model.control<- trainControl(
+  method = "cv", # 'cv' for cross validation
+  number = 5, # number of folds in cross validation
+  classProbs = TRUE,
+  summaryFunction = stephanie.cutoff,
+  allowParallel = TRUE, # Enable parallelization if available
+  returnData = TRUE # We will use this to plot partial dependence
+)
+
+parameters = expand.grid(nrounds = 800, max_depth = 4, eta = 0.01, gamma = 0, colsample_bytree = 1, min_child_weight = 1, subsample = 0.8)
+
+xgb.class <- train(return_customer~., data = known_predictions,  
+                       method = "xgbTree",
+                       tuneGrid = xgb.parms.default,
+                       metric = "avg_return", 
+                       trControl = model.control)
+
+# load class dataset
+
+class_predictions = call_master("class_predictions.csv")
+meta4.class.pred <- predict(xgb.def.train, newdata = class_predictions, type = "prob")[,2]
+class_predictions$return_customer = ifelse(meta4.class.pred > optimized_cutoff_final, "1", "0")
+group27 = call_master("group27.csv")
+group27$return_customer = ifelse(meta4.class.pred > optimized_cutoff_final, 1, 0)
+
+
+summary(group27$return_customer)
+
+group27 = save_prediction_to_master("group27.csv", group27)
