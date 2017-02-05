@@ -31,22 +31,25 @@ stephanie.cutoff <- function(data, lev = NULL, model = NULL){
       data = data, 
       control = model.control.optc)
     
-    # SELECT OPTIMAL CUTPOINT & store hmeasure and AUC in dataframe
+    # SELECT OPTIMAL CUTPOINT
     # define temporary dataframes to store cutoffs 
     df <- data.frame(cutoff = oc$MCT$Global$optimal.cutoff$cutoff)
     # check if cutpoint unique                  
     for(index in 1:length(oc$MCT$Global$optimal.cutoff$cutoff)){
       # optimal cutpoint
-      df[index,"avg_return"] <- predictive_performance(data[,"obs"], prediction = data[,"yes"], cutoff = df[index,"cutoff"], returnH = FALSE)$avg_return
+      df[index,"avg_return"] <- predictive_performance(y = data[,"obs"], prediction = data[,"yes"], cutoff = df[index,"cutoff"], returnH = FALSE)$avg_return
     }
     opt.cutoff <- df[df$avg_return == max(df$avg_return), "cutoff"]
-    avg_return <- predictive_performance(y = data$obs, prediction = data$yes, cutoff = opt.cutoff, returnH = FALSE)$avg_return
+    performance.measures <- predictive_performance(y = data[,"obs"], prediction = data[,"yes"], cutoff = opt.cutoff, returnH = FALSE)
+    avg_return <- performance.measures$avg_return
+    AUC <- performance.measures$area_under_curve
      
     names(avg_return) <- "avg_return"
     names(opt.cutoff) <- "optimal.cutoff"
+    names(AUC) <- "AUC"
    
   # OUTPUT
-  return(c(avg_return, opt.cutoff))
+  return(list(avg_return, opt.cutoff, AUC))
 }
 
 
