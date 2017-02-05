@@ -21,7 +21,7 @@ model_control = trainControl(
   #repeats = 5, # number of repeats for repeated cross validation
   search = "grid", # or grid for a grid search
   classProbs = TRUE,
-  summaryFunction = twoClassSummary,
+  summaryFunction = cv.meta.cutoff,
   #timingSamps = length(fold), # number of samples to predict the time taken
   sampling = "smote", # This resolves class imbalances. 
   # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
@@ -47,6 +47,7 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   source("helper.R")
   source("woe.R")
   source("performance_measures.R")
+  source("controlcutoff_fortraincontrol.R")
   
   # Split data into training and prediction folds
   idx_test = which(fold_membership == i)
@@ -69,8 +70,8 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   xgb_woe_parms = expand.grid(nrounds = 200, max_depth = 4, eta = 0.05, gamma = 0, colsample_bytree = 1,min_child_weight = 1, subsample = 0.8)
   
   # Train models
-  xgb = train(return_customer~., data = train_fold, method = "xgbTree", tuneGrid = xgb_parms, metric = "ROC", trControl = model_control)
-  xgb_woe = train(return_customer~., data = train_fold_woe, method = "xgbTree", tuneGrid = xgb_woe_parms, metric = "ROC", trControl = model_control)
+  xgb = train(return_customer~., data = train_fold, method = "xgbTree", tuneGrid = xgb_parms, metric = "avg_return", trControl = model_control)
+  xgb_woe = train(return_customer~., data = train_fold_woe, method = "xgbTree", tuneGrid = xgb_woe_parms, metric = "avg_return", trControl = model_control)
   logistic      = glm(return_customer ~ ., data = train_fold_woe, family = binomial(link = "logit"))
   random_forest = randomForest(return_customer ~ ., data = train_fold_woe, mtry = 8)
   neuralnet     = nnet(return_customer ~ ., data = train_fold_norm, size = 3, decay = 1, maxit = 1000)
@@ -126,7 +127,7 @@ meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, 
     #repeats = 5, # number of repeats for repeated cross validation
     search = "grid", # or grid for a grid search
     classProbs = TRUE,
-    summaryFunction = twoClassSummary,
+    summaryFunction = cv.meta.cutoff,
     #timingSamps = length(fold), # number of samples to predict the time taken
     sampling = "smote", # This resolves class imbalances. 
     # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
