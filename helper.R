@@ -406,8 +406,8 @@ build_cost_matrix <- function(CBTN = +3, CBFN = -10, CBFP = 0, CBTP = 0){
   
   # build cost-matrix
   cost.matrix <- matrix(c(
-    NA, CFN,
-    CFP, NA),
+    0, CFN,
+    CFP, 0),
     2, 2, byrow=TRUE)
   
   # name rows and columns
