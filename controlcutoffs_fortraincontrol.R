@@ -37,19 +37,19 @@ stephanie.cutoff <- function(data, lev = NULL, model = NULL){
     # check if cutpoint unique                  
     for(index in 1:length(oc$MCT$Global$optimal.cutoff$cutoff)){
       # optimal cutpoint
-      df[index,"avg_return"] <- predictive_performance(y = data[,"obs"], prediction = data[,"yes"], cutoff = df[index,"cutoff"], returnH = FALSE)$avg_return
+      df[index,"avg_return"] <- predictive_performance(data[,"obs"], prediction = data[,"yes"], cutoff = df[index,"cutoff"], returnH = FALSE)$avg_return
     }
     opt.cutoff <- df[df$avg_return == max(df$avg_return), "cutoff"]
-    performance.measures <- predictive_performance(y = data[,"obs"], prediction = data[,"yes"], cutoff = opt.cutoff, returnH = FALSE)
-    avg_return <- performance.measures$avg_return
-    AUC <- performance.measures$area_under_curve
+    avg_return <- predictive_performance(y = data$obs, prediction = data$yes, cutoff = opt.cutoff, returnH = FALSE)$avg_return
+
      
+    # name metrics
     names(avg_return) <- "avg_return"
     names(opt.cutoff) <- "optimal.cutoff"
-    names(AUC) <- "AUC"
+
    
   # OUTPUT
-  return(list(avg_return, opt.cutoff, AUC))
+    return(c(avg_return, opt.cutoff))
 }
 
 
