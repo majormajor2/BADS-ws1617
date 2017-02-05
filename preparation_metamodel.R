@@ -4,15 +4,8 @@
 # 2. Predict for remainder
 # 3. Create data.frame of predictions
 
-#### Setup of parallel backend ####
-# Detect number of available clusters, which gives you the maximum number of "workers" your computer has
-big_server = TRUE
-cores = detectCores()
-if(big_server){cores = cores - 1} # use on bigger computers, to leave one core for system
-cl = makeCluster(max(1,cores))
-registerDoParallel(cl)
-message(paste("Registered number of cores:",getDoParWorkers()))
-on.exit(stopCluster(cl))
+# Source for finding cutoff
+source("controlcutoffs_fortraincontrol.R")
 
 ###### Initialise model control ######
 model_control = trainControl(
@@ -38,8 +31,16 @@ set.seed(123)
 # Define fold membership for cross validation
 fold_membership = createFolds(known$return_customer, list = FALSE, k = k)
 
+#### Setup of parallel backend ####
+# Detect number of available clusters, which gives you the maximum number of "workers" your computer has
+cores = detectCores()
+cl = makeCluster(min(k,cores)) # only use k cores, as there are only k folds
+registerDoParallel(cl)
+message(paste("Registered number of cores:",getDoParWorkers()))
+on.exit(stopCluster(cl))
+
 # Create a data frame of predictions
-print("Starting creation of prediction data frame at", Sys.time())
+print("Starting creation of prediction data frame at", as.numeric(Sys.time()))
 
 known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRUE) %dopar% # fold = training_folds, .packages = required_packages, .export = required_functions, .combine = list
 {
@@ -47,7 +48,7 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   source("helper.R")
   source("woe.R")
   source("performance_measures.R")
-  source("controlcutoff_fortraincontrol.R")
+  source("controlcutoffs_fortraincontrol.R")
   
   # Split data into training and prediction folds
   idx_test = which(fold_membership == i)
@@ -103,7 +104,8 @@ known_predictions = known_predictions[order(as.numeric(row.names(known_predictio
 stopCluster(cl)
 
 # Start a new cluster
-cl = makeCluster(max(1,cores))
+cores = detectCores()
+cl = makeCluster(min(k,cores)) # only use k cores, as there are only k folds
 registerDoParallel(cl)
 message(paste("Registered number of cores:",getDoParWorkers()))
 on.exit(stopCluster(cl))
@@ -115,7 +117,7 @@ meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, 
   source("helper.R")
   source("woe.R")
   source("performance_measures.R")
-  source("controlcutoff_fortraincontrol.R")
+  source("controlcutoffs_fortraincontrol.R")
   
   # Split data into training and prediction folds
   idx_test = which(fold_membership == i)
@@ -155,6 +157,11 @@ meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, 
   return(output)
 }
 
+# Stop the parallel computing cluster
+stopCluster(cl)
+
+# Save to csv-file
+write.csv(known_predictions, "predictions_known.csv", row.names = row.names(known))
 
 # Initialise to 0
 optimal_cutoff_for_class = 0
@@ -170,12 +177,8 @@ optimal_cutoff_for_class = optimal_cutoff_for_class / k
 avg_return = avg_return / k
 
 # Check performance
-# First load the old predictions and convert them so that they can be used with the meta model
-predictions_test = read.csv("predictions_test.csv")
-predictions_test = predictions_test[-1]
-predictions_test = predictions_test[c(1,7,10,12,13)]
-predictions_test = cbind.data.frame(predictions_test,read.csv("neuralnet_predictions_test.csv"))
-colnames(predictions_test) = c("return_customer","xgb_woe","random_forest","xgb","logistic","neuralnet")
+# Load predictions
+predictions_test = read.csv("predictions_test.csv", row.names = 1)
 
 meta_predictions_test = data.frame(return_customer = predictions_test$return_customer)
 meta_performance_test = data.frame(metrics = c("brier_score","classification_error","h_measure","area_under_curve","gini","precision","true_positives","false_positives","true_negatives","false_negatives","avg_return"))
@@ -184,5 +187,4 @@ for(i in 1:k)
 {
   meta_predictions_test[,paste("Fold",i)] = predict(meta_model[[i]]$model, newdata = predictions_test, type = "response")
   meta_performance_test[,paste("Fold",i)] = as.numeric(predictive_performance(predictions_test$return_customer, meta_predictions_test[,paste("Fold",i)], cutoff = meta_model[[i]]$cutoff, returnH = FALSE))
-
 }
