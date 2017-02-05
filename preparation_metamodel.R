@@ -73,7 +73,7 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   xgb_woe = train(return_customer~., data = train_fold_woe, method = "xgbTree", tuneGrid = xgb_woe_parms, metric = "ROC", trControl = model_control)
   logistic      = glm(return_customer ~ ., data = train_fold_woe, family = binomial(link = "logit"))
   random_forest = randomForest(return_customer ~ ., data = train_fold_woe, mtry = 8)
-  neuralnet     = nnet(return_customer ~ ., data = train_fold_norm, size = 3, decay = 1, maxit = 1000)
+  neuralnet     = nnet(return_customer ~ ., data = train_fold_norm, size = 12, decay = 10, maxit = 1000)
   
   # Predict return_customer on remainder
   prediction_xgb = predict(xgb, newdata = test_fold, type = "prob")[,2]
