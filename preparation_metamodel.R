@@ -81,7 +81,7 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   prediction_xgb_woe = predict(xgb_woe, newdata = test_fold_woe, type = "prob")[,2]
   prediction_logistic = predict(logistic, newdata = test_fold_woe, type = "response")
   prediction_random_forest = predict(random_forest, newdata = test_fold_woe, type = "prob")[,2]
-  prediction_neuralnet = predict(neuralnet, newdata = test_fold_norm, type = "prob")[,2]
+  prediction_neuralnet = as.numeric(predict(neuralnet, newdata = test_fold_norm, type = "raw"))
   
 
   predictions = cbind.data.frame(return_customer = test_fold$return_customer,
@@ -115,6 +115,7 @@ meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, 
   source("helper.R")
   source("woe.R")
   source("performance_measures.R")
+  source("controlcutoff_fortraincontrol.R")
   
   # Split data into training and prediction folds
   idx_test = which(fold_membership == i)
@@ -183,6 +184,5 @@ for(i in 1:k)
 {
   meta_predictions_test[,paste("Fold",i)] = predict(meta_model[[i]]$model, newdata = predictions_test, type = "response")
   meta_performance_test[,paste("Fold",i)] = as.numeric(predictive_performance(predictions_test$return_customer, meta_predictions_test[,paste("Fold",i)], cutoff = meta_model[[i]]$cutoff, returnH = FALSE))
-
 
 }
