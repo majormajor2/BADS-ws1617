@@ -216,7 +216,7 @@ predictive_performance(test_data_norm$return_customer,neural_predictions_test,cu
 
 
 
-# Run a normal neural network
+# Run a deep neural network
 run_deep_neural_network = function(dataset, fold_membership, model_control, number_of_folds = 5, big_server = FALSE)
 {
   #### Setup of parallel backend ####
@@ -288,7 +288,7 @@ run_deep_neural_network = function(dataset, fold_membership, model_control, numb
     
     #### Train Normal Artificial Neural Network ####
     DANNII = train(return_customer~., data = train_fold_woe,  
-                method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
+                method = "dnn", maxit = 1000, trace = FALSE, # options for nnet function
                 tuneGrid = DANNII_parms, # parameters to be tested
                 #tuneLength = 100,
                 metric = "ROC", trControl = model_control)
