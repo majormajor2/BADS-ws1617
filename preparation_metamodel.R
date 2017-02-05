@@ -101,6 +101,7 @@ known_predictions = known_predictions[order(as.numeric(row.names(known_predictio
 stopCluster(cl)
 
 # Start a new cluster
+cl = makeCluster(max(1,cores))
 registerDoParallel(cl)
 message(paste("Registered number of cores:",getDoParWorkers()))
 on.exit(stopCluster(cl))
@@ -138,16 +139,17 @@ meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, 
   parameters = expand.grid(nrounds = 800, max_depth = 4, eta = 0.01, gamma = 0, colsample_bytree = 1, min_child_weight = 1, subsample = 0.8)
 
   # Train models
-  model = train(return_customer~., data = train_fold, method = "xgbTree", tuneGrid = xgb_parms, metric = "ROC", trControl = model_control)
-  
+  #model = train(return_customer~., data = train_fold, method = "xgbTree", tuneGrid = xgb_parms, metric = "ROC", trControl = model_control)
+  model= glm(return_customer ~ ., data = train_fold, family = binomial(link = "logit"))
+    
   # Predict return_customer on remainder
-  prediction = predict(xgb, newdata = test_fold, type = "prob")[,2]
+  prediction = predict(model, newdata = test_fold, type = "response")
   cutoff = optimal_cutoff(test_fold$return_customer, prediction)
-  avg_return = predictive_performance(test_fold$return_customer, prediction, cutoff, returnH = FALSE)
+  avg_return = predictive_performance(test_fold$return_customer, prediction, cutoff, returnH = FALSE)$avg_return
   output = list(model = model, cutoff = cutoff, avg_return = avg_return)
 
   # Return
-  output
+  return(output)
 }
 
 
@@ -163,3 +165,21 @@ for(i in 1:k)
 # Take averages
 optimal_cutoff_for_class = optimal_cutoff_for_class / k
 avg_return = avg_return / k
+
+# Check performance
+# First load the old predictions and convert them so that they can be used with the meta model
+predictions_test = read.csv("predictions_test.csv")
+predictions_test = predictions_test[-1]
+predictions_test = predictions_test[c(1,7,10,12,13)]
+colnames(predictions_test) = c("return_customer","xgb_woe","random_forest","xgb","logistic")
+
+meta_predictions_test = data.frame(return_customer = predictions_test$return_customer)
+meta_performance_test = data.frame(metrics = c("brier_score","classification_error","h_measure","area_under_curve","gini","precision","true_positives","false_positives","true_negatives","false_negatives","avg_return"))
+
+for(i in 1:k)
+{
+  meta_predictions_test[,paste("Fold",i)] = predict(meta_model[[i]]$model, newdata = predictions_test, type = "response")
+  meta_performance_test[,paste("Fold",i)] = as.numeric(predictive_performance(predictions_test$return_customer, meta_predictions_test[,paste("Fold",i)], cutoff = meta_model[[i]]$cutoff, returnH = FALSE))
+
+
+}
