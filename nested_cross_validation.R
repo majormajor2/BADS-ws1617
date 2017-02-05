@@ -200,6 +200,125 @@ predictive_performance(test_data_norm$return_customer,neural_predictions_test,cu
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Run a normal neural network
+run_deep_neural_network = function(dataset, fold_membership, model_control, number_of_folds = 5, big_server = FALSE)
+{
+  #### Setup of parallel backend ####
+  # Detect number of available clusters, which gives you the maximum number of "workers" your computer has
+  cores = detectCores()
+  if(big_server){cores = cores - 1} # use on bigger computers, to leave one core for system
+  cl = makeCluster(max(1,cores))
+  registerDoParallel(cl)
+  message(paste("Registered number of cores:",getDoParWorkers()))
+  on.exit(stopCluster(cl))
+  #required_packages = c("caret","nnet", "pROC", "klaR")
+  #required_functions = c("calculate_woe","apply_woe", "prepare", "strongly_correlated", "predictive_performance", "treat_outliers", "truncate_outliers", "standardize", "normalize", "normalize_dataset")
+  
+  #### Initialise output lists ####
+  object = list()
+  
+  # Start timing
+  print(paste("Started timing at",Sys.time()))
+  timing = Sys.time()
+  
+  #### Start loops ####
+  # Use anormal loop here because otherwise the inner 
+  # cross validation with train is not parallelized.
+  for(i in 1:number_of_folds) 
+    #object <- foreach(i = 1:number_of_folds, .verbose = TRUE) %dopar% # .packages = required_packages, .export = required_functions, .combine = list
+  {
+    # Sourcing function files - potentially required for foreach loop
+    #source("helper.R")
+    #source("woe.R")
+    #source("performance_measures.R")
+    
+    print(paste("Begin inner cross validation in fold", i))
+    
+    #### Split data into training and validation folds ####
+    idx_test = which(fold_membership == i)
+    #idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
+    
+    test_fold = dataset[idx_test,]
+    #validation_fold = dataset[idx_validation,]
+    #train_fold = dataset[-c(idx_test,idx_validation),]
+    train_fold = dataset[-idx_test,]
+    
+    #### Calculate Weight of Evidence ####
+    print("Replacing multilevel factors with weight of evidence.")
+    # Will create a new dataframe consisting of all the variables of known but replaces the factor
+    # variables into numerical variables according to the weight of evidence
+    columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
+    # Calculate WoE from train_fold and return woe object
+    woe_object = calculate_woe(train_fold, target = "return_customer", columns_to_replace = columns_to_replace)
+    # Replace multilevel factor columns in train_fold by their WoE
+    train_fold_woe = apply_woe(dataset = train_fold, woe_object = woe_object)
+    # Apply WoE to all the other folds 
+    #validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
+    test_fold_woe = apply_woe(dataset = test_fold, woe_object = woe_object)
+    
+    #### Normalize folds ####
+    
+    dropped_correlated_variables = strongly_correlated(train_fold_woe, threshold = 0.6)
+    
+    print("Perform normalization operations.")
+    train_fold_woe = prepare(train_fold_woe, dropped_correlated_variables)
+    #validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
+    test_fold_woe = prepare(test_fold_woe, dropped_correlated_variables)
+    
+    #### Create hyperparameter grid ####
+    DANNII_parms = expand.grid(layer1 = seq(5, 50, 3), layer2 = seq(3, 30, 3), layer3 = seq(1, 10, 1), hidden_dropout = c(0, 10^seq(-5, 1, 1)), visible_dropout = c(0, 10^seq(-5, 1, 1)))
+    
+    print("Begin training of primary model.")
+    
+    #### Train Normal Artificial Neural Network ####
+    DANNII = train(return_customer~., data = train_fold_woe,  
+                method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
+                tuneGrid = DANNII_parms, # parameters to be tested
+                #tuneLength = 100,
+                metric = "ROC", trControl = model_control)
+    
+    print("Training of primary model completed.")
+    
+    #### Predict on validation fold ####
+    prediction_DANNII = predict(DANNII, newdata = test_fold_woe, type = "prob")[,2]
+    #result_DANNII = predictive_performance(validation_fold_woe$return_customer, prediction_DANNII, returnH = FALSE)
+    
+    print("Prediction by primary model completed.")
+    
+    print(paste("Completed all tasks in fold", i, "- Saving now."))
+    
+    #### Return output of the loop ####
+    object[[i]] = list(model = DANNII, prediction = prediction_DANNII) #, result = result_DANNII
+  } 
+  
+  print(paste("Ended timing at",Sys.time()))
+  timing = as.numeric(Sys.time() - timing)
+  print(paste("Ended cross validation after", timing, "seconds."))
+  
+  
+  #### Stop parallel computing cluster ####
+  # This is taken care of by the on.exit at the beginning
+  
+  #### End function ####
+  return(list(all = object, timing = timing))
+}
+
 #################### After this there be dragons! ##########################
 # What follows is just a testing ground and will be deleted at some point. #
 
