@@ -4,7 +4,7 @@ model.control<- trainControl(
   method = "cv", # 'cv' for cross validation
   number = 5, # number of folds in cross validation
   classProbs = TRUE,
-  summaryFunction = optimalCutpoint,
+  summaryFunction = stephanie.cutoff,
   allowParallel = TRUE, # Enable parallelization if available
   returnData = TRUE # We will use this to plot partial dependence
 )

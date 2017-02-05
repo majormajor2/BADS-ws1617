@@ -150,7 +150,7 @@ xgb_base_param2_score <-predictive_performance(test_data$return_customer, xgb.pa
 #  need to find optimal cutpoints
 
 #WOE
-xgb_woe_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.default.pred, cutoff = 0.212)
+xgb_woe_default_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.default.pred, cutoff = 0.2266277,returnH = FALSE)
 xgb_woe_param1_score <-predictive_performance(test_data_woe$return_customer, xgb_woe.param1.pred, cutoff = 0.212)
 xgb_woe_param2_score <-predictive_performance(validation_data_woe$return_customer, xgb_woe.param2.pred, cutoff = 0.212)
 #  need to find optimal cutpoints

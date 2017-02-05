@@ -5,16 +5,16 @@
 
 ### Optimal Cutpoints
 
-if(!require("OptimalCutpoints")) install.packages("OptimalCutpoints"); library("OptimalCutpoints")
-source("performance_measures.R")
-
 
 ###### --------- control.cutpoints ---------  ######
 
 # input: dataframe with predictions
 
-optimalCutpoint <- function(data, lev = NULL, model = NULL){
+stephanie.cutoff <- function(data, lev = NULL, model = NULL){
   
+  if(!require("OptimalCutpoints")) install.packages("OptimalCutpoints"); library("OptimalCutpoints")
+  source("helper.R")
+  source("performance_measures.R")
   # GET COST MATRIX
   cost.matrix <- build_cost_matrix()
   
@@ -41,11 +41,12 @@ optimalCutpoint <- function(data, lev = NULL, model = NULL){
     }
     opt.cutoff <- df[df$avg_return == max(df$avg_return), "cutoff"]
     avg_return <- predictive_performance(y = data$obs, prediction = data$yes, cutoff = opt.cutoff, returnH = FALSE)$avg_return
-    
-    
+     
+    names(avg_return) <- "avg_return"
+    names(opt.cutoff) <- "optimal.cutoff"
    
   # OUTPUT
-  return(avg_return)
+  return(c(avg_return, opt.cutoff))
 }
 
 
