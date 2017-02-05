@@ -74,7 +74,7 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   xgb_woe = train(return_customer~., data = train_fold_woe, method = "xgbTree", tuneGrid = xgb_woe_parms, metric = "avg_return", trControl = model_control)
   logistic      = glm(return_customer ~ ., data = train_fold_woe, family = binomial(link = "logit"))
   random_forest = randomForest(return_customer ~ ., data = train_fold_woe, mtry = 8)
-  neuralnet     = nnet(return_customer ~ ., data = train_fold_norm, size = 3, decay = 1, maxit = 1000)
+  neuralnet     = nnet(return_customer ~ ., data = train_fold_norm, size = 12, decay = 10, maxit = 1000)
   
   # Predict return_customer on remainder
   prediction_xgb = predict(xgb, newdata = test_fold, type = "prob")[,2]
@@ -87,7 +87,8 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
   predictions = cbind.data.frame(return_customer = test_fold$return_customer,
                                  xgb = prediction_xgb, xgb_woe = prediction_xgb_woe, 
                                  logistic = prediction_logistic, 
-                                 random_forest = prediction_random_forest #,neuralnet =
+                                 random_forest = prediction_random_forest,
+                                 neuralnet = prediction_neuralnet
                                  )
 
   # Return the list of predictions
@@ -172,7 +173,8 @@ avg_return = avg_return / k
 predictions_test = read.csv("predictions_test.csv")
 predictions_test = predictions_test[-1]
 predictions_test = predictions_test[c(1,7,10,12,13)]
-colnames(predictions_test) = c("return_customer","xgb_woe","random_forest","xgb","logistic")
+predictions_test = cbind.data.frame(predictions_test,read.csv("neuralnet_predictions_test.csv"))
+colnames(predictions_test) = c("return_customer","xgb_woe","random_forest","xgb","logistic","neuralnet")
 
 meta_predictions_test = data.frame(return_customer = predictions_test$return_customer)
 meta_performance_test = data.frame(metrics = c("brier_score","classification_error","h_measure","area_under_curve","gini","precision","true_positives","false_positives","true_negatives","false_negatives","avg_return"))
