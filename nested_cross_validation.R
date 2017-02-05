@@ -158,7 +158,45 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
 
 
 
+# Will create a new dataframe consisting of all the variables of known but replaces the factor
+# variables into numerical variables according to the weight of evidence
+columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
+# Calculate WoE from train_fold and return woe object
+woe_object = calculate_woe(train_data, target = "return_customer", columns_to_replace = columns_to_replace)
+# Replace multilevel factor columns in train_fold by their WoE
+train_data_woe = apply_woe(dataset = train_data, woe_object = woe_object)
+# Apply WoE to all the other folds 
+#validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
+test_data_woe = apply_woe(dataset = test_data, woe_object = woe_object)
 
+#### Normalize datasets ####
+
+dropped_correlated_variables = strongly_correlated(train_data_woe, threshold = 0.6)
+
+print("Perform normalization operations.")
+train_data_norm = prepare(train_data_woe, dropped_correlated_variables)
+#validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
+test_data_norm = prepare(test_data_woe, dropped_correlated_variables)
+
+performance_neuralnet = data.frame(metrics = c("brier_score","classification_error","h_measure","area_under_curve","gini","precision","true_positives","false_positives","true_negatives","false_negatives","avg_return"))
+
+for(i in c(1,2,3,5))
+{
+  best_cutoff = optimal_cutoff(train_data_norm[which(fold_membership == i),]$return_customer, output_neuralnet$all[[i]]$prediction)
+  print(best_cutoff)
+  performance_neuralnet[,paste("Fold",i)] = as.numeric(predictive_performance(train_data_norm[which(fold_membership == i),]$return_customer, output_neuralnet$all[[i]]$prediction, cutoff = best_cutoff, returnH = FALSE))
+}
+
+# Now find best tune
+size = output_neuralnet$all[[2]]$model$bestTune$size # Models from fold 1 and 2 have best AUC and avg_return
+decay = output_neuralnet$all[[2]]$model$bestTune$decay # and also the same hyperparameters
+
+# Then test on test_data and add prediction
+ANN = nnet(return_customer~., train_data_norm, size=size, decay=decay, maxit = 1000)
+neural_predictions_test = as.numeric(predict(ANN, newdata = test_data_norm, type = "raw"))
+write.csv(data.frame(return_customer = test_data$return_customer, neural_predictions = neural_predictions_test), "neuralnet_predictions_test.csv")
+best_cutoff = optimal_cutoff(test_data_norm$return_customer, neural_predictions_test)
+predictive_performance(test_data_norm$return_customer,neural_predictions_test,cutoff = best_cutoff, returnH = FALSE)
 
 
 
