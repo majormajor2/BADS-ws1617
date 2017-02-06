@@ -282,13 +282,13 @@ run_deep_neural_network = function(dataset, fold_membership, model_control, numb
     test_fold_woe = prepare(test_fold_woe, dropped_correlated_variables)
     
     #### Create hyperparameter grid ####
-    DANNII_parms = expand.grid(layer1 = seq(5, 50, 3), layer2 = seq(3, 30, 3), layer3 = seq(1, 10, 1), hidden_dropout = c(0, 10^seq(-5, 1, 1)), visible_dropout = c(0, 10^seq(-5, 1, 1)))
+    DANNII_parms = expand.grid(layer1 = seq(12, 36, 3), layer2 = seq(3, 24, 3), layer3 = seq(1, 10, 1), hidden_dropout = c(0, 10^seq(-4, 1, 1)), visible_dropout = c(0, 10^seq(-4, 1, 1)))
     
     print("Begin training of primary model.")
     
     #### Train Normal Artificial Neural Network ####
     DANNII = train(return_customer~., data = train_fold_woe,  
-                method = "dnn", maxit = 1000, trace = FALSE, # options for nnet function
+                method = "dnn", maxit = 100, trace = FALSE, # options for nnet function
                 tuneGrid = DANNII_parms, # parameters to be tested
                 #tuneLength = 100,
                 metric = "ROC", trControl = model_control)
