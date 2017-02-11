@@ -1,10 +1,4 @@
-
 ### Load packages and set up the basic cleaned dataset
-if(!require("klaR")) install.packages("klaR")
-library(klaR)
-if(!require("pROC")) install.packages("pROC"); library("pROC") # load the package
-if(!require("randomForest")) install.packages("randomForest")
-source("main.R")
 source("masterload.R")
 
 ### 1. SETUP
@@ -252,8 +246,7 @@ pred.rf.woe.80   <- predict(rf.woe.80, newdata = test_data_woe, type = "prob")[,
 
 
 ### 4. MODEL EVALUATION
-# As done in previous exercises, the AUC is computed in order to evaluate our model performance. 
-if(!require("pROC")) install.packages("pROC"); library("pROC") # load the package
+# AUC is computed in order to evaluate our model performance. 
 auc.caret <- auc(test_data$return_customer, yhat.rf.caret) 
 # Area under the curve: 0.645
 auc.caret.woe <- auc(test_data_woe$return_customer, yhat.rf.caret.woe) 

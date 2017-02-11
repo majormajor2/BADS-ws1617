@@ -1,4 +1,4 @@
-### Model Performance Measures ###
+#### Model Performance Measures ####
 
 
 # Helper function to compute measures of predictive accuracy
@@ -67,4 +67,103 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5, returnH = 
   if(!returnH){output$H = NULL}
   
   return(output)
+}
+
+
+## Function to construct a cost matrix
+
+build_cost_matrix = function(CBTN = +3, CBFN = -10, CBFP = 0, CBTP = 0)
+{
+  # calculate costs with 0 on diagonals
+  CFN = CBFN - CBTP
+  CFP = CBFP - CBTN
+  
+  # build cost-matrix
+  cost.matrix = matrix(c(
+    0, CFN,
+    CFP, 0),
+    2, 2, byrow=TRUE)
+  
+  # name rows and columns
+  colnames(cost.matrix) = list("noreturn", "return")
+  rownames(cost.matrix) = list("noreturn", "return")
+  
+  return(cost.matrix)
+}
+
+
+# Function to return the optimal cutoff 
+# given a target vector of factors and a vector of predictions as probabilities.
+# Returns a number.
+optimal_cutoff = function(target, prediction, cost_matrix = build_cost_matrix(), tag_false = "no")
+{
+  # create dataframe for later use
+  df = data.frame(target = target, prediction = prediction)
+  # MODEL CONTROL
+  # method: maxKappa
+  model_control_cutpoints = control.cutpoints(CFP = -cost_matrix[2,1], CFN = -cost_matrix[1,2], costs.ratio = -cost_matrix[2,1]/-cost_matrix[1,2], weighted.Kappa = TRUE)
+  
+  # get the OC object
+  oc = optimal.cutpoints(X = "prediction", 
+                         status = "target",
+                         tag.healthy = tag_false,
+                         methods = "MCT", 
+                         data = df, 
+                         control = model_control_cutpoints)
+  
+  # extract optimal cutoff
+  optimal_cutoff = oc$MCT$Global$optimal.cutoff$cutoff
+  return(optimal_cutoff)
+}
+
+
+
+### Custom function for train.control
+# use avg retrun as metric to choose the model
+# input: dataframe with predictions
+# output: average return
+
+stephanie.cutoff = function(data, lev = NULL, model = NULL)
+{
+  # load inside function to ensure that with parallel computing workers have it in their environment
+  if(!require("OptimalCutpoints")) install.packages("OptimalCutpoints"); library("OptimalCutpoints")
+  source("helper.R")
+  
+  # GET COST MATRIX
+  cost.matrix <- build_cost_matrix()
+  
+  # MODEL.CONTROL
+  # method: maxKappa
+  model.control.optc = control.cutpoints(CFP = -cost.matrix[2,1], CFN = -cost.matrix[1,2], costs.ratio = -cost.matrix[2,1]/-cost.matrix[1,2], weighted.Kappa = TRUE)
+  
+  # RUN OPTIMAL CUTPOINTS
+  oc = optimal.cutpoints(
+    X = "yes", 
+    status = "obs", 
+    tag.healthy = "no", 
+    methods = "MCT", 
+    data = data, 
+    control = model.control.optc)
+  
+  # SELECT OPTIMAL CUTPOINT
+  # define temporary dataframes to store cutoffs 
+  df <- data.frame(cutoff = oc$MCT$Global$optimal.cutoff$cutoff)
+  # check if cutpoint unique                  
+  for(index in 1:length(oc$MCT$Global$optimal.cutoff$cutoff)){
+    # optimal cutpoint
+    df[index,"avg_return"] <- predictive_performance(data[,"obs"], prediction = data[,"yes"], cutoff = df[index,"cutoff"], returnH = FALSE)$avg_return
+  }
+  # Choose cutoff that maximises avg return
+  opt.cutoff <- df[df$avg_return == max(df$avg_return), "cutoff"]
+  # Calculate average return
+  avg_return <- predictive_performance(y = data$obs, prediction = data$yes, cutoff = opt.cutoff, returnH = FALSE)$avg_return
+  
+  
+  # name metrics
+  names(avg_return) <- "avg_return"
+  names(opt.cutoff) <- "optimal.cutoff"
+  
+  
+  # OUTPUT
+  return(c(avg_return, opt.cutoff))
 }

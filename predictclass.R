@@ -1,12 +1,14 @@
-
-predict_class = function(filename = "class_predictions.csv")
+# Make predictions for the class dataset with the 5 primary models we have selected in earlier stages
+predict_class = function(filename = "class_predictions.csv", save_to_csv = TRUE)
 {
+  # Set up parallel computing
   cores = detectCores()
   cl = makeCluster(max(1,cores))
   registerDoParallel(cl)
   message(paste("Registered number of cores:",getDoParWorkers()))
   on.exit(stopCluster(cl))
   
+  # Initialise model control
   model.control = trainControl(
     method = "cv", # 'cv' for cross validation, 'adaptive_cv' drops unpromising models
     number = 5, # number of folds in cross validation (or number of resampling iterations)
@@ -19,7 +21,7 @@ predict_class = function(filename = "class_predictions.csv")
     allowParallel = TRUE, # Enable parallelization if available
     returnData = FALSE) # The training data will not be included in the output training object
 
-# Train models
+  # Train models
   print("Begin training xgb")
   xgb_parms_cphsv = expand.grid(nrounds = 800,
                            max_depth = 4,
@@ -75,10 +77,14 @@ predict_class = function(filename = "class_predictions.csv")
                                   neuralnet = prediction_neuralnet)
 
   # save it to csv file
-  print(paste("Writing to"), filename)
-  write.csv(df_predictions_class, file = filename, row.names = row.names(class))
-
+  if(save_to_csv)
+  {
+    print(paste("Writing to"), filename)
+    write.csv(df_predictions_class, file = filename, row.names = row.names(class))
+  }
+    
   # check correlations between the models
   corrplot(cor(df_predictions_class))
+  
   return(df_predictions_class)
 }

@@ -300,35 +300,6 @@ xgb.params2.meta4 <- predict(xgb.def, newdata = df_predictions_test_meta4, type 
 optimal_cutoff(df_predictions_test_meta_FINAL4$return_customer, xgb.meta4.train)
 predictive_performance(df_predictions_test_meta_FINAL4$return_customer, xgb.meta4.train, cutoff =  0.3455043, returnH = FALSE)
 
-
-# 1.4 REGULARIZED REGRESSION  # not using it due to unsatisfactory results
-if(!require("rrlda")) install.packages("rrlda"); library("rrlda")
-if(!require("glmnet")) install.packages("glmnet"); library("glmnet")
-
-
-cctrl1 <- trainControl(method = "cv", number = 3, 
-                       classProbs = TRUE,
-                       summaryFunction = twoClassSummary)
-x = df_predictions_validation_meta4[,-1]
-y = df_predictions_validation_meta4[,1]
-x_test = df_predictions_test_meta4[,-1]
-y_test = df_predictions_meta4[,-1]
-
-
-rega.meta <- train(x = x,
-                   y = y,
-                    method = "rrlda",
-                    trControl = cctrl1,
-                    metric = "ROC")
-
-rega2.meta <- glmnet(x = x, y = y, alpha = 1, family = "binomial")
-
-
-meta4.rega <- predict(rega.meta, x_test, type = "response")
-optimal_cutoff(df_predictions_test_meta4$return_customer, meta4.rega)
-predictive_performance(y_test, meta4.rega, cutoff =  0.5204702, returnH = FALSE)
-
-
 ## 2. SAVE PREDICTIONS TO RESULTS 
 
 ## Saving to a csv

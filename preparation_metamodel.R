@@ -4,26 +4,6 @@
 # 2. Predict for remainder
 # 3. Create data.frame of predictions
 
-# Source for finding cutoff
-source("controlcutoffs_fortraincontrol.R")
-
-###### Initialise model control ######
-model_control = trainControl(
-  method = "cv", # 'cv' for cross validation, 'adaptive_cv' drops unpromising models
-  number = 5, # number of folds in cross validation (or number of resampling iterations)
-  #repeats = 5, # number of repeats for repeated cross validation
-  search = "grid", # or grid for a grid search
-  classProbs = TRUE,
-  summaryFunction = stephanie.cutoff,
-  #timingSamps = length(fold), # number of samples to predict the time taken
-  sampling = "smote", # This resolves class imbalances. 
-  # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
-  allowParallel = TRUE, # Enable parallelization if available
-  #savePredictions = TRUE, # Save the hold-out predictions
-  verboseIter = TRUE, # Print training log
-  returnData = FALSE) # The training data will not be included in the output training object
-
-
 # Set number of folds
 k = 5
 # Set seed for reproducability
@@ -46,9 +26,22 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
 {
   # Sourcing function files - potentially required for foreach loop
   source("helper.R")
-  source("woe.R")
-  source("performance_measures.R")
-  source("controlcutoffs_fortraincontrol.R")
+  
+  ###### Initialise model control ######
+  model_control = trainControl(
+    method = "cv", # 'cv' for cross validation, 'adaptive_cv' drops unpromising models
+    number = 5, # number of folds in cross validation (or number of resampling iterations)
+    #repeats = 5, # number of repeats for repeated cross validation
+    search = "grid", # or grid for a grid search
+    classProbs = TRUE,
+    summaryFunction = stephanie.cutoff,
+    #timingSamps = length(fold), # number of samples to predict the time taken
+    sampling = "smote", # This resolves class imbalances. 
+    # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
+    allowParallel = TRUE, # Enable parallelization if available
+    #savePredictions = TRUE, # Save the hold-out predictions
+    verboseIter = TRUE, # Print training log
+    returnData = FALSE) # The training data will not be included in the output training object
   
   # Split data into training and prediction folds
   idx_test = which(fold_membership == i)
@@ -100,8 +93,14 @@ print("Completed creation of prediction data frame at", Sys.time())
 # Order the data frame by row.name
 known_predictions = known_predictions[order(as.numeric(row.names(known_predictions))),]
 
+
+# Save to csv-file
+write.csv(known_predictions, "predictions_known.csv", row.names = row.names(known))
+
 # Stop the parallel computing cluster
 stopCluster(cl)
+
+
 
 # Start a new cluster
 cores = detectCores()
@@ -111,13 +110,10 @@ message(paste("Registered number of cores:",getDoParWorkers()))
 on.exit(stopCluster(cl))
 
 # Train the meta model on the predictions dataframe
-meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, .packages = required_packages, .export = required_functions, .combine = rbind.data.frame, 
+meta_models = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, .packages = required_packages, .export = required_functions, .combine = rbind.data.frame, 
 {
   # Sourcing function files - potentially required for foreach loop
   source("helper.R")
-  source("woe.R")
-  source("performance_measures.R")
-  source("controlcutoffs_fortraincontrol.R")
   
   # Split data into training and prediction folds
   idx_test = which(fold_membership == i)
@@ -144,11 +140,19 @@ meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, 
   parameters = expand.grid(nrounds = 800, max_depth = 4, eta = 0.01, gamma = 0, colsample_bytree = 1, min_child_weight = 1, subsample = 0.8)
 
   # Train models
-  #model = train(return_customer~., data = train_fold, method = "xgbTree", tuneGrid = xgb_parms, metric = "ROC", trControl = model_control)
-  model= glm(return_customer ~ ., data = train_fold, family = binomial(link = "logit"))
-    
+  # Logistic:
+  # model= glm(return_customer ~ ., data = train_fold, family = binomial(link = "logit"))
+  # XGB:
+  model = train(return_customer~., data = train_fold, method = "xgbTree", tuneGrid = parameters, metric = "avg_return", trControl = model_control)
+  
   # Predict return_customer on remainder
-  prediction = predict(model, newdata = test_fold, type = "response")
+  
+  
+  # Predict return_customer on remainder
+  # Logistic: 
+  # prediction = predict(model, newdata = test_fold, type = "response")
+  # XGB:
+  prediction = predict(model, newdata = test_fold, type = "prob")[,2]
   cutoff = optimal_cutoff(test_fold$return_customer, prediction)
   avg_return = predictive_performance(test_fold$return_customer, prediction, cutoff, returnH = FALSE)$avg_return
   output = list(model = model, cutoff = cutoff, avg_return = avg_return)
@@ -160,22 +164,22 @@ meta_model = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds, 
 # Stop the parallel computing cluster
 stopCluster(cl)
 
-# Save to csv-file
-write.csv(known_predictions, "predictions_known.csv", row.names = row.names(known))
-
 # Initialise to 0
 optimal_cutoff_for_class = 0
 avg_return = 0
 # Add for all folds
 for(i in 1:k)
 {
-  optimal_cutoff_for_class = optimal_cutoff_for_class + meta_model[[i]]$cutoff
-  avg_return = avg_return + meta_model[[i]]$avg_return
+  optimal_cutoff_for_class = optimal_cutoff_for_class + meta_models[[i]]$cutoff
+  avg_return = avg_return + meta_models[[i]]$avg_return
 }
 # Take averages
 optimal_cutoff_for_class = optimal_cutoff_for_class / k
 avg_return = avg_return / k
 
+
+
+##### Needed? #### 
 # Check performance
 # Load predictions
 predictions_test = read.csv("predictions_test.csv", row.names = 1)
@@ -185,6 +189,6 @@ meta_performance_test = data.frame(metrics = c("brier_score","classification_err
 
 for(i in 1:k)
 {
-  meta_predictions_test[,paste("Fold",i)] = predict(meta_model[[i]]$model, newdata = predictions_test, type = "response")
-  meta_performance_test[,paste("Fold",i)] = as.numeric(predictive_performance(predictions_test$return_customer, meta_predictions_test[,paste("Fold",i)], cutoff = meta_model[[i]]$cutoff, returnH = FALSE))
+  meta_predictions_test[,paste("Fold",i)] = predict(meta_models[[i]]$model, newdata = predictions_test, type = "response")
+  meta_performance_test[,paste("Fold",i)] = as.numeric(predictive_performance(predictions_test$return_customer, meta_predictions_test[,paste("Fold",i)], cutoff = meta_models[[i]]$cutoff, returnH = FALSE))
 }

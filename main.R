@@ -1,14 +1,8 @@
 # This is the main script that runs all the other modules
 
-####### Load modules ################
+####### Load helper ################
 
 source("helper.R")
-source("weight.R")
-source("woe.R")
-source("performance_measures.R")
-source("binning.R")
-source("controlcutoffs_fortraincontrol.R")
-source("predictclass.R")
 
 ####### Set seed ################
 
@@ -20,10 +14,10 @@ known = get_dataset("assignment_BADS_WS1617_known.csv")
 # class - data to be classified
 class = get_dataset("assignment_BADS_WS1617_class.csv")
 
-######### Treat missing variables ##############
+######### Preprocess ##############
 
-known = treat_missing_values(known)
-class = treat_missing_values(class)
+known = treat_NAs(known)
+class = treat_NAs(class)
 known = treat_postcodes(known)
 class = treat_postcodes(class)
 known = treat_dates(known)
@@ -32,6 +26,7 @@ known = treat_weight(known)
 class = treat_weight(class)
 
 ##### Create Master Dataset to store results #####
+
 predictions_all = data.frame(return_customer = known$return_customer)
 
 ####### Check plausability of data types ################
@@ -42,6 +37,10 @@ predictions_all = data.frame(return_customer = known$return_customer)
 # Summarise
 #lapply(known,summary)
 #lapply(class,summary)
+
+###### Plotting ######
+
+par(mar=c(1,1,1,1)) # to make sure the plot works on a small screen
 
 ######### Partition the data ##############
 
@@ -61,20 +60,48 @@ test_data  =  known[-idx_train, ] # test set (drop all observations with train i
 columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
 # Calculate WoE from train_fold and return woe object
 woe_object = calculate_woe(known, target = "return_customer", columns_to_replace = columns_to_replace)
-# Replace multilevel factor columns in train_fold by their WoE
+# Replace multilevel factor columns by their WoE
 known_woe = apply_woe(dataset = known, woe_object = woe_object)
-# Apply WoE to all the other folds 
-#validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
 class_woe = apply_woe(dataset = class, woe_object = woe_object)
 
 ###### Normalize datasets ######
 
+# Identify variables that are highly correlated and drop them from dataset
 dropped_correlated_variables = strongly_correlated(known_woe, threshold = 0.6)
 
-print("Perform normalization operations.")
+# Perform normalization operations
 known_norm = prepare(known_woe, dropped_correlated_variables)
-#validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
 class_norm = prepare(class_woe, dropped_correlated_variables)
+
+
+
+##### Nested Cross Validation #####
+
+# Run Neural Network
+
+###### Meta Model ######
+
+# Get a data frame of predictions for all of known
+# Have a cross validation of meta models over this dataframe
+source("preparation_metamodel.R")
+
+# Initialise highest return for the selection of meta model
+highest_return = 0
+
+# Loop over the models from the cross validation
+for(model in meta_models)
+{
+  # Check if the highest return is better than that of the other sets of hyperparameters
+  # i.e. if it generalizes better than the others
+  if(model$avg_return > highest_return)
+  {
+    # Pick best set of hyperparameters
+    meta_hyperparameters = data.frame(model$model$bestTune)
+    highest_return = model$avg_return
+  }
+}
+
+meta_model = train(return_customer~., data = known_predictions, method = "xgbTree", tuneGrid = meta_hyperparameters, metric = "avg_return", trControl = model_control)
 
 
 ######## Cost matrix ##########
@@ -82,12 +109,18 @@ cost.matrix = build_cost_matrix(CBTN = 3, CBFP = -10)
 
 
 ####### Call Master File ######
-df_predictions_test <- call_master(filename.csv = "predictions_test.csv")
+df_predictions_test = call_master(filename.csv = "predictions_test.csv")
 
 
-#### Plotting ####
-par(mar=c(1,1,1,1)) # to make sure the plot works on a small screen
+
 
 
 ##### Predict classification dataset #####
-predict_class()
+# get predictions from primary models
+class_predictions = predict_class()
+# use primary predictions to predict with meta model
+final_prediction =   predict(meta_model, newdata = class_predictions, type = "prob")[,2]
+# use optimal cutoff previously found and save to data frame
+final_output = data.frame(ID = row.names(class), return_customer = ifelse(final_prediction <= optimal_cutoff_for_class, 0, 1))
+# save csv-file with predictions
+write.csv(final_output, file = "27.csv", row.names = FALSE)

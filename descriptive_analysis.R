@@ -1,5 +1,3 @@
-# Preprocessing
------------------------------
 # Packages
 if(!require("lubridate")) install.packages("lubridate"); library(lubridate)
 if(!require("corrplot")) install.packages("corrplot"); library(corrplot) 

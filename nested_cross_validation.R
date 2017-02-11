@@ -155,39 +155,17 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
 }
 
 
-
-
-
-# Will create a new dataframe consisting of all the variables of known but replaces the factor
-# variables into numerical variables according to the weight of evidence
-columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
-# Calculate WoE from train_fold and return woe object
-woe_object = calculate_woe(train_data, target = "return_customer", columns_to_replace = columns_to_replace)
-# Replace multilevel factor columns in train_fold by their WoE
-train_data_woe = apply_woe(dataset = train_data, woe_object = woe_object)
-# Apply WoE to all the other folds 
-#validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
-test_data_woe = apply_woe(dataset = test_data, woe_object = woe_object)
-
-#### Normalize datasets ####
-
-dropped_correlated_variables = strongly_correlated(train_data_woe, threshold = 0.6)
-
-print("Perform normalization operations.")
-train_data_norm = prepare(train_data_woe, dropped_correlated_variables)
-#validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
-test_data_norm = prepare(test_data_woe, dropped_correlated_variables)
-
+######## CHECK! ############
 performance_neuralnet = data.frame(metrics = c("brier_score","classification_error","h_measure","area_under_curve","gini","precision","true_positives","false_positives","true_negatives","false_negatives","avg_return"))
 
+# Choose neuralnet with best generalisation (i.e. best avg_return given by predictive_performance)
 for(i in c(1,2,3,5))
 {
   best_cutoff = optimal_cutoff(train_data_norm[which(fold_membership == i),]$return_customer, output_neuralnet$all[[i]]$prediction)
-  print(best_cutoff)
   performance_neuralnet[,paste("Fold",i)] = as.numeric(predictive_performance(train_data_norm[which(fold_membership == i),]$return_customer, output_neuralnet$all[[i]]$prediction, cutoff = best_cutoff, returnH = FALSE))
 }
 
-# Now find best tune
+# Now find best tune and save - this will be used to train on the entire known
 size = output_neuralnet$all[[2]]$model$bestTune$size # Models from fold 1 and 2 have best AUC and avg_return
 decay = output_neuralnet$all[[2]]$model$bestTune$decay # and also the same hyperparameters
 
@@ -195,8 +173,6 @@ decay = output_neuralnet$all[[2]]$model$bestTune$decay # and also the same hyper
 ANN = nnet(return_customer~., train_data_norm, size=size, decay=decay, maxit = 1000)
 neural_predictions_test = as.numeric(predict(ANN, newdata = test_data_norm, type = "raw"))
 write.csv(data.frame(return_customer = test_data$return_customer, neural_predictions = neural_predictions_test), "neuralnet_predictions_test.csv")
-best_cutoff = optimal_cutoff(test_data_norm$return_customer, neural_predictions_test)
-predictive_performance(test_data_norm$return_customer,neural_predictions_test,cutoff = best_cutoff, returnH = FALSE)
 
 
 
@@ -319,18 +295,21 @@ run_deep_neural_network = function(dataset, fold_membership, model_control, numb
   return(list(all = object, timing = timing))
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 #################### After this there be dragons! ##########################
 # What follows is just a testing ground and will be deleted at some point. #
-
-
-
-
-
-
-
-
-
-
 
 
 # Run a normal neural network
@@ -424,189 +403,6 @@ run_neural_network_old = function(dataset, fold_membership, model_control, numbe
 }
 
 
-
-
-
-
-
-
-
-#################### After this there be dragons! ##########################
-# What follows is just a testing ground and will be deleted at some point. #
-
-
-
-
-
-
-
-
-
-
-
-
-# Run a normal neural network
-run_neural_network_old = function(dataset, fold_membership, model_control, number_of_folds = 5, runWoE = TRUE, perform_normalization = TRUE, big_server = FALSE)
-{
-  #### Setup of parallel backend ####
-  # Detect number of available clusters, which gives you the maximum number of "workers" your computer has
-  cores = detectCores()
-  if(big_server){cores = cores - 1} # use on bigger computers, to leave one core for system
-  cl = makeCluster(max(1,cores))
-  registerDoParallel(cl)
-  message(paste("Registered number of cores:",getDoParWorkers()))
-  packages_neuralnet = c("caret","nnet", "pROC")
-  
-  #### Initialise output lists ####
-  models = list()
-  predictions = list()
-  results = list()
-  object = list()
-  
-  # Start timing
-  print(paste("Started timing at",date()))
-  timing = system.time( 
-    #### Start loops ####
-    #for(i in 1:number_of_folds)
-    fold_output <- foreach(i = 1:number_of_folds, .combine = list, .packages = packages_neuralnet, .verbose = TRUE) %dopar%
-    {
-      
-      print(paste("Begin inner cross validation in fold", i))
-      
-      # Split data into training and validation folds
-      idx_test = which(fold_membership == i)
-      idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
-      
-      test_fold = dataset[idx_test,]
-      validation_fold = dataset[idx_validation,]
-      train_fold = dataset[-c(idx_test,idx_validation),]
-      
-      # Create hyperparameter grid
-      ANN_parms = expand.grid(decay = c(0, 10^seq(-5, 1, 1)), size = seq(3,45,3))
-      
-      print("Begin training of primary model.")
-      
-      # Normal Artificial Neural Network
-      ANN = train(return_customer~., data = train_fold,  
-                  method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
-                  tuneGrid = ANN_parms, # parameters to be tested
-                  #tuneLength = 100,
-                  metric = "ROC", trControl = model_control)
-      
-      print("Training of primary model completed.")
-      
-      prediction_ANN = predict(ANN, newdata = validation_fold, type = "prob")[,2]
-      result_ANN = predictive_performance(validation_fold$return_customer, prediction_ANN, returnH = FALSE)
-      
-      print("Prediction by primary model completed.")
-      
-      if(runWoE)
-      {
-        ###### Weight of Evidence ######
-        print("Starting calculations with weight of evidence.")
-        # Will create a new dataframe consisting of all the variables of known but replaces the factor
-        # variables into numerical variables according to the weight of evidence
-        columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
-        # Calculate WoE from train_fold and return woe object
-        woe_object = calculate_woe(train_fold, target = "return_customer", columns_to_replace = columns_to_replace)
-        # Replace multilevel factor columns in train_fold by their WoE
-        train_fold_woe = apply_woe(dataset = train_fold, woe_object = woe_object)
-        # Apply WoE to all the other folds 
-        validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
-        test_fold_woe = apply_woe(dataset = test_fold, woe_object = woe_object)
-        
-        print("Begin training of primary model with weight of evidence.")
-        
-        # Normal Artificial Neural Network with Weights of Evidence
-        ANN_woe = train(return_customer~., data = train_fold_woe,  
-                        method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
-                        tuneGrid = ANN_parms, # parameters to be tested
-                        #tuneLength = 100,
-                        metric = "ROC", trControl = model_control)
-        
-        print("Training of primary model completed.")
-        
-        prediction_ANN_woe = predict(ANN_woe, newdata = validation_fold_woe, type = "prob")[,2]
-        result_ANN_woe = predictive_performance(validation_fold_woe$return_customer, prediction_ANN_woe, returnH = FALSE)
-        
-        print("Prediction by primary model completed.")
-        
-        if(perform_normalization)
-        {
-          dropped_correlated_variables = strongly_correlated(train_fold_woe, threshold = 0.6)
-          
-          print("Perform normalization operations.")
-          train_fold_woe = prepare(train_fold_woe)
-          validation_fold_woe = prepare(validation_fold_woe)
-          test_fold_woe = prepare(test_fold_woe)
-          
-          print("Begin training of primary model with normalization.")
-          
-          # Normal Artificial Neural Network (Normalized)
-          ANN_norm = train(return_customer~., data = train_fold_woe,  
-                           method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
-                           tuneGrid = ANN_parms, # parameters to be tested
-                           #tuneLength = 100,
-                           metric = "ROC", trControl = model_control)
-          
-          print("Training of primary model completed.")
-          
-          prediction_ANN_norm = predict(ANN_norm, newdata = validation_fold_woe, type = "prob")[,2]
-          result_ANN_norm = predictive_performance(validation_fold_woe$return_customer, prediction_ANN_norm, returnH = FALSE)
-          
-          print("Prediction by primary model completed.")
-          
-        }
-      }
-      
-      
-      print(paste("Completed all tasks in fold", i, "- Saving now."))
-      
-      models[i] = list(raw = ANN, woe = ANN_woe, normalized = ANN_norm)
-      predictions[i] = list(raw = prediction_ANN, woe = prediction_ANN_woe, normalized = prediction_ANN_norm)
-      results[i] = list(raw = results_ANN, woe = results_ANN_woe, normalized = results_ANN_norm)
-      object[i] = list(models = models[i], predictions = predictions[i], results = results[i])
-      
-    } 
-  )[3]   # End timing
-  print(paste("Ended cross validation after", timing))
-  
-  
-  # Stop the parallel computing cluster
-  stopCluster(cl)
-  
-  return(list(models = models, predictions = predictions, results = results, all = object, timing = timing))
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Initialise model control
-model_control = trainControl(
-  method = "adaptive_cv", # 'cv' for cross validation, 'adaptive_cv' drops unpromising models
-  number = 5, # number of folds in cross validation (or number of resampling iterations)
-  repeats = 5, # number of repeats for repeated cross validation
-  search = "random", # or grid for a grid search
-  classProbs = TRUE,
-  summaryFunction = twoClassSummary,
-  #timingSamps = length(fold), # number of samples to predict the time taken
-  sampling = "smote", # This resolves class imbalances. 
-  # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
-  allowParallel = TRUE, # Enable parallelization if available
-  savePredictions = TRUE, # Save the hold-out predictions
-  verboseIter = TRUE, # Print training log
-  returnData = FALSE) # The training data will not be included in the output training object
-
-
 train_network = function(method, dataset, model_control)
 {
   if(method %in% c("nnet", "pca", "avNNet"))
@@ -676,10 +472,6 @@ run_neural_networks_parallel_parallel = function(dataset, fold_membership, model
   
   return(list(folds = fold_output, timing = timing))
 }
-
-
-
-
 
 
 
@@ -782,150 +574,3 @@ stopCluster(cl)
 
 return(list(models = models, predictions = predictions, results = results, all = output, timing = timing))
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-############################
-
-
-timing_parallel = system.time( 
-  results <- foreach(i = 1:k, .combine = c, .packages = c("caret","nnet", "pROC"), .verbose = TRUE) %dopar%
-  {
-    # Split data into training and validation folds
-    idx_test = which(fold_membership == i)
-    idx_validation = which(fold_membership == ifelse(i == k, 1, i+1))
-    
-    test_fold = train_data[idx_test,]
-    validation_fold = train_data[idx_validation,]
-    train_fold = train_data[-c(idx_test,idx_validation)]
-    
-    ANN = train(return_customer~., data = train_fold,  
-                method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
-                #tuneGrid = ANN_parms, # parameters to be tested
-                tuneLength = 10,
-                metric = "ROC", trControl = model_control)
-    
-    prediction_ANN = predict(ANN, newdata = validation_fold, type = "raw")
-    
-    metaANN = train(return_customer~., data = cbind.data.frame(return_customer = validation_fold$return_customer, prediction_ANN),  
-                     method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
-                     #tuneGrid = ANN_parms, # parameters to be tested
-                     tuneLength = 10,
-                     metric = "ROC", trControl = model_control)
-    
-    prediction_metaANN = predict(metaANN, newdata = test_fold, type = "raw")
-    
-    list(ANN = ANN, prediction_ANN = prediction_ANN, 
-         metaANN = metaANN, prediction_metaANN = prediction_metaANN, 
-         auc = auc(test_fold$return_customer, prediction_metaANN))
-  } 
-)[3]   # End timing
-
-
-
-
-# Option to run_meta
-
-if(run_meta)
-{
-  metaANN = train(return_customer~., data = cbind.data.frame(return_customer = validation_fold$return_customer, prediction_ANN),  
-                  method = "avNNet", maxit = 100, trace = FALSE, # options for nnet function
-                  #tuneGrid = ANN_parms, # parameters to be tested
-                  tuneLength = 10,
-                  metric = "ROC", trControl = model_control)
-  
-  print("Training of meta model completed.")
-  
-  prediction_metaANN = predict(metaANN, newdata = test_fold, type = "raw")
-  
-  print("Prediction by meta model completed.")
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-results_sequential = vector()
-# Start timing
-timing_sequential = system.time( 
-  for(fold in training_folds)
-  {
-    # Split data into training and validation folds
-    train_fold = train_data[fold,]
-    test_fold  = train_data[-fold,]
-    
-    decision_tree = train(return_customer~., data = train_fold,  
-                          method = "rpart", 
-                          #maxit = 1000, trace = FALSE, # options for nnet function
-                          #tuneGrid = dt_parms, # parameters to be tested
-                          tuneLength = 15,
-                          metric = "ROC", trControl = model_control)
-    
-    prediction_dt = predict(decision_tree, newdata = test_fold, type = "prob")[,2]
-    results_sequential = append(results_sequential, auc(test_fold$return_customer, prediction_dt))
-  }
-)[3] # End timing
-
-
-
-timing_parallel = system.time( 
-  results <- foreach(fold = training_folds, .combine = c, .packages = c("caret","rpart", "pROC")) %dopar%
-  {
-    # Split data into training and validation folds
-    train_fold = train_data[fold,]
-    test_fold  = train_data[-fold,]
-    
-    
-    decision_tree = train(return_customer~., data = train_fold,  
-                          method = "rpart", 
-                          #maxit = 1000, trace = FALSE, # options for nnet function
-                          #tuneGrid = dt_parms, # parameters to be tested
-                          tuneLength = 15,
-                          metric = "ROC", trControl = model_control)
-    
-    prediction_dt = predict(decision_tree, newdata = test_fold, type = "prob")[,2]
-    auc(test_fold$return_customer, prediction_dt)
-  } 
-)[3]   # End timing
-
