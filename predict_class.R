@@ -15,7 +15,7 @@ predict_class = function(filename = "class_predictions.csv", save_to_csv = TRUE)
     #repeats = 5, # number of repeats for repeated cross validation
     search = "grid", # or grid for a grid search
     classProbs = TRUE,
-    summaryFunction = twoClassSummary,
+    summaryFunction = stephanie.cutoff,
     sampling = "smote", # This resolves class imbalances. 
     # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
     allowParallel = TRUE, # Enable parallelization if available

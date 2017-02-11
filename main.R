@@ -86,7 +86,7 @@ model_control = trainControl(
   #repeats = 5, # number of repeats for repeated cross validation
   search = "grid", # or grid for a grid search
   classProbs = TRUE,
-  summaryFunction = twoClassSummary,
+  summaryFunction = stephanie.cutoff,
   #timingSamps = length(fold), # number of samples to predict the time taken
   sampling = "smote", # This resolves class imbalances. 
   # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
