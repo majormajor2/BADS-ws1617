@@ -200,7 +200,7 @@ choose_best_tune = function(models)
 list_fold_performance = function(models, name, store = NULL)
 {
   # Initialise
-  if(is.null(store)){store = data.frame(metrics = c("avg_return (mean)","avg_return (SD)","AUC (mean)","AUC (SD)"))}
+  if(is.null(store)){store = data.frame(row.names = c("avg_return (mean)","avg_return (SD)","AUC (mean)","AUC (SD)"))}
   avg_return = vector()
   auc = vector()
   
