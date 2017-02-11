@@ -1,12 +1,15 @@
-# This is the main script that runs all the other modules
+######################## INTRODUCTION #################################
+# This is the main script that runs the main code.                    #
+# It is segmented into logical steps.                                 #
+# All functions are stored in other scripts, of which                 #
+# the most important one is helper.R.                                 #
+# This loads all necessary packages, repeatedly used helper functions #
+# and other script files for more specific functions.                 #
+#  #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #   #  #
 
 ####### Load helper ################
 
 source("helper.R")
-
-####### Set seed ################
-
-set.seed(666)
 
 ###### Set plotting margins ######
 
@@ -40,10 +43,12 @@ class = treat_weight(class)
 
 ###### Calculate Weights of Evidence #########
 
+
 # Will create a new dataframe consisting of all the variables of known but replaces the 
 # factor variables into numerical variables according to the weight of evidence
 columns_to_replace = c("form_of_address", "email_domain", "model", "payment", "postcode_invoice", "postcode_delivery", "advertising_code")
 # Calculate WoE from known data and return woe object
+set.seed(666)
 woe_object = calculate_woe(known, target = "return_customer", columns_to_replace = columns_to_replace)
 # Replace multilevel factor columns by their WoE
 known_woe = apply_woe(dataset = known, woe_object = woe_object)
