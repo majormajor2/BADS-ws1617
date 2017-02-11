@@ -136,9 +136,14 @@ meta_models = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds,
     verboseIter = TRUE, # Print training log
     returnData = FALSE) # The training data will not be included in the output training object
   
-  # Set hyperparameters (only a single set - so we can use the train function, others are defined in their function)
-  parameters = expand.grid(nrounds = 800, max_depth = 4, eta = 0.01, gamma = 0, colsample_bytree = 1, min_child_weight = 1, subsample = 0.8)
-
+  # Set hyperparameters grid
+  parameters = expand.grid(nrounds = c(20, 40, 60, 80, 200, 800), 
+                           max_depth = c(2, 4, 6), 
+                           eta = c(0.001, 0.01, 0.05, 0.1, 0.15, 0.2),
+                           gamma = 0,
+                           colsample_bytree = c(0.5, 0.8, 1),
+                           min_child_weight = 1,
+                           subsample = 0.8)
   # Train models
   # Logistic:
   # model= glm(return_customer ~ ., data = train_fold, family = binomial(link = "logit"))
@@ -167,28 +172,22 @@ stopCluster(cl)
 # Initialise to 0
 optimal_cutoff_for_class = 0
 avg_return = 0
+highest_return = 0 # Initialise highest return for the selection of meta model
+
 # Add for all folds
-for(i in 1:k)
+for(model in meta_models)
 {
-  optimal_cutoff_for_class = optimal_cutoff_for_class + meta_models[[i]]$cutoff
-  avg_return = avg_return + meta_models[[i]]$avg_return
+  optimal_cutoff_for_class = optimal_cutoff_for_class + model$cutoff
+  avg_return = avg_return + model$avg_return
+  # Check if the highest return is better than that of the other sets of hyperparameters
+  # i.e. if it generalizes better than the others
+  if(model$avg_return > highest_return)
+  {
+    # Pick best set of hyperparameters
+    meta_hyperparameters = data.frame(model$model$bestTune)
+    highest_return = model$avg_return
+  }
 }
 # Take averages
 optimal_cutoff_for_class = optimal_cutoff_for_class / k
 avg_return = avg_return / k
-
-
-
-##### Needed? #### 
-# Check performance
-# Load predictions
-predictions_test = read.csv("predictions_test.csv", row.names = 1)
-
-meta_predictions_test = data.frame(return_customer = predictions_test$return_customer)
-meta_performance_test = data.frame(metrics = c("brier_score","classification_error","h_measure","area_under_curve","gini","precision","true_positives","false_positives","true_negatives","false_negatives","avg_return"))
-
-for(i in 1:k)
-{
-  meta_predictions_test[,paste("Fold",i)] = predict(meta_models[[i]]$model, newdata = predictions_test, type = "response")
-  meta_performance_test[,paste("Fold",i)] = as.numeric(predictive_performance(predictions_test$return_customer, meta_predictions_test[,paste("Fold",i)], cutoff = meta_models[[i]]$cutoff, returnH = FALSE))
-}

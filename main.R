@@ -79,34 +79,49 @@ idx_train  = createDataPartition(y = known$return_customer, p = 0.8, list = FALS
 train_data = known[idx_train, ] # training set
 test_data  =  known[-idx_train, ] # test set (drop all observations with train indices)
 
+##### Slice data set into folds #####
+# Set number of folds
+k = 5
+# Set seed for reproducability
+set.seed(123)
+# Create folds for cross validation (these are the big folds 4/5 of total) - not used in function at the moment
+training_folds = createFolds(train_data$return_customer, k = k, list = TRUE, returnTrain = TRUE)
+# Set seed for reproducability
+set.seed(123)
+# Define fold membership for cross validation
+fold_membership = createFolds(train_data$return_customer, list = FALSE, k = k)
+
+###### Initialise model control ######
+model_control = trainControl(
+  method = "cv", # 'cv' for cross validation, 'adaptive_cv' drops unpromising models
+  number = 5, # number of folds in cross validation (or number of resampling iterations)
+  #repeats = 5, # number of repeats for repeated cross validation
+  search = "grid", # or grid for a grid search
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary,
+  #timingSamps = length(fold), # number of samples to predict the time taken
+  sampling = "smote", # This resolves class imbalances. 
+  # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
+  allowParallel = TRUE, # Enable parallelization if available
+  savePredictions = TRUE, # Save the hold-out predictions
+  verboseIter = TRUE, # Print training log
+  returnData = FALSE) # The training data will not be included in the output training object
 
 
-##### Nested Cross Validation #####
+##### Perform Nested Cross Validation #####
 
-# Run Neural Network
+logistic_output = run_logistic(known, fold_membership, model_control, big_server = TRUE, dropped_correlated_variables)$all
+random_forest_output = run_random_forest(known, fold_membership, model_control, big_server = TRUE, dropped_correlated_variables)$all
+neuralnet_output = run_neural_network(known, fold_membership, model_control, big_server = TRUE, dropped_correlated_variables)$all
+xgb_output = run_xgboosting(known, fold_membership, model_control, big_server = TRUE, dropped_correlated_variables)$all
+xgb_woe_output = run_xgboosting_woe(known, fold_membership, model_control, big_server = TRUE, dropped_correlated_variables)$all
 
-###### Meta Model ######
+###### Create Meta Model ######
 
 # Get a data frame of predictions for all of known
 # Have a cross validation of meta models over this dataframe
 source("preparation_metamodel.R")
-
-# Initialise highest return for the selection of meta model
-highest_return = 0
-
-# Loop over the models from the cross validation
-for(model in meta_models)
-{
-  # Check if the highest return is better than that of the other sets of hyperparameters
-  # i.e. if it generalizes better than the others
-  if(model$avg_return > highest_return)
-  {
-    # Pick best set of hyperparameters
-    meta_hyperparameters = data.frame(model$model$bestTune)
-    highest_return = model$avg_return
-  }
-}
-
+# Train meta model on entire known dataset with best set of hyperparameters
 meta_model = train(return_customer~., data = known_predictions, method = "xgbTree", tuneGrid = meta_hyperparameters, metric = "avg_return", trControl = model_control)
 
 
