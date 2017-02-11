@@ -12,9 +12,7 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
   registerDoParallel(cl)
   message(paste("Registered number of cores:",getDoParWorkers()))
   on.exit(stopCluster(cl))
-  #required_packages = c("caret","nnet", "pROC", "klaR")
-  #required_functions = c("calculate_woe","apply_woe", "prepare", "strongly_correlated", "predictive_performance", "treat_outliers", "truncate_outliers", "standardize", "normalize", "normalize_dataset")
-  
+
   #### Initialise output lists ####
   object = list()
   
@@ -23,25 +21,16 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
   timing = Sys.time()
 
   #### Start loops ####
-  # Use anormal loop here because otherwise the inner 
+  # Use a normal loop here because otherwise the inner 
   # cross validation with train is not parallelized.
   for(i in 1:number_of_folds) 
   #object <- foreach(i = 1:number_of_folds, .verbose = TRUE) %dopar% # .packages = required_packages, .export = required_functions, .combine = list
   {
-      # Sourcing function files - potentially required for foreach loop
-      #source("helper.R")
-      #source("woe.R")
-      #source("performance_measures.R")
-      
       print(paste("Begin inner cross validation in fold", i))
       
       #### Split data into training and validation folds ####
       idx_test = which(fold_membership == i)
-      #idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
-      
       test_fold = dataset[idx_test,]
-      #validation_fold = dataset[idx_validation,]
-      #train_fold = dataset[-c(idx_test,idx_validation),]
       train_fold = dataset[-idx_test,]
       
       #### Calculate Weight of Evidence ####
@@ -53,8 +42,6 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       woe_object = calculate_woe(train_fold, target = "return_customer", columns_to_replace = columns_to_replace)
       # Replace multilevel factor columns in train_fold by their WoE
       train_fold_woe = apply_woe(dataset = train_fold, woe_object = woe_object)
-      # Apply WoE to all the other folds 
-      #validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
       test_fold_woe = apply_woe(dataset = test_fold, woe_object = woe_object)
       
       #### Normalize folds ####
@@ -62,7 +49,6 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       
       print("Perform normalization operations.")
       train_fold_woe = prepare(train_fold_woe, dropped_correlated_variables)
-      #validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
       test_fold_woe = prepare(test_fold_woe, dropped_correlated_variables)
       
       #### Create hyperparameter grid ####
@@ -104,28 +90,6 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
 }
 
 
-######## CHECK! ############
-performance_neuralnet = data.frame(metrics = c("brier_score","classification_error","h_measure","area_under_curve","gini","precision","true_positives","false_positives","true_negatives","false_negatives","avg_return"))
-
-# Choose neuralnet with best generalisation (i.e. best avg_return given by predictive_performance)
-for(i in c(1,2,3,5))
-{
-  best_cutoff = optimal_cutoff(train_data_norm[which(fold_membership == i),]$return_customer, output_neuralnet$all[[i]]$prediction)
-  performance_neuralnet[,paste("Fold",i)] = as.numeric(predictive_performance(train_data_norm[which(fold_membership == i),]$return_customer, output_neuralnet$all[[i]]$prediction, cutoff = best_cutoff, returnH = FALSE))
-}
-
-# Now find best tune and save - this will be used to train on the entire known
-size = output_neuralnet$all[[2]]$model$bestTune$size # Models from fold 1 and 2 have best AUC and avg_return
-decay = output_neuralnet$all[[2]]$model$bestTune$decay # and also the same hyperparameters
-
-# Then test on test_data and add prediction
-ANN = nnet(return_customer~., train_data_norm, size=size, decay=decay, maxit = 1000)
-neural_predictions_test = as.numeric(predict(ANN, newdata = test_data_norm, type = "raw"))
-write.csv(data.frame(return_customer = test_data$return_customer, neural_predictions = neural_predictions_test), "neuralnet_predictions_test.csv")
-
-
-
-
 
 # Run xgboosting with WoE
 run_xgboosting_woe = function(dataset, fold_membership, model_control, number_of_folds = 5, big_server = FALSE, dropped_correlated_variables = NULL)
@@ -138,9 +102,7 @@ run_xgboosting_woe = function(dataset, fold_membership, model_control, number_of
   registerDoParallel(cl)
   message(paste("Registered number of cores:",getDoParWorkers()))
   on.exit(stopCluster(cl))
-  #required_packages = c("caret","nnet", "pROC", "klaR")
-  #required_functions = c("calculate_woe","apply_woe", "prepare", "strongly_correlated", "predictive_performance", "treat_outliers", "truncate_outliers", "standardize", "normalize", "normalize_dataset")
-  
+
   #### Initialise output lists ####
   object = list()
   
@@ -149,25 +111,18 @@ run_xgboosting_woe = function(dataset, fold_membership, model_control, number_of
   timing = Sys.time()
   
   #### Start loops ####
-  # Use anormal loop here because otherwise the inner 
+  # Use a normal loop here because otherwise the inner 
   # cross validation with train is not parallelized.
   for(i in 1:number_of_folds) 
     #object <- foreach(i = 1:number_of_folds, .verbose = TRUE) %dopar% # .packages = required_packages, .export = required_functions, .combine = list
   {
-    # Sourcing function files - potentially required for foreach loop
-    #source("helper.R")
-    #source("woe.R")
-    #source("performance_measures.R")
     
     print(paste("Begin inner cross validation in fold", i))
     
     #### Split data into training and validation folds ####
     idx_test = which(fold_membership == i)
-    #idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
-    
+
     test_fold = dataset[idx_test,]
-    #validation_fold = dataset[idx_validation,]
-    #train_fold = dataset[-c(idx_test,idx_validation),]
     train_fold = dataset[-idx_test,]
     
     #### Calculate Weight of Evidence ####
@@ -179,17 +134,13 @@ run_xgboosting_woe = function(dataset, fold_membership, model_control, number_of
     woe_object = calculate_woe(train_fold, target = "return_customer", columns_to_replace = columns_to_replace)
     # Replace multilevel factor columns in train_fold by their WoE
     train_fold_woe = apply_woe(dataset = train_fold, woe_object = woe_object)
-    # Apply WoE to all the other folds 
-    #validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
+    # Apply WoE to all the other fold 
     test_fold_woe = apply_woe(dataset = test_fold, woe_object = woe_object)
     
     #### Normalize folds ####
     if(is.null(dropped_correlated_variables)){dropped_correlated_variables = strongly_correlated(train_fold_woe, threshold = 0.6)}
-    
-    print("Perform normalization operations.")
-    train_fold_woe = prepare(train_fold_woe, dropped_correlated_variables)
-    #validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
-    test_fold_woe = prepare(test_fold_woe, dropped_correlated_variables)
+    train_fold[,dropped_correlated_variables] = NULL
+    test_fold[,dropped_correlated_variables] = NULL
     
     #### Create hyperparameter grid ####
     parameters = expand.grid(nrounds = c(20, 40, 60, 80, 200, 800), 
@@ -213,8 +164,7 @@ run_xgboosting_woe = function(dataset, fold_membership, model_control, number_of
     
     #### Predict on validation fold ####
     prediction = predict(model, newdata = test_fold_woe, type = "prob")[,2]
-    #result_ANN = predictive_performance(validation_fold_woe$return_customer, prediction_ANN, returnH = FALSE)
-    
+  
     print("Prediction by primary model completed.")
     
     print(paste("Completed all tasks in fold", i, "- Saving now."))
@@ -262,20 +212,13 @@ run_xgboosting = function(dataset, fold_membership, model_control, number_of_fol
   for(i in 1:number_of_folds) 
     #object <- foreach(i = 1:number_of_folds, .verbose = TRUE) %dopar% # .packages = required_packages, .export = required_functions, .combine = list
   {
-    # Sourcing function files - potentially required for foreach loop
-    #source("helper.R")
-    #source("woe.R")
-    #source("performance_measures.R")
     
     print(paste("Begin inner cross validation in fold", i))
     
     #### Split data into training and validation folds ####
     idx_test = which(fold_membership == i)
-    #idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
     
     test_fold = dataset[idx_test,]
-    #validation_fold = dataset[idx_validation,]
-    #train_fold = dataset[-c(idx_test,idx_validation),]
     train_fold = dataset[-idx_test,]
     
     #### Normalize folds ####
@@ -305,8 +248,7 @@ run_xgboosting = function(dataset, fold_membership, model_control, number_of_fol
     
     #### Predict on validation fold ####
     prediction = predict(model, newdata = test_fold, type = "prob")[,2]
-    #result_ANN = predictive_performance(validation_fold_woe$return_customer, prediction_ANN, returnH = FALSE)
-    
+
     print("Prediction by primary model completed.")
     
     print(paste("Completed all tasks in fold", i, "- Saving now."))
@@ -340,9 +282,7 @@ run_random_forest = function(dataset, fold_membership, model_control, number_of_
   registerDoParallel(cl)
   message(paste("Registered number of cores:",getDoParWorkers()))
   on.exit(stopCluster(cl))
-  #required_packages = c("caret","nnet", "pROC", "klaR")
-  #required_functions = c("calculate_woe","apply_woe", "prepare", "strongly_correlated", "predictive_performance", "treat_outliers", "truncate_outliers", "standardize", "normalize", "normalize_dataset")
-  
+ 
   #### Initialise output lists ####
   object = list()
   
@@ -356,20 +296,12 @@ run_random_forest = function(dataset, fold_membership, model_control, number_of_
   for(i in 1:number_of_folds) 
     #object <- foreach(i = 1:number_of_folds, .verbose = TRUE) %dopar% # .packages = required_packages, .export = required_functions, .combine = list
   {
-    # Sourcing function files - potentially required for foreach loop
-    #source("helper.R")
-    #source("woe.R")
-    #source("performance_measures.R")
-    
     print(paste("Begin inner cross validation in fold", i))
     
     #### Split data into training and validation folds ####
     idx_test = which(fold_membership == i)
-    #idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
-    
+
     test_fold = dataset[idx_test,]
-    #validation_fold = dataset[idx_validation,]
-    #train_fold = dataset[-c(idx_test,idx_validation),]
     train_fold = dataset[-idx_test,]
     
     #### Calculate Weight of Evidence ####
@@ -382,16 +314,12 @@ run_random_forest = function(dataset, fold_membership, model_control, number_of_
     # Replace multilevel factor columns in train_fold by their WoE
     train_fold_woe = apply_woe(dataset = train_fold, woe_object = woe_object)
     # Apply WoE to all the other folds 
-    #validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
     test_fold_woe = apply_woe(dataset = test_fold, woe_object = woe_object)
     
     #### Normalize folds ####
     if(is.null(dropped_correlated_variables)){dropped_correlated_variables = strongly_correlated(train_fold_woe, threshold = 0.6)}
-    
-    print("Perform normalization operations.")
-    train_fold_woe = prepare(train_fold_woe, dropped_correlated_variables)
-    #validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
-    test_fold_woe = prepare(test_fold_woe, dropped_correlated_variables)
+    train_fold[,dropped_correlated_variables] = NULL
+    test_fold[,dropped_correlated_variables] = NULL
     
     #### Create hyperparameter grid ####
     parameters = expand.grid(mtry = 1:10)
@@ -409,7 +337,6 @@ run_random_forest = function(dataset, fold_membership, model_control, number_of_
     
     #### Predict on validation fold ####
     prediction = predict(model, newdata = test_fold_woe, type = "prob")[,2]
-    #result_ANN = predictive_performance(validation_fold_woe$return_customer, prediction_ANN, returnH = FALSE)
     
     print("Prediction by primary model completed.")
     
@@ -459,20 +386,13 @@ run_logistic = function(dataset, fold_membership, model_control, number_of_folds
   for(i in 1:number_of_folds) 
     #object <- foreach(i = 1:number_of_folds, .verbose = TRUE) %dopar% # .packages = required_packages, .export = required_functions, .combine = list
   {
-    # Sourcing function files - potentially required for foreach loop
-    #source("helper.R")
-    #source("woe.R")
-    #source("performance_measures.R")
     
     print(paste("Begin inner cross validation in fold", i))
     
     #### Split data into training and validation folds ####
     idx_test = which(fold_membership == i)
-    #idx_validation = which(fold_membership == ifelse(i == number_of_folds, 1, i+1))
     
     test_fold = dataset[idx_test,]
-    #validation_fold = dataset[idx_validation,]
-    #train_fold = dataset[-c(idx_test,idx_validation),]
     train_fold = dataset[-idx_test,]
     
     #### Calculate Weight of Evidence ####
@@ -485,16 +405,12 @@ run_logistic = function(dataset, fold_membership, model_control, number_of_folds
     # Replace multilevel factor columns in train_fold by their WoE
     train_fold_woe = apply_woe(dataset = train_fold, woe_object = woe_object)
     # Apply WoE to all the other folds 
-    #validation_fold_woe = apply_woe(dataset = validation_fold, woe_object = woe_object)
     test_fold_woe = apply_woe(dataset = test_fold, woe_object = woe_object)
     
     #### Normalize folds ####
     if(is.null(dropped_correlated_variables)){dropped_correlated_variables = strongly_correlated(train_fold_woe, threshold = 0.6)}
-    
-    print("Perform normalization operations.")
-    train_fold_woe = prepare(train_fold_woe, dropped_correlated_variables)
-    #validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)
-    test_fold_woe = prepare(test_fold_woe, dropped_correlated_variables)
+    train_fold[,dropped_correlated_variables] = NULL
+    test_fold[,dropped_correlated_variables] = NULL
     
     #### Create hyperparameter grid ####
     # None for logistic regression

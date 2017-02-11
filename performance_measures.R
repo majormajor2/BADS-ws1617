@@ -167,3 +167,56 @@ stephanie.cutoff = function(data, lev = NULL, model = NULL)
   # OUTPUT
   return(c(avg_return, opt.cutoff))
 }
+
+# This function chooses the best tune that generalizes best to other folds
+# out of a selection of models from nested cross-validation 
+# Input: a list of model objects from nested x-val functions
+# Output: data.frame with hyperparameters for final fitting
+choose_best_tune = function(models)
+{
+  highest_return = 0
+  for(i in 1:length(models))
+  {
+    model = models[[i]]$model
+    prediction = models[[i]]$prediction
+    best_cutoff = optimal_cutoff(known[which(fold_membership == i),]$return_customer, prediction)
+    avg_return = as.numeric(predictive_performance(known[which(fold_membership == i),]$return_customer, prediction, cutoff = best_cutoff, returnH = FALSE)$avg_return)
+    # Check if the highest return is better than that of the other sets of hyperparameters
+    # i.e. if it generalizes better than the others
+    if(avg_return > highest_return)
+    {
+      # Pick best set of hyperparameters
+      hyperparameters = data.frame(model$bestTune)
+      highest_return = avg_return
+    }
+  }
+  return(hyperparameters)
+}
+
+# This function lists the predictive performance of each fold
+# from nested cross-validation 
+# Input: a list of model objects from nested x-val functions, dataframe to store the result
+# Output: dataframe
+list_fold_performance = function(models, name, store = NULL)
+{
+  # Initialise
+  if(is.null(store)){store = data.frame(metrics = c("avg_return (mean)","avg_return (SD)","AUC (mean)","AUC (SD)"))}
+  avg_return = vector()
+  auc = vector()
+  
+  for(i in 1:length(models))
+  {
+    model = models[[i]]$model
+    prediction = models[[i]]$prediction
+    best_cutoff = optimal_cutoff(known[which(fold_membership == i),]$return_customer, prediction)
+    
+    avg_return = append(avg_return, predictive_performance(known[which(fold_membership == i),]$return_customer, prediction, cutoff = best_cutoff, returnH = FALSE)$avg_return)
+    auc = append(auc, predictive_performance(known[which(fold_membership == i),]$return_customer, prediction, cutoff = best_cutoff, returnH = FALSE)$area_under_curve)
+  }
+  store["avg_return (mean)",name] = mean(avg_return)
+  store["avg_return (SD)",name] = sd(avg_return)
+  store["AUC (mean)",name] = mean(auc)
+  store["AUC (SD)",name] = sd(auc)
+    
+  return(store)
+}

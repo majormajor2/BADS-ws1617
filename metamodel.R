@@ -148,7 +148,7 @@ meta_models = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds,
   # Logistic:
   # model= glm(return_customer ~ ., data = train_fold, family = binomial(link = "logit"))
   # XGB:
-  model = train(return_customer~., data = train_fold, method = "xgbTree", tuneGrid = parameters, metric = "avg_return", trControl = model_control)
+  model = train(return_customer~., data = train_fold[,-length(train_fold)], method = "xgbTree", tuneGrid = parameters, metric = "avg_return", trControl = model_control)
   
   # Predict return_customer on remainder
   
@@ -157,7 +157,7 @@ meta_models = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds,
   # Logistic: 
   # prediction = predict(model, newdata = test_fold, type = "response")
   # XGB:
-  prediction = predict(model, newdata = test_fold, type = "prob")[,2]
+  prediction = predict(model, newdata = test_fold[,-length(test_fold)], type = "prob")[,2]
   cutoff = optimal_cutoff(test_fold$return_customer, prediction)
   avg_return = predictive_performance(test_fold$return_customer, prediction, cutoff, returnH = FALSE)$avg_return
   output = list(model = model, cutoff = cutoff, avg_return = avg_return)
