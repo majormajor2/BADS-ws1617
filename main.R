@@ -98,11 +98,11 @@ model_control = trainControl(
 
 ##### Perform Nested Cross Validation #####
 # Do nested cross validation
-logistic_output = run_logistic(known, fold_membership, model_control, number_of_folds = k, big_server = TRUE, dropped_correlated_variables)$all
-random_forest_output = run_random_forest(known, fold_membership, model_control, number_of_folds = k, big_server = TRUE, dropped_correlated_variables)$all
-neuralnet_output = run_neural_network(known, fold_membership, model_control, number_of_folds = k, big_server = TRUE, dropped_correlated_variables)$all
-xgb_output = run_xgboosting(known, fold_membership, model_control, number_of_folds = k, big_server = TRUE, dropped_correlated_variables)$all
-xgb_woe_output = run_xgboosting_woe(known, fold_membership, model_control, number_of_folds = k, big_server = TRUE, dropped_correlated_variables)$all
+logistic_output = run_logistic(known, fold_membership, model_control, number_of_folds = k, big_server = TRUE, dropped_correlated_variables = dropped_correlated_variables)$all
+random_forest_output = run_random_forest(known, fold_membership, model_control, number_of_folds = k, big_server = TRUE, dropped_correlated_variables = dropped_correlated_variables)$all
+neuralnet_output = run_neural_network(known, fold_membership, model_control, number_of_folds = k, big_server = TRUE, dropped_correlated_variables = dropped_correlated_variables)$all
+xgb_output = run_xgboosting(known, fold_membership, model_control, number_of_folds = k, big_server = TRUE, dropped_correlated_variables = dropped_correlated_variables)$all
+xgb_woe_output = run_xgboosting_woe(known, fold_membership, model_control, number_of_folds = k, big_server = TRUE, dropped_correlated_variables = dropped_correlated_variables)$all
 
 # Check performances of the primary models
 primary_performance = list_fold_performance(logistic_output,"logistic")
@@ -156,3 +156,20 @@ final_prediction =   predict(meta_model, newdata = class_predictions[,-length(cl
 final_output = data.frame(ID = row.names(class), return_customer = ifelse(final_prediction <= optimal_cutoff_for_class, 0, 1))
 # save csv-file with predictions
 write.csv(final_output, file = "27.csv", row.names = FALSE)
+
+
+##### Interpret models #####
+
+# Create variable importance plots
+
+imp = data.frame()
+for(i in 1:k)
+{
+  for(variable in row.names(varImp(xgb_woe_output[[i]]$model)$importance))
+  {
+    imp[paste("Fold",i, sep = ""),variable] = varImp(xgb_woe_output[[i]]$model)$importance[variable,]
+  }
+}
+imp[sapply(imp, is.na)] = 0
+imp["Average",] = sapply(imp, mean)
+barplot(as.numeric(imp["Average",]), names.arg = colnames(imp), las=2)

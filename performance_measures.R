@@ -127,7 +127,7 @@ optimal_cutoff = function(target, prediction, cost_matrix = build_cost_matrix(),
 # input: dataframe with predictions
 # output: average return
 
-stephanie.cutoff = function(data, lev = NULL, model = NULL)
+revenue_maximization = function(data, lev = NULL, model = NULL)
 {
   # load inside function to ensure that with parallel computing workers have it in their environment
   if(!require("OptimalCutpoints")) install.packages("OptimalCutpoints"); library("OptimalCutpoints")
@@ -182,7 +182,7 @@ stephanie.cutoff = function(data, lev = NULL, model = NULL)
 cost_minimization = function(data, lev = c("no","yes"), model = NULL)
 {
   # Define costs of False Positives (CFP) and False Negatives (CFN)
-  CFP = 3; CFN = 10
+  CFP = -3; CFN = -10
   # Generate cost matrix
   #cost_matrix = matrix(c(0, CFN,
   #                       CFP, 0), nrow = 2, ncol = 2, byrow=TRUE, 

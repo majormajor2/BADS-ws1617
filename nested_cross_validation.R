@@ -447,7 +447,7 @@ run_logistic = function(dataset, fold_membership, model_control, number_of_folds
 
 
 # Run a deep neural network
-run_deep_neural_network = function(dataset, fold_membership, model_control, number_of_folds = 5, big_server = FALSE)
+run_deep_neural_network = function(dataset, fold_membership, model_control, number_of_folds = 5, big_server = FALSE, dropped_correlated_variables = NULL)
 {
   #### Setup of parallel backend ####
   # Detect number of available clusters, which gives you the maximum number of "workers" your computer has
@@ -503,9 +503,8 @@ run_deep_neural_network = function(dataset, fold_membership, model_control, numb
     test_fold_woe = apply_woe(dataset = test_fold, woe_object = woe_object)
     
     #### Normalize folds ####
-    
-    dropped_correlated_variables = strongly_correlated(train_fold_woe, threshold = 0.6)
-    
+    if(is.null(dropped_correlated_variables)){dropped_correlated_variables = strongly_correlated(train_fold_woe, threshold = 0.6)}
+
     print("Perform normalization operations.")
     train_fold_woe = prepare(train_fold_woe, dropped_correlated_variables)
     #validation_fold_woe = prepare(validation_fold_woe, dropped_correlated_variables)

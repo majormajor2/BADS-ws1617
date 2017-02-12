@@ -4,13 +4,6 @@
 # 2. Predict for remainder
 # 3. Create data.frame of predictions
 
-# Set number of folds
-k = 5
-# Set seed for reproducability
-set.seed(123)
-# Define fold membership for cross validation
-fold_membership = createFolds(known$return_customer, list = FALSE, k = k)
-
 #### Setup of parallel backend ####
 # Detect number of available clusters, which gives you the maximum number of "workers" your computer has
 cores = detectCores()
@@ -34,7 +27,7 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
     #repeats = 5, # number of repeats for repeated cross validation
     search = "grid", # or grid for a grid search
     classProbs = TRUE,
-    summaryFunction = stephanie.cutoff,
+    summaryFunction = revenue_maximization,
     #timingSamps = length(fold), # number of samples to predict the time taken
     #sampling = "smote", # This resolves class imbalances. 
     # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
@@ -120,6 +113,12 @@ meta_models = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds,
   test_fold = known_predictions[idx_test,]
   train_fold = known_predictions[-idx_test,]
 
+  cores = detectCores()
+  cl2 = makeCluster(max(1,floor((cores-k)/k)))
+  registerDoParallel(cl2)
+  message(paste("Registered number of cores:",getDoParWorkers()))
+  on.exit(stopCluster(cl2))
+  
   ###### Initialise model control ######
   model_control = trainControl(
     method = "cv", # 'cv' for cross validation, 'adaptive_cv' drops unpromising models
@@ -127,7 +126,7 @@ meta_models = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds,
     #repeats = 5, # number of repeats for repeated cross validation
     search = "grid", # or grid for a grid search
     classProbs = TRUE,
-    summaryFunction = stephanie.cutoff,
+    summaryFunction = revenue_maximization,
     #timingSamps = length(fold), # number of samples to predict the time taken
     #sampling = "smote", # This resolves class imbalances. 
     # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
@@ -137,7 +136,7 @@ meta_models = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds,
     returnData = FALSE) # The training data will not be included in the output training object
   
   # Set hyperparameters grid
-  parameters = expand.grid(nrounds = c(20, 40, 60, 80, 200, 800), 
+  parameters = expand.grid(nrounds = c(20, 40, 60, 80, 200, 400), 
                            max_depth = c(2, 4, 6), 
                            eta = c(0.001, 0.01, 0.05, 0.1, 0.15, 0.2),
                            gamma = 0,
