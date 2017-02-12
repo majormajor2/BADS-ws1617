@@ -2,7 +2,7 @@
 
 
 # Helper function to compute measures of predictive accuracy
-predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5, returnH = TRUE) 
+predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5, returnH = TRUE, shallPlot = TRUE) 
 {
   # Assumptions:
   # y is a vector of factors
@@ -46,8 +46,11 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5, returnH = 
   # Compute Average Return per Customer
   score = (3*TN - 10*FN)/(TP+FP+TN+FN)
   
+  # Compute average expected costs
+  exp_cost = mean(ifelse(y == "yes", 10*(1-prediction), 3*(prediction)))
+  
   # Calculate ROC
-  plotROC(results = H)
+  if(shallPlot){plotROC(results = H)}
   
   # create a list of the performance measures
   output = list(brier_score = brier_score, 
@@ -61,6 +64,7 @@ predictive_performance = function(y=NULL, prediction=NULL, cutoff=.5, returnH = 
                 true_negatives = TN,
                 false_negatives = FN,
                 avg_return = score,
+                exp_cost = exp_cost,
                 H = H)
   
   # if returnH is FALSE, drop H object from output
@@ -168,6 +172,39 @@ stephanie.cutoff = function(data, lev = NULL, model = NULL)
   return(c(avg_return, opt.cutoff))
 }
 
+
+
+### Custom function for trainControl
+# use expected cost as metric to choose the tune hyperparameters of the model
+# input: dataframe with true values and predictions
+# output: expected cost per customer
+
+cost_minimization = function(data, lev = c("no","yes"), model = NULL)
+{
+  # Define costs of False Positives (CFP) and False Negatives (CFN)
+  CFP = 3; CFN = 10
+  # Generate cost matrix
+  #cost_matrix = matrix(c(0, CFN,
+  #                       CFP, 0), nrow = 2, ncol = 2, byrow=TRUE, 
+  #                              dimnames = list(c("non-return", "return"), c("non-return", "return")))
+  
+  # Check if observations are encoded as expected
+  #print(summary(as.numeric(data$obs)))
+  
+  # Calculate expected costs (true values are in data$obs, probability predictions for a return in data$yes)
+  expected_cost = ifelse(data$obs == "yes", CFN*(1-data$yes), CFP*(data$yes))
+  
+  # Calculate mean of expected costs
+  expected_cost = mean(expected_cost)
+  
+  # Name metrics
+  names(expected_cost) = "exp_cost"
+  
+  # OUTPUT
+  return(expected_cost)
+}
+
+
 # This function chooses the best tune that generalizes best to other folds
 # out of a selection of models from nested cross-validation 
 # Input: a list of model objects from nested x-val functions
@@ -200,8 +237,9 @@ choose_best_tune = function(models)
 list_fold_performance = function(models, name, store = NULL)
 {
   # Initialise
-  if(is.null(store)){store = data.frame(row.names = c("avg_return (mean)","avg_return (SD)","AUC (mean)","AUC (SD)"))}
+  if(is.null(store)){store = data.frame(row.names = c("avg_return (mean)","avg_return (SD)","exp_cost (mean)", "exp_cost (SD)", "AUC (mean)","AUC (SD)"))}
   avg_return = vector()
+  exp_cost = vector()
   auc = vector()
   
   for(i in 1:length(models))
@@ -211,10 +249,13 @@ list_fold_performance = function(models, name, store = NULL)
     best_cutoff = optimal_cutoff(known[which(fold_membership == i),]$return_customer, prediction)
     
     avg_return = append(avg_return, predictive_performance(known[which(fold_membership == i),]$return_customer, prediction, cutoff = best_cutoff, returnH = FALSE)$avg_return)
-    auc = append(auc, predictive_performance(known[which(fold_membership == i),]$return_customer, prediction, cutoff = best_cutoff, returnH = FALSE)$area_under_curve)
+    exp_cost = append(exp_cost, predictive_performance(known[which(fold_membership == i),]$return_customer, prediction, shallPlot = FALSE, returnH = FALSE)$exp_cost)
+    auc = append(auc, predictive_performance(known[which(fold_membership == i),]$return_customer, prediction, shallPlot = FALSE, returnH = FALSE)$area_under_curve)
   }
   store["avg_return (mean)",name] = mean(avg_return)
   store["avg_return (SD)",name] = sd(avg_return)
+  store["exp_cost (mean)",name] = mean(exp_cost)
+  store["exp_cost (SD)",name] = sd(exp_cost)
   store["AUC (mean)",name] = mean(auc)
   store["AUC (SD)",name] = sd(auc)
     

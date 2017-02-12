@@ -58,10 +58,10 @@ run_neural_network = function(dataset, fold_membership, model_control, number_of
       
       #### Train Normal Artificial Neural Network ####
       ANN = train(return_customer~., data = train_fold_woe,  
-                  method = "nnet", maxit = 1000, trace = FALSE, # options for nnet function
+                  method = "nnet", maxit = 200, trace = FALSE, # options for nnet function
                   tuneGrid = ANN_parms, # parameters to be tested
                   #tuneLength = 100,
-                  metric = "ROC", trControl = model_control)
+                  metric = "exp_cost", trControl = model_control)
       
       print("Training of primary model completed.")
       
@@ -158,7 +158,7 @@ run_xgboosting_woe = function(dataset, fold_membership, model_control, number_of
                 method = "xgbTree",
                 tuneGrid = parameters, # parameters to be tested
                 #tuneLength = 100,
-                metric = "ROC", trControl = model_control)
+                metric = "exp_cost", trControl = model_control)
     
     print("Training of primary model completed.")
     
@@ -242,7 +242,7 @@ run_xgboosting = function(dataset, fold_membership, model_control, number_of_fol
                   method = "xgbTree",
                   tuneGrid = parameters, # parameters to be tested
                   #tuneLength = 100,
-                  metric = "ROC", trControl = model_control)
+                  metric = "exp_cost", trControl = model_control)
     
     print("Training of primary model completed.")
     

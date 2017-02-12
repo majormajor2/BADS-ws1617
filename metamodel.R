@@ -36,7 +36,7 @@ known_predictions = foreach(i = 1:k, .combine = rbind.data.frame, .verbose = TRU
     classProbs = TRUE,
     summaryFunction = stephanie.cutoff,
     #timingSamps = length(fold), # number of samples to predict the time taken
-    sampling = "smote", # This resolves class imbalances. 
+    #sampling = "smote", # This resolves class imbalances. 
     # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
     allowParallel = TRUE, # Enable parallelization if available
     #savePredictions = TRUE, # Save the hold-out predictions
@@ -129,7 +129,7 @@ meta_models = foreach(i = 1:k, .verbose = TRUE) %dopar% # fold = training_folds,
     classProbs = TRUE,
     summaryFunction = stephanie.cutoff,
     #timingSamps = length(fold), # number of samples to predict the time taken
-    sampling = "smote", # This resolves class imbalances. 
+    #sampling = "smote", # This resolves class imbalances. 
     # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
     allowParallel = TRUE, # Enable parallelization if available
     #savePredictions = TRUE, # Save the hold-out predictions
