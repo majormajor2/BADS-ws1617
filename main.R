@@ -86,7 +86,7 @@ model_control = trainControl(
   #repeats = 5, # number of repeats for repeated cross validation
   search = "grid", # or grid for a grid search
   classProbs = TRUE,
-  summaryFunction = cost_minimization,
+  summaryFunction = revenue_maximization,
   #timingSamps = length(fold), # number of samples to predict the time taken
   #sampling = "smote", # This resolves class imbalances. 
   # Possible values are "none", "down", "up", "smote", or "rose". The latter two values require the DMwR and ROSE packages, respectively.
@@ -162,14 +162,5 @@ write.csv(final_output, file = "27.csv", row.names = FALSE)
 
 # Create variable importance plots
 
-imp = data.frame()
-for(i in 1:k)
-{
-  for(variable in row.names(varImp(xgb_woe_output[[i]]$model)$importance))
-  {
-    imp[paste("Fold",i, sep = ""),variable] = varImp(xgb_woe_output[[i]]$model)$importance[variable,]
-  }
-}
-imp[sapply(imp, is.na)] = 0
-imp["Average",] = sapply(imp, mean)
-barplot(as.numeric(imp["Average",]), names.arg = colnames(imp), las=2)
+variable_importance = importance_plot(xgb_woe_output)
+meta_importance = importance_plot(meta_models)

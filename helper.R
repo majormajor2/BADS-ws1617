@@ -286,6 +286,31 @@ save_prediction = function(predictions_all, newprediction, name)
   return(predictions_all)
 }
 
+importance_plot = function(models)
+{
+  # Initialise data frame of importances
+  importance = data.frame()
+  
+  # Fill data frame with variable importances
+  for(i in 1:length(models))
+  {
+    for(variable in row.names(varImp(models[[i]]$model)$importance))
+    {
+      importance[paste("Fold",i, sep = ""),variable] = varImp(models[[i]]$model)$importance[variable,]
+    }
+  }
+  # Fill missing values with 0
+  importance[sapply(importance, is.na)] = 0
+  # Calculate average importance
+  importance["Average",] = sapply(importance, mean)
+  
+  # Plot the importance
+  #par(mar=c(7,1,1,1))
+  barplot(as.numeric(importance["Average",]), names.arg = colnames(importance), las=2)
+  
+  # Return data frame
+  return(importance)
+}
 
 ####### Load scripts #######
 source("data_cleaning.R")
